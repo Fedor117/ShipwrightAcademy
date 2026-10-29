@@ -87,6 +87,17 @@ Deck entries are keyed by a hash of the question text and options (`mistakeKey` 
 
 These rules are written twice, once in `app.js` and once in `ProgressStore.swift` (`Rules`). Change both, then run `node scripts/check-rules.js`.
 
+## Search
+
+Both apps search the whole course: section and topic titles, summaries, headings, paragraphs, list items, callouts, figure captions, key points and patterns. Code blocks and quiz questions are not indexed.
+
+- **Open it:** on the web, use the field in the header (⌘K / Ctrl+K or `/`), then ↑ ↓ to move, Enter to open and Esc to close. On macOS, use the sidebar search field (⌘F or ⌘K), and Return opens the top result. In both apps, focusing the field again shows the results for the current query, and while you type, quiz shortcuts (1–5, Return) are ignored.
+- **Matching:** every word you type must match the start of a word in the same piece of text. Case, accents and `**`/`` ` `` markup are ignored, so `cache inval` finds "invalidating caches". Queries shorter than 2 letters show no results.
+- **Ranking:** titles first, then headings, key points and patterns, then body text. Results are grouped by topic and each topic shows its best 3 matches.
+- **Locks:** locked topics are listed and marked locked, but can't be opened unless free roam is on. Picking a result opens the lesson and scrolls to the matching block.
+
+The index is built from the curriculum at launch, so new content is searchable with no extra step. The thresholds and the label and weight for each kind of text are written twice: `SEARCH_*` in `app.js` and `SearchRules` in `Search.swift`. `check-rules.js` compares them.
+
 ## Progress
 
 - macOS: `~/Library/Application Support/ShipwrightAcademy/progress.json`

@@ -18,11 +18,18 @@ struct ShipwrightAcademyApp: App {
         }
         .defaultSize(width: 1280, height: 840)
         .windowToolbarStyle(.unified)
+        .commands {
+            CommandGroup(replacing: .textEditing) {
+                Button("Search Lessons") { model.searchFocusRequests += 1 }.keyboardShortcut("f")
+                Button("Quick Search") { model.searchFocusRequests += 1 }.keyboardShortcut("k")
+            }
+        }
     }
 }
 
 struct ContentView: View {
     @Environment(AppModel.self) private var model
+    @FocusState private var searchFocused: Bool
 
     var body: some View {
         @Bindable var model = model
@@ -37,11 +44,18 @@ struct ContentView: View {
                         case .lesson(let si, let ti): LessonView(si: si, ti: ti)
                         case .quiz: QuizView()
                         case .result: ResultView()
+                        case .search: SearchView()
                         }
                     }
             }
             .toolbar { ToolbarItem(placement: .primaryAction) { StatsBar() } }
         }
+        .searchable(text: $model.searchText, placement: .sidebar, prompt: "Search lessons")
+        .searchFocused($searchFocused)
+        .onSubmit(of: .search) { model.openFirstResult() }
+        .onChange(of: model.searchText) { model.searchChanged() }
+        .onChange(of: model.searchFocusRequests) { searchFocused = true }
+        .onChange(of: searchFocused) { model.searchFocusChanged(searchFocused) }
         .overlay(alignment: .top) { ToastStack() }
         .onAppear { NSApplication.shared.activate() }
     }

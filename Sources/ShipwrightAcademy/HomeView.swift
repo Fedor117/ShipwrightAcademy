@@ -51,7 +51,7 @@ struct HomeView: View {
                     }
                     .buttonStyle(.glassProminent)
                     .controlSize(.extraLarge)
-                    .keyboardShortcut(.defaultAction)
+                    .keyboardShortcut(model.searchFocused ? nil : .defaultAction)
                 }
                 let deck = store.mistakeDeck.count
                 if deck > 0 {

@@ -22,7 +22,7 @@ struct MistakesView: View {
                         Button("Review \(min(deck.count, Rules.mistakeSession)) \(deck.count == 1 ? "mistake" : "mistakes")") { model.startMistakes() }
                             .buttonStyle(.glassProminent)
                             .controlSize(.extraLarge)
-                            .keyboardShortcut(.defaultAction)
+                            .keyboardShortcut(model.searchFocused ? nil : .defaultAction)
                         GroupedList {
                             ForEach(deck, id: \.self) { k in
                                 if let e = store.questionIndex[k] {

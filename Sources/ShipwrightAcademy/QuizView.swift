@@ -91,7 +91,7 @@ struct QuizView: View {
                     }
                     .buttonStyle(.glassProminent)
                     .controlSize(.extraLarge)
-                    .keyboardShortcut(.defaultAction)
+                    .keyboardShortcut(model.searchFocused ? nil : .defaultAction)
                     .disabled(!s.canCheck)
 
                     Text(hint(item))
@@ -154,7 +154,7 @@ struct QuizView: View {
         }
         .buttonStyle(.plain)
         .disabled(s.checked)
-        .keyboardShortcut(KeyEquivalent(Character("\(pos + 1)")), modifiers: [])
+        .keyboardShortcut(model.searchFocused ? nil : KeyboardShortcut(KeyEquivalent(Character("\(pos + 1)")), modifiers: []))
         .glassEffect(state.tint.map { Glass.regular.tint($0.opacity(0.3)).interactive() } ?? .regular.interactive(),
                      in: .rect(cornerRadius: 18))
         .glassEffectID(orig, in: glass)
@@ -208,6 +208,7 @@ struct QuizView: View {
 
 /// A code snippet with numbered lines. With `pick`, each line is a button ("spot the bug").
 struct CodeLines: View {
+    @Environment(AppModel.self) private var model
     let question: Question
     var picked: Int? = nil
     var checked = false
@@ -235,7 +236,7 @@ struct CodeLines: View {
                             .buttonStyle(.plain)
                             .disabled(checked)
                             .accessibilityLabel("Line \(i + 1): \(lines[i])")
-                            .keyboardShortcut(i < 9 ? KeyboardShortcut(KeyEquivalent(Character("\(i + 1)")), modifiers: []) : nil)
+                            .keyboardShortcut(i < 9 && !model.searchFocused ? KeyboardShortcut(KeyEquivalent(Character("\(i + 1)")), modifiers: []) : nil)
                     } else {
                         row
                     }

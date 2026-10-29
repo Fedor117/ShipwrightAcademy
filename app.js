@@ -228,6 +228,81 @@
     return fresh;
   }
 
+  // ---------- Search ----------
+  // Same rules as SearchRules in Search.swift (scripts/check-rules.js compares them).
+  // Every query term must prefix a word of one entry; entries group by topic, best kind weight first.
+  const SEARCH_MIN = 2;
+  const SEARCH_SNIPPET = 160;
+  const SEARCH_LEAD = 40;
+  const SEARCH_PER_TOPIC = 3;
+  const SEARCH_KINDS = {
+    section: ['Section', 3], title: ['Title', 3], summary: ['Summary', 1],
+    h: ['Heading', 2], keyPoint: ['Key point', 2], pattern: ['Pattern', 2],
+    p: ['Paragraph', 1], list: ['List', 1], tip: ['Tip', 1], warn: ['Pitfall', 1], agent: ['With agents', 1], figure: ['Figure', 1],
+  };
+  const fold = (s) => String(s).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+  const words = (s) => fold(s).match(/[\p{L}\p{N}]+/gu) || [];
+  const WORD = /[\p{L}\p{N}\p{M}]+/gu;
+  const INDEX = [];
+  SECTIONS.forEach((s, si) => {
+    const add = (ti, kind, text, anchor) => {
+      const t = String(text).replace(/\*\*|`/g, '');
+      INDEX.push({ si, ti, kind, anchor, text: t, words: words(t), order: INDEX.length });
+    };
+    add(-1, 'section', s.title, 'sec-' + s.id);
+    s.topics.forEach((t, ti) => {
+      add(ti, 'title', t.title, null);
+      add(ti, 'summary', t.summary, null);
+      t.lesson.forEach((b, bi) => {
+        const a = 'blk-' + bi;
+        if (b.type === 'h' || b.type === 'p') add(ti, b.type, b.text, a);
+        else if (b.type === 'list') b.items.forEach((i) => add(ti, 'list', i, a));
+        else if (b.type === 'callout') add(ti, SEARCH_KINDS[b.kind] ? b.kind : 'tip', b.text, a);
+        else if (b.type === 'figure') add(ti, 'figure', b.caption, a);
+        else if (b.type === 'patterns') b.patterns.forEach((p) => add(ti, 'pattern', [p.signal, p.use, p.why].join(' · '), a));
+      });
+      t.keyPoints.forEach((k, ki) => add(ti, 'keyPoint', k, 'kp-' + ki));
+    });
+  });
+  const weight = (e) => SEARCH_KINDS[e.kind][1];
+  function search(q) {
+    const terms = [...new Set(words(q))];
+    if (terms.join('').length < SEARCH_MIN) return null;
+    const groups = new Map();
+    INDEX.forEach((e) => {
+      if (!terms.every((t) => e.words.some((w) => w.startsWith(t)))) return;
+      const k = e.si + '/' + e.ti;
+      if (!groups.has(k)) groups.set(k, { si: e.si, ti: e.ti, hits: [], score: 0, order: e.order });
+      const g = groups.get(k);
+      g.hits.push(e);
+      g.score = Math.max(g.score, weight(e));
+    });
+    const list = [...groups.values()];
+    list.forEach((g) => g.hits.sort((a, b) => weight(b) - weight(a) || a.order - b.order));
+    list.sort((a, b) => b.score - a.score || b.hits.length - a.hits.length || a.order - b.order);
+    return { terms, groups: list };
+  }
+  function snippet(text, terms) {
+    const hit = (w) => { const f = fold(w); return terms.some((t) => f.startsWith(t)); };
+    let s = 0, e = text.length;
+    if (e > SEARCH_SNIPPET) {
+      let pos = 0;
+      for (const m of text.matchAll(WORD)) if (hit(m[0])) { pos = m.index; break; }
+      s = Math.max(0, pos - SEARCH_LEAD);
+      if (s > 0) { const sp = text.indexOf(' ', s); if (sp >= 0 && sp < pos) s = sp + 1; }
+      e = Math.min(text.length, s + SEARCH_SNIPPET);
+      if (e < text.length) { const sp = text.lastIndexOf(' ', e); if (sp > pos) e = sp; }
+    }
+    const part = text.slice(s, e);
+    let out = '', last = 0;
+    for (const m of part.matchAll(WORD)) {
+      if (!hit(m[0])) continue;
+      out += esc(part.slice(last, m.index)) + '<mark>' + esc(m[0]) + '</mark>';
+      last = m.index + m[0].length;
+    }
+    return (s > 0 ? '…' : '') + out + esc(part.slice(last)) + (e < text.length ? '…' : '');
+  }
+
   // ---------- UI chrome ----------
   function toast(html) {
     const el = document.createElement('div');
@@ -278,7 +353,11 @@
   let session = null;
   const app = $('#app');
 
-  function go(v) { view = v; session = v.name === 'quiz' ? session : null; render(); window.scrollTo(0, 0); }
+  function go(v) {
+    view = v; session = v.name === 'quiz' ? session : null; render(); window.scrollTo(0, 0);
+    const el = v.anchor && document.getElementById(v.anchor);
+    if (el) { el.scrollIntoView({ block: 'center' }); el.classList.add('hit-flash'); }
+  }
 
   function render() {
     renderStats();
@@ -288,6 +367,7 @@
     if (view.name === 'quiz') return renderQuiz();
     if (view.name === 'result') return renderResult();
     if (view.name === 'badges') return renderBadges();
+    if (view.name === 'search') return renderSearch();
   }
 
   function renderHome() {
@@ -362,19 +442,20 @@
   function renderTopic(si, ti) {
     const s = SECTIONS[si], t = s.topics[ti];
     const ts = tstate(s.id, t.id);
-    const blocks = t.lesson.map((b) => {
-      if (b.type === 'h') return '<h3>' + md(b.text) + '</h3>';
+    const blocks = t.lesson.map((b, bi) => {
+      const at = ' id="blk-' + bi + '"';
+      if (b.type === 'h') return '<h3' + at + '>' + md(b.text) + '</h3>';
       // Figure SVG is curriculum content checked by scripts/validate-content.js (no scripts, handlers or external refs).
-      if (b.type === 'figure') return '<figure class="fig"><div class="fig-art">' + b.svg + '</div><figcaption>' + md(b.caption) + '</figcaption></figure>';
-      if (b.type === 'patterns') return '<section class="patterns"><h3>Patterns</h3><p class="pat-hint">When you notice the signal, reach for the move.</p><ol>' +
+      if (b.type === 'figure') return '<figure class="fig"' + at + '><div class="fig-art">' + b.svg + '</div><figcaption>' + md(b.caption) + '</figcaption></figure>';
+      if (b.type === 'patterns') return '<section class="patterns"' + at + '><h3>Patterns</h3><p class="pat-hint">When you notice the signal, reach for the move.</p><ol>' +
         b.patterns.map((p) => '<li class="pat"><span class="pat-k">When</span><p class="pat-signal">' + md(p.signal) + '</p><span class="pat-k">Use</span><p class="pat-use">' + md(p.use) + '</p><p class="pat-why">' + md(p.why) + '</p></li>').join('') + '</ol></section>';
-      if (b.type === 'list') return '<ul>' + b.items.map((i) => '<li>' + md(i) + '</li>').join('') + '</ul>';
-      if (b.type === 'code') return '<pre data-lang="' + esc(b.lang || '') + '"><code>' + esc(b.text) + '</code></pre>';
+      if (b.type === 'list') return '<ul' + at + '>' + b.items.map((i) => '<li>' + md(i) + '</li>').join('') + '</ul>';
+      if (b.type === 'code') return '<pre' + at + ' data-lang="' + esc(b.lang || '') + '"><code>' + esc(b.text) + '</code></pre>';
       if (b.type === 'callout') {
         const label = { tip: 'Tip', warn: 'Pitfall', agent: 'With agents' }[b.kind] || 'Note';
-        return '<div class="callout callout-' + esc(b.kind) + '"><span class="c-label">' + label + '</span><div>' + md(b.text) + '</div></div>';
+        return '<div' + at + ' class="callout callout-' + esc(b.kind) + '"><span class="c-label">' + label + '</span><div>' + md(b.text) + '</div></div>';
       }
-      return '<p>' + md(b.text) + '</p>';
+      return '<p' + at + '>' + md(b.text) + '</p>';
     }).join('');
     const status = ts.passed ? '<span class="pill pill-ok">' + ICON.check + ' Passed ' + ts.best + ' / ' + ts.total + '</span>' : (ts.attempts ? '<span class="pill pill-bad">Not passed yet</span>' : '');
     const due = reviewDue(s.id, t.id) ? '<span class="pill pill-acc">' + ICON.repeat + ' Review due · +20 XP</span>' : '';
@@ -383,7 +464,7 @@
       '<nav class="crumbs"><button type="button" data-action="home">Path</button><span>/</span><span>' + esc(s.title) + '</span><span>/</span><span>Topic ' + (ti + 1) + ' of ' + s.topics.length + '</span></nav>' +
       '<header class="lesson-head"><h1>' + esc(t.title) + '</h1><p>' + md(t.summary) + '</p><div class="meta-row"><span class="pill pill-mute">' + t.minutes + ' min read</span><span class="pill pill-mute">' + t.quiz.length + '-question quiz</span>' + status + due + '</div></header>' +
       '<article class="prose">' + blocks + '</article>' +
-      '<aside class="keypoints"><h3>Key points</h3><ul>' + t.keyPoints.map((k) => '<li>' + md(k) + '</li>').join('') + '</ul></aside>' +
+      '<aside class="keypoints"><h3>Key points</h3><ul>' + t.keyPoints.map((k, ki) => '<li id="kp-' + ki + '">' + md(k) + '</li>').join('') + '</ul></aside>' +
       '<div class="lesson-cta"><p>Score ' + Math.ceil(TOPIC_PASS * t.quiz.length) + ' of ' + t.quiz.length + ' to pass' + (ts.passed ? '. Retaking can raise your best score.' : ' and unlock the next topic.') + '</p>' +
       '<div class="btn-row">' + (prev ? '<button class="btn btn-ghost" data-action="topic" data-si="' + prev.si + '" data-ti="' + prev.ti + '">Previous topic</button>' : '') +
       '<button class="btn btn-primary" data-action="quiz" data-si="' + si + '" data-ti="' + ti + '">' + (ts.attempts ? 'Retake the quiz' : 'Take the quiz') + '</button></div></div></div>';
@@ -615,6 +696,67 @@
       '</div></div>';
   }
 
+  let searchFrom = null;   // view to return to when the search is cleared
+  let searchActive = 0;
+  function renderSearch() {
+    const r = search(view.q);
+    let body;
+    if (!r) body = '<div class="empty">Type at least ' + SEARCH_MIN + ' letters to search.</div>';
+    else if (!r.groups.length) body = '<div class="empty">No lessons match “' + esc(view.q.trim()) + '”.</div>';
+    else {
+      let n = 0;
+      body = '<div class="results" role="listbox" id="results" aria-label="Search results">' + r.groups.map((g) => {
+        const s = SECTIONS[g.si], t = s.topics[g.ti];
+        const open = !t || topicUnlocked(g.si, g.ti);
+        const rows = g.hits.slice(0, SEARCH_PER_TOPIC).map((e) => {
+          const attrs = open
+            ? 'id="hit-' + n + '" role="option" data-action="hit" data-n="' + (n++) + '" data-si="' + e.si + '" data-ti="' + e.ti + '"' + (e.anchor ? ' data-anchor="' + esc(e.anchor) + '"' : '')
+            : 'aria-disabled="true"';
+          return '<li><button type="button" class="hit" ' + attrs + '><span class="hit-kind">' + SEARCH_KINDS[e.kind][0] + '</span><span class="hit-snip">' + snippet(e.text, r.terms) + '</span></button></li>';
+        }).join('');
+        const more = g.hits.length > SEARCH_PER_TOPIC ? '<p class="hit-more">+' + (g.hits.length - SEARCH_PER_TOPIC) + ' more in this ' + (t ? 'topic' : 'section') + '</p>' : '';
+        return '<section class="hit-group' + (open ? '' : ' locked') + '"><div class="hit-head"><span>' + esc(s.title) + (t ? ' · <b>' + esc(t.title) + '</b>' : '') + '</span>' +
+          (open ? '' : '<span class="pill pill-mute">' + ICON.lock + ' Locked</span>') + '</div><ol>' + rows + '</ol>' + more + '</section>';
+      }).join('') + '</div>';
+      const hits = r.groups.reduce((a, g) => a + g.hits.length, 0);
+      body = '<p class="page-sub">' + hits + ' match' + (hits === 1 ? '' : 'es') + ' in ' + r.groups.length + ' place' + (r.groups.length === 1 ? '' : 's') + '. ↑ ↓ to move, Enter to open, Esc to close.</p>' + body;
+    }
+    app.innerHTML = '<div class="narrow"><nav class="crumbs"><button type="button" data-action="home">Path</button><span>/</span><span>Search</span></nav>' +
+      '<h1 class="page-title">Search</h1>' + body + '</div>';
+    moveHit(0);
+  }
+  function moveHit(d) {
+    const hits = app.querySelectorAll('.hit[data-n]');
+    searchActive = hits.length ? Math.max(0, Math.min(hits.length - 1, searchActive + d)) : 0;
+    hits.forEach((h, i) => { h.classList.toggle('active', i === searchActive); h.setAttribute('aria-selected', i === searchActive); });
+    if (hits[searchActive]) { qEl.setAttribute('aria-activedescendant', hits[searchActive].id); if (d) hits[searchActive].scrollIntoView({ block: 'nearest' }); }
+    else qEl.removeAttribute('aria-activedescendant');
+  }
+  const qEl = $('#q');
+  const kbd = $('.search kbd');
+  if (kbd && !/Mac|iPhone|iPad/.test(navigator.userAgent)) kbd.textContent = 'Ctrl K';
+  function showSearch() {
+    if (!qEl.value.trim()) { if (view.name === 'search') closeSearch(); return; }
+    const entering = view.name !== 'search';
+    if (entering) searchFrom = view;
+    view = { name: 'search', q: qEl.value };
+    searchActive = 0;
+    render();
+    if (entering) window.scrollTo(0, 0);
+  }
+  function closeSearch() {
+    view = searchFrom || { name: 'home' };
+    searchFrom = null;
+    render();
+  }
+  qEl.addEventListener('input', showSearch);
+  qEl.addEventListener('focus', () => { if (view.name !== 'search') showSearch(); });
+  qEl.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); moveHit(e.key === 'ArrowDown' ? 1 : -1); }
+    else if (e.key === 'Enter') { e.preventDefault(); const h = app.querySelector('.hit.active'); if (h) h.click(); }
+    else if (e.key === 'Escape') { e.preventDefault(); if (qEl.value) { qEl.value = ''; showSearch(); } else qEl.blur(); }
+  });
+
   // ---------- Events ----------
   document.addEventListener('click', (e) => {
     const el = e.target.closest('[data-action]');
@@ -624,6 +766,10 @@
     if (a === 'home') return go({ name: 'home' });
     if (a === 'badges') { confirmReset = false; return go({ name: 'badges' }); }
     if (a === 'topic') return go({ name: 'topic', si, ti });
+    if (a === 'hit') {
+      searchFrom = null; qEl.blur();
+      return go(ti < 0 ? { name: 'home', anchor: el.dataset.anchor } : { name: 'topic', si, ti, anchor: el.dataset.anchor });
+    }
     if (a === 'quiz') return startQuiz(si, ti);
     if (a === 'exam') return startExam(si);
     if (a === 'mistakes') return startMistakes();
@@ -664,7 +810,10 @@
     window.scrollTo(0, 0);
   }
   document.addEventListener('keydown', (e) => {
-    if (view.name !== 'quiz' || !session || e.metaKey || e.ctrlKey || e.altKey) return;
+    const typing = e.target.closest && e.target.closest('input, textarea, [contenteditable]');
+    if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey) && !e.altKey) { e.preventDefault(); qEl.focus(); qEl.select(); return; }
+    if (e.key === '/' && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); qEl.focus(); qEl.select(); return; }
+    if (typing || view.name !== 'quiz' || !session || e.metaKey || e.ctrlKey || e.altKey) return;
     const q = session.qs[session.i];
     const n = parseInt(e.key, 10);
     const choices = q.kind === 'mc' ? q.options.length : q.kind === 'line' ? codeLines(q).length : 0;

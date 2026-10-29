@@ -1,4 +1,4 @@
-// Checks that the web app (app.js) and the macOS app (ProgressStore.swift) apply the same progression rules,
+// Checks that the web app (app.js) and the macOS app (ProgressStore.swift, Search.swift) apply the same progression and search rules,
 // and that every place listing the section order agrees.
 //   node scripts/check-rules.js
 const fs = require('fs');
@@ -55,6 +55,18 @@ same('fixed badges', webBadges, macBadges);
 same('section badge detail',
   one(js, /desc: ('Pass the ' \+ s\.title \+ '[^']*')/, 'section badge desc in app.js')?.replace(/' \+ s\.title \+ '/, '<title>').slice(1, -1),
   one(swift, /detail: "(Pass the \\\(section\.title\)[^"]*)"/, 'section badge detail in swift')?.replace('\\(section.title)', '<title>'));
+
+// Search: thresholds and the label and weight of every kind of indexed text (SearchRules in Search.swift).
+const search = read('Sources/ShipwrightAcademy/Search.swift');
+[['SEARCH_MIN', 'minQuery'], ['SEARCH_SNIPPET', 'snippet'], ['SEARCH_LEAD', 'lead'], ['SEARCH_PER_TOPIC', 'perTopic']].forEach(([w, m]) =>
+  same('search ' + m,
+    Number(one(js, new RegExp(w + '\\s*=\\s*(\\d+)'), w + ' in app.js')),
+    Number(one(search, new RegExp('static let ' + m + '\\s*=\\s*(\\d+)'), 'SearchRules.' + m))));
+const kinds = (s) => [...(s || '').matchAll(/"?(\w+)"?:\s*[[(]["']([^"']+)["'],\s*(\d+)/g)].map((m) => [m[1], m[2], Number(m[3])])
+  .sort((a, b) => a[0].localeCompare(b[0]));
+same('search kinds',
+  kinds(one(js, /SEARCH_KINDS\s*=\s*\{([\s\S]*?)\};/, 'SEARCH_KINDS in app.js')),
+  kinds(one(search, /static let kinds[^=]*=\s*\[([\s\S]*?)\]\n/, 'SearchRules.kinds')));
 
 // Section order: app.js, the curriculum bundler, index.html script tags, and the content files on disk.
 const order = (src, file) => JSON.parse(one(src, /ORDER\s*=\s*(\[[^\]]*\])/, `ORDER in ${file}`)?.replace(/'/g, '"') || '[]');
