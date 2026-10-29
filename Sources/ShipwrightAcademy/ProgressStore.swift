@@ -20,6 +20,14 @@ struct ExamProgress: Codable {
     var failedOnce = false
 }
 
+/// A question in the mistakes deck. Keyed by ProgressStore.mistakeKey, not by position, so content can reorder.
+struct Mistake: Codable {
+    var section: String
+    var topic: String     // topic id, or "exam" for the section exam pool
+    var missedAt: Date
+    var streak = 0        // right answers in a row in mistakes reviews
+}
+
 struct ProgressState: Codable {
     var xp = 0
     var topics: [String: TopicProgress] = [:]
@@ -28,6 +36,7 @@ struct ProgressState: Codable {
     var badges: [String: Date] = [:]
     var reviews = 0
     var freeRoam = false
+    var mistakes: [String: Mistake]?   // optional so older progress.json still decodes
 }
 
 struct Badge: Identifiable {
@@ -42,6 +51,8 @@ enum Rules {
     static let topicPass = 0.8   // 4 of 5
     static let examPass = 0.8
     static let reviewDays = [3, 7, 21, 60]
+    static let mistakeClearStreak = 2   // right answers in a row, in mistakes reviews, to clear a question
+    static let mistakeSession = 10
     static let levels: [(Int, String)] = [
         (0, "Intern"), (200, "Apprentice"), (600, "Junior Engineer"), (1200, "Engineer"),
         (2000, "Senior Engineer"), (3000, "Staff Engineer"), (4500, "Principal Engineer"), (6500, "Distinguished Engineer"),
@@ -56,6 +67,7 @@ struct QuizOutcome {
     let gains: [(String, Int)]
     let newBadges: [Badge]
     let levelUp: String?
+    var cleared: [Question] = []
     var percent: Int { Int((Double(correct) / Double(total) * 100).rounded()) }
 }
 
@@ -64,6 +76,17 @@ struct QuizOutcome {
 final class ProgressStore {
     private(set) var state = ProgressState()
     let sections = Curriculum.sections
+    /// Every quiz and exam question by mistake key, with where it lives.
+    let questionIndex: [String: (si: Int, ti: Int?, question: Question)] = {
+        var index: [String: (si: Int, ti: Int?, question: Question)] = [:]
+        for (si, section) in Curriculum.sections.enumerated() {
+            for q in section.exam { index[ProgressStore.mistakeKey(q)] = (si, nil, q) }
+            for (ti, topic) in section.topics.enumerated() {
+                for q in topic.quiz { index[ProgressStore.mistakeKey(q)] = (si, ti, q) }
+            }
+        }
+        return index
+    }()
 
     private let fileURL: URL = {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -77,6 +100,8 @@ final class ProgressStore {
            let saved = try? JSONDecoder().decode(ProgressState.self, from: data) {
             state = saved
         }
+        // Questions whose content is gone from the curriculum drop out silently.
+        if !sections.isEmpty { state.mistakes = state.mistakes?.filter { questionIndex[$0.key] != nil } }
     }
 
     private func save() {
@@ -150,6 +175,24 @@ final class ProgressStore {
     var currentSection: Int {
         sections.indices.first { !exam($0).passed } ?? max(sections.count - 1, 0)
     }
+
+    // MARK: Mistakes deck
+
+    /// FNV-1a over the question's UTF-16 content, base 36; matches mistakeKey in app.js.
+    nonisolated static func mistakeKey(_ q: Question) -> String {
+        var h: UInt32 = 0x811c9dc5
+        for u in ([q.q] + q.options).joined(separator: "\u{0}").utf16 { h = (h ^ UInt32(u)) &* 0x01000193 }
+        return String(h, radix: 36)
+    }
+
+    /// Deck keys, oldest miss first.
+    var mistakeDeck: [String] {
+        (state.mistakes ?? [:]).filter { questionIndex[$0.key] != nil }
+            .sorted { ($0.value.missedAt, $0.key) < ($1.value.missedAt, $1.key) }
+            .map(\.key)
+    }
+
+    func mistake(_ key: String) -> Mistake? { state.mistakes?[key] }
 
     // MARK: Level, streak
 
@@ -251,6 +294,34 @@ final class ProgressStore {
         if !passed { e.failedOnce = true }
         state.exams[sections[si].id] = e
         return finish(correct: correct, total: total, passed: passed, gains: gains)
+    }
+
+    /// Wrong answers from a topic quiz, review or exam (question, topic index or nil for the exam pool). Saved by the record call that follows.
+    func recordMisses(_ si: Int, _ misses: [(Question, Int?)]) {
+        var deck = state.mistakes ?? [:]
+        for (q, ti) in misses {
+            deck[Self.mistakeKey(q)] = Mistake(section: sections[si].id, topic: ti.map { sections[si].topics[$0].id } ?? "exam", missedAt: Date())
+        }
+        state.mistakes = deck
+    }
+
+    func recordMistakes(_ results: [(Question, Bool)]) -> QuizOutcome {
+        var deck = state.mistakes ?? [:]
+        var cleared: [Question] = []
+        for (q, correct) in results {
+            let k = Self.mistakeKey(q)
+            guard var m = deck[k] else { continue }
+            if !correct { m.streak = 0; m.missedAt = Date(); deck[k] = m }
+            else if m.streak + 1 >= Rules.mistakeClearStreak { deck[k] = nil; cleared.append(q) }
+            else { m.streak += 1; deck[k] = m }
+        }
+        state.mistakes = deck
+        let n = cleared.count
+        var gains: [(String, Int)] = []
+        if n > 0 { gains.append(("Mistake cleared", n * 15)) }
+        var outcome = finish(correct: results.filter(\.1).count, total: results.count, passed: n > 0, gains: gains)
+        outcome.cleared = cleared
+        return outcome
     }
 
     private func finish(correct: Int, total: Int, passed: Bool, gains: [(String, Int)]) -> QuizOutcome {

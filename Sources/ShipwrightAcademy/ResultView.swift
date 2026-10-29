@@ -14,10 +14,12 @@ struct ResultView: View {
     private func content(_ s: QuizSession, _ o: QuizOutcome) -> some View {
         let section = model.sections[s.sectionIndex]
         let isExam: Bool = if case .exam = s.kind { true } else { false }
+        let isMistakes = s.kind == .mistakes
         let passMark = isExam ? Rules.examPass : Rules.topicPass
         let what: String = switch s.kind {
         case .topic(_, let ti): section.topics[ti].title
         case .exam: "\(section.title) · Section exam"
+        case .mistakes: "Mistakes review"
         }
         let missedTopics = Array(Set(s.items.indices.compactMap { i in s.answers[i].correct ? nil : s.items[i].topicIndex })).sorted()
 
@@ -25,17 +27,20 @@ struct ResultView: View {
             VStack(spacing: 28) {
                 VStack(spacing: 16) {
                     ZStack {
-                        Ring(fraction: Double(o.correct) / Double(o.total), color: o.passed ? .green : .orange, lineWidth: 22)
+                        Ring(fraction: Double(o.correct) / Double(o.total), color: isMistakes ? .accentColor : o.passed ? .green : .orange, lineWidth: 22)
                         VStack(spacing: 2) {
                             Text("\(o.percent)%").font(.system(size: 44, weight: .bold)).monospacedDigit()
-                            Text("pass \(Int(passMark * 100))%").font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
+                            Text(isMistakes ? "\(o.correct) of \(o.total) right" : "pass \(Int(passMark * 100))%").font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
                         }
                     }
                     .frame(width: 180, height: 180)
                     Eyebrow(text: what)
-                    Text(o.passed ? (isExam ? "Section cleared." : "Topic passed.") : "Almost there.")
+                    Text(isMistakes ? (o.cleared.isEmpty ? "Mistakes reviewed." : "Cleared \(o.cleared.count) \(o.cleared.count == 1 ? "mistake" : "mistakes").")
+                         : o.passed ? (isExam ? "Section cleared." : "Topic passed.") : "Almost there.")
                         .font(.system(size: 46, weight: .bold)).tracking(-1)
-                    Text(o.passed
+                    Text(isMistakes
+                         ? "You got \(o.correct) of \(o.total). A question leaves the deck after \(Rules.mistakeClearStreak) right answers in a row here. \(model.store.mistakeDeck.count) left in your deck."
+                         : o.passed
                          ? "You got \(o.correct) of \(o.total).\(isExam ? Curriculum.nextInTrack(s.sectionIndex).map { " \(model.sections[$0].title) is now open." } ?? "" : "")"
                          : "You got \(o.correct) of \(o.total). The pass mark is \(Int(passMark * 100))%, so this needs a retake. Questions and answer order change each attempt.")
                         .font(.title3).foregroundStyle(.secondary).multilineTextAlignment(.center).frame(maxWidth: 520)
@@ -52,6 +57,20 @@ struct ResultView: View {
                 .padding(.horizontal, 32)
                 .frame(maxWidth: .infinity)
                 .glassEffect(.regular, in: .rect(cornerRadius: 30))
+
+                if !o.cleared.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Cleared from your deck").font(.title2.bold())
+                        GroupedList {
+                            ForEach(o.cleared.indices, id: \.self) { i in
+                                Label { Text(inline(o.cleared[i].q)) } icon: { Image(systemName: "checkmark.circle.fill").foregroundStyle(.green) }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 20).padding(.vertical, 14)
+                                if i < o.cleared.count - 1 { Divider().padding(.leading, 20) }
+                            }
+                        }
+                    }
+                }
 
                 if isExam && !o.passed && !missedTopics.isEmpty {
                     VStack(alignment: .leading, spacing: 10) {
@@ -80,7 +99,7 @@ struct ResultView: View {
                     GroupedList {
                         ForEach(s.items.indices, id: \.self) { i in
                             ReviewRow(item: s.items[i], answer: s.answers[i],
-                                      topicTitle: isExam ? s.items[i].topicIndex.map { section.topics[$0].title } : nil,
+                                      topicTitle: isMistakes ? model.originTitle(s.items[i]) : isExam ? s.items[i].topicIndex.map { section.topics[$0].title } : nil,
                                       number: i + 1)
                             if i < s.items.count - 1 { Divider().padding(.leading, 56) }
                         }
@@ -93,19 +112,25 @@ struct ResultView: View {
             .frame(maxWidth: .infinity)
         }
         .background(Backdrop())
-        .navigationTitle(o.passed ? "Passed" : "Retake required")
+        .navigationTitle(isMistakes ? "Mistakes review" : o.passed ? "Passed" : "Retake required")
     }
 
     @ViewBuilder
     private func actions(_ s: QuizSession, _ o: QuizOutcome, isExam: Bool) -> some View {
         HStack(spacing: 12) {
-            if !o.passed {
+            if s.kind == .mistakes {
+                if !model.store.mistakeDeck.isEmpty {
+                    Button("Review more mistakes") { model.startMistakes() }.buttonStyle(.glassProminent)
+                }
+            } else if !o.passed {
                 switch s.kind {
                 case .topic(let si, let ti):
                     Button("Retake quiz") { model.startQuiz(si, ti) }.buttonStyle(.glassProminent)
                     Button("Reread the lesson") { model.openLesson(si, ti) }.buttonStyle(.glass)
                 case .exam(let si):
                     Button("Retake exam") { model.startExam(si) }.buttonStyle(.glassProminent)
+                case .mistakes:
+                    EmptyView()
                 }
             } else if let step = model.store.nextStep {
                 Button(nextLabel(step)) { model.go(to: step) }.buttonStyle(.glassProminent)

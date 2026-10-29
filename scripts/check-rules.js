@@ -32,6 +32,12 @@ same('exam pass threshold',
 same('review days',
   nums(one(js, /REVIEW_DAYS\s*=\s*\[([^\]]*)\]/, 'REVIEW_DAYS in app.js')),
   nums(one(swift, /reviewDays\s*=\s*\[([^\]]*)\]/, 'Rules.reviewDays')));
+same('mistake clear streak',
+  Number(one(js, /MISTAKE_CLEAR_STREAK\s*=\s*(\d+)/, 'MISTAKE_CLEAR_STREAK in app.js')),
+  Number(one(swift, /mistakeClearStreak\s*=\s*(\d+)/, 'Rules.mistakeClearStreak')));
+same('mistakes session size',
+  Number(one(js, /MISTAKE_SESSION\s*=\s*(\d+)/, 'MISTAKE_SESSION in app.js')),
+  Number(one(swift, /mistakeSession\s*=\s*(\d+)/, 'Rules.mistakeSession')));
 same('levels',
   pairs(one(js, /LEVELS\s*=\s*\[([\s\S]*?)\];/, 'LEVELS in app.js')),
   pairs(one(swift, /levels:[^=]*=\s*\[([\s\S]*?)\]\n/, 'Rules.levels')));

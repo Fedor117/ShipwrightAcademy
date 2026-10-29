@@ -53,6 +53,12 @@ struct HomeView: View {
                     .controlSize(.extraLarge)
                     .keyboardShortcut(.defaultAction)
                 }
+                let deck = store.mistakeDeck.count
+                if deck > 0 {
+                    Button("Review \(deck) \(deck == 1 ? "mistake" : "mistakes")") { model.startMistakes() }
+                        .buttonStyle(.glass)
+                        .controlSize(.extraLarge)
+                }
                 Button("View badges") { model.select(.badges) }
                     .buttonStyle(.glass)
                     .controlSize(.extraLarge)
