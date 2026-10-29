@@ -50,6 +50,21 @@ same('section badge detail',
   one(js, /desc: ('Pass the ' \+ s\.title \+ '[^']*')/, 'section badge desc in app.js')?.replace(/' \+ s\.title \+ '/, '<title>').slice(1, -1),
   one(swift, /detail: "(Pass the \\\(section\.title\)[^"]*)"/, 'section badge detail in swift')?.replace('\\(section.title)', '<title>'));
 
+// Interactive figures: same CSP, base stylesheet and --fig-* theme variables in both hosts.
+const interactive = read('Sources/ShipwrightAcademy/InteractiveFigureView.swift');
+same('interactive CSP',
+  one(js, /INTERACTIVE_CSP\s*=\s*"([^"]+)"/, 'INTERACTIVE_CSP in app.js'),
+  one(interactive, /static let csp\s*=\s*"([^"]+)"/, 'Interactive.csp'));
+const concat = (s) => [...(s || '').matchAll(/(['"])((?:(?!\1).)*)\1/g)].map((m) => m[2]).join('');
+same('interactive base CSS',
+  concat(one(js, /INTERACTIVE_BASE\s*=\s*([\s\S]*?);\n/, 'INTERACTIVE_BASE in app.js')),
+  concat(one(interactive, /static let base\s*=\s*([\s\S]*?)\n\n/, 'Interactive.base')));
+const figVars = (s) => [...new Set([...(s || '').matchAll(/--fig-([\w-]+)\s*:/g)].map((m) => m[1]))].sort();
+const webVars = [...(one(js, /FIG_VARS\s*=\s*\[([^\]]*)\]/, 'FIG_VARS in app.js') || '').matchAll(/'([\w-]+)'/g)].map((m) => m[1]).sort();
+same('figure theme variables (app.js vs index.html)', webVars, figVars(read('index.html')));
+same('figure theme variables (app.js vs FigureView.swift)', webVars,
+  figVars(one(read('Sources/ShipwrightAcademy/FigureView.swift'), /let figureTheme = """([\s\S]*?)"""/, 'figureTheme in FigureView.swift')));
+
 // Section order: app.js, the curriculum bundler, index.html script tags, and the content files on disk.
 const order = (src, file) => JSON.parse(one(src, /ORDER\s*=\s*(\[[^\]]*\])/, `ORDER in ${file}`)?.replace(/'/g, '"') || '[]');
 const webOrder = order(js, 'app.js');

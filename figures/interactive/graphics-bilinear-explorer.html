@@ -1,0 +1,90 @@
+<style>
+.w { display: flex; flex-direction: column; height: 100%; gap: 8px; }
+svg { flex: 1; min-height: 0; width: 100%; display: block; touch-action: none; }
+.tx { fill: var(--fig-accent2); stroke: var(--fig-line); stroke-width: 2; }
+.near { fill: none; stroke: var(--fig-warn); stroke-width: 4; }
+.ov { fill: var(--fig-accent); fill-opacity: .28; }
+.box { fill: none; stroke: var(--fig-accent); stroke-width: 2; stroke-dasharray: 6 4; }
+.ctr { fill: var(--fig-ink); fill-opacity: .5; }
+.dot { fill: var(--fig-accent); stroke: var(--fig-bg); stroke-width: 2; cursor: grab; }
+.t { fill: var(--fig-ink); font-size: 14px; }
+.b { font-weight: 600; }
+.m { fill: var(--fig-muted); font-size: 12px; }
+.mid { text-anchor: middle; } .end { text-anchor: end; }
+.bar { fill: var(--fig-accent); }
+.tr { fill: var(--fig-panel); }
+.c { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 10px; align-items: center; }
+.c input { width: 100%; }
+output { font-variant-numeric: tabular-nums; color: var(--fig-muted); }
+</style>
+<div class="w">
+<svg id="s" viewBox="0 0 640 300" role="img" aria-label="Four texels in a 2 by 2 block with a sample point between their centres. A one-texel box around the sample overlaps each texel; the overlap areas are the bilinear weights, and the nearest texel is what point filtering returns.">
+  <g id="tex"></g><g id="ovl"></g>
+  <rect id="near" class="near" width="120" height="120"/>
+  <rect id="box" class="box" width="120" height="120"/>
+  <circle class="ctr" cx="120" cy="90" r="3"/><circle class="ctr" cx="240" cy="90" r="3"/><circle class="ctr" cx="120" cy="210" r="3"/><circle class="ctr" cx="240" cy="210" r="3"/>
+  <g id="lbl"></g>
+  <circle id="dot" class="dot" r="9"/>
+  <text class="m mid" x="180" y="292">drag the sample, or use the sliders</text>
+  <text class="t b" x="340" y="44">Weights (sum to 1)</text>
+  <g id="bars"></g>
+  <text id="fxy" class="m" x="340" y="200"></text>
+  <text id="bil" class="t" x="340" y="232"></text>
+  <text id="pt" class="t" x="340" y="258"></text>
+</svg>
+<div class="c">
+  <label for="u">Sample u</label><input id="u" type="range" min="0" max="1" step="0.01" value="0.3"><output id="uo" for="u"></output>
+  <label for="v">Sample v</label><input id="v" type="range" min="0" max="1" step="0.01" value="0.6"><output id="vo" for="v"></output>
+</div>
+</div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var T = [{ n: 'top-left', x: 60, y: 30, val: 0.9 }, { n: 'top-right', x: 180, y: 30, val: 0.2 }, { n: 'bottom-left', x: 60, y: 150, val: 0.4 }, { n: 'bottom-right', x: 180, y: 150, val: 0.7 }];
+  $('tex').innerHTML = T.map(function (t) { return '<rect class="tx" x="' + t.x + '" y="' + t.y + '" width="120" height="120" fill-opacity="' + (0.1 + 0.4 * t.val).toFixed(2) + '"/>'; }).join('');
+  function draw() {
+    var fx = +$('u').value, fy = +$('v').value;
+    var px = 120 + fx * 120, py = 90 + fy * 120;
+    var w = [(1 - fx) * (1 - fy), fx * (1 - fy), (1 - fx) * fy, fx * fy];
+    var bx = px - 60, by = py - 60;
+    $('box').setAttribute('x', bx); $('box').setAttribute('y', by);
+    $('dot').setAttribute('cx', px); $('dot').setAttribute('cy', py);
+    var ov = '', lbl = '';
+    T.forEach(function (t, i) {
+      var x0 = Math.max(bx, t.x), y0 = Math.max(by, t.y), x1 = Math.min(bx + 120, t.x + 120), y1 = Math.min(by + 120, t.y + 120);
+      if (x1 > x0 && y1 > y0) ov += '<rect class="ov" x="' + x0 + '" y="' + y0 + '" width="' + (x1 - x0) + '" height="' + (y1 - y0) + '"/>';
+      var lx = t.x + 60, ly = t.y + (i < 2 ? 22 : 94);
+      lbl += '<text class="m mid" x="' + lx + '" y="' + ly + '">value ' + t.val.toFixed(1) + '</text>';
+      lbl += '<text class="t b mid" x="' + lx + '" y="' + (ly + 18) + '">w ' + w[i].toFixed(2) + '</text>';
+    });
+    $('ovl').innerHTML = ov; $('lbl').innerHTML = lbl;
+    var bars = '';
+    T.forEach(function (t, i) {
+      var y = 60 + i * 30;
+      bars += '<text class="t" x="340" y="' + (y + 13) + '">' + t.n + '</text><rect class="tr" x="450" y="' + y + '" width="140" height="16" rx="8"/>' +
+        '<rect class="bar" x="450" y="' + y + '" width="' + (140 * w[i]).toFixed(1) + '" height="16" rx="8"/><text class="t end" x="634" y="' + (y + 13) + '">' + w[i].toFixed(2) + '</text>';
+    });
+    $('bars').innerHTML = bars;
+    var n = (fy < 0.5 ? 0 : 2) + (fx < 0.5 ? 0 : 1);
+    $('near').setAttribute('x', T[n].x); $('near').setAttribute('y', T[n].y);
+    var sum = w.reduce(function (a, wi, i) { return a + wi * T[i].val; }, 0);
+    $('fxy').textContent = 'fx = ' + fx.toFixed(2) + ', fy = ' + fy.toFixed(2) + ' (fraction between centres)';
+    $('bil').textContent = 'Bilinear: Σ w × value = ' + sum.toFixed(2);
+    $('pt').textContent = 'Point: nearest texel (' + T[n].n + ') = ' + T[n].val.toFixed(1);
+    $('uo').textContent = fx.toFixed(2); $('vo').textContent = fy.toFixed(2);
+  }
+  var svg = $('s'), drag = false;
+  function move(e) {
+    var p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+    p = p.matrixTransform(svg.getScreenCTM().inverse());
+    $('u').value = Math.min(1, Math.max(0, (p.x - 120) / 120)).toFixed(2);
+    $('v').value = Math.min(1, Math.max(0, (p.y - 90) / 120)).toFixed(2);
+    draw();
+  }
+  svg.addEventListener('pointerdown', function (e) { drag = true; svg.setPointerCapture(e.pointerId); move(e); });
+  svg.addEventListener('pointermove', function (e) { if (drag) move(e); });
+  svg.addEventListener('pointerup', function () { drag = false; });
+  $('u').addEventListener('input', draw); $('v').addEventListener('input', draw);
+  draw();
+})();
+</script>

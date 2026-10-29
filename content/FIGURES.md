@@ -2,6 +2,8 @@
 
 A figure is a lesson block that draws a concept as inline SVG, optionally animated with CSS. The same SVG renders in the web app (inlined into the page) and the macOS app (in a WebKit view), so it must be self-contained and theme-neutral.
 
+For figures the reader can manipulate (sliders, drag handles, step buttons), use an interactive block instead: see [INTERACTIVE.md](INTERACTIVE.md).
+
 ```js
 { type: "figure", id: "tcp-handshake", caption: "SYN, SYN-ACK, ACK: three packets before any data moves.", svg: "<svg ...>...</svg>" }
 ```

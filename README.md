@@ -1,6 +1,6 @@
 # Shipwright Academy
 
-A course in CS fundamentals, engineering practice, building with AI agents, and game development. It has 11 sections and 81 topics across two tracks. Each topic has a lesson with animated SVG figures, a 6-question quiz and spaced reviews, and each section ends in an exam.
+A course in CS fundamentals, engineering practice, building with AI agents, and game development. It has 11 sections and 81 topics across two tracks. Each topic has a lesson with animated SVG figures (some with interactive versions), a 6-question quiz and spaced reviews, and each section ends in an exam.
 
 | Track | Sections |
 | --- | --- |
@@ -33,15 +33,15 @@ python3 -m http.server 8765
 
 `content/<section>.js` is the source of truth. Each file pushes one section onto `window.CURRICULUM_SECTIONS`. `scripts/build-curriculum.js` bundles these files into `Sources/ShipwrightAcademy/Resources/curriculum.json` for the macOS app. That file is generated, so never edit it by hand.
 
-Lesson blocks are `p`, `h`, `list`, `code`, `callout` (`tip`, `warn` or `agent`), `figure` and `patterns`. Each topic needs at least one `agent` callout, exactly one `patterns` block (signal → move cheat sheet) and exactly 6 quiz questions. Figures follow the contract in [content/FIGURES.md](content/FIGURES.md).
+Lesson blocks are `p`, `h`, `list`, `code`, `callout` (`tip`, `warn` or `agent`), `figure`, `interactive` and `patterns`. Each topic needs at least one `agent` callout, exactly one `patterns` block (signal → move cheat sheet) and exactly 6 quiz questions. Figures follow the contract in [content/FIGURES.md](content/FIGURES.md). Interactive figures (sliders and step buttons in a sandboxed frame, sources in `figures/interactive/`) follow [content/INTERACTIVE.md](content/INTERACTIVE.md).
 
 | Script | Purpose |
 | --- | --- |
-| `validate-content.js content/*.js` | Checks the schema, figure rules and quiz balance |
-| `check-rules.js` | Checks that the web and macOS apps use the same progression rules and section order |
+| `validate-content.js content/*.js` | Checks the schema, figure and interactive-figure rules, and quiz balance |
+| `check-rules.js` | Checks that the web and macOS apps use the same progression rules, section order and interactive-figure sandbox (CSP, base CSS, theme variables) |
 | `build-curriculum.js` | Regenerates `curriculum.json` |
 | `build-cases.js` | Assembles `content/cases.js` from `figures/cases/` |
-| `insert-topic.js`, `insert-figure.js` | Add or replace a single topic or figure |
+| `insert-topic.js`, `insert-figure.js` | Add or replace a single topic, or a figure (`.svg`) or interactive figure (`.html`) |
 | `apply-figures.js`, `apply-patterns.js`, `apply-questions.js` | Apply batch manifests to a section file |
 | `figure-gallery.html` | Previews every figure in one place |
 

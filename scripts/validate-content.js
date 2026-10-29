@@ -46,6 +46,36 @@ function checkFigure(b, p, errs) {
   for (const m of svg.matchAll(/var\((--[\w-]+)/g)) if (!/^--fig-(ink|muted|line|bg|panel|accent|accent2|ok|bad|warn)$/.test(m[1])) { errs.push(`${p} unknown colour variable ${m[1]}`); break; }
 }
 
+// Interactive figures are HTML fragments run in a sandboxed frame; see content/INTERACTIVE.md.
+function checkInteractive(b, p, errs) {
+  if (typeof b.id !== 'string' || !/^[a-z][a-z0-9-]{2,40}$/.test(b.id)) { errs.push(`${p}.id must be kebab-case`); return; }
+  if (figureIds.has(b.id)) errs.push(`${p}.id "${b.id}" is not unique`);
+  figureIds.add(b.id);
+  if (typeof b.caption !== 'string' || !b.caption.trim()) errs.push(`${p}.caption required`);
+  if (!Number.isInteger(b.height) || b.height < 200 || b.height > 520) errs.push(`${p}.height must be an integer from 200 to 520`);
+  const html = b.html;
+  if (typeof html !== 'string' || !html.trim()) { errs.push(`${p}.html required`); return; }
+  if (html.length >= 20000) errs.push(`${p}.html is ${html.length} chars; keep under 20000`);
+  if (/<!doctype|<\/?(html|head|body)[\s>]/i.test(html)) errs.push(`${p}.html must be a fragment (the host supplies the document)`);
+  const forbidden = [
+    [/https?:/i, 'http(s): URL'], [/(["'(=]\s*)\/\/[\w.-]/, 'protocol-relative // URL'], [/\bfetch\s*\(/, 'fetch'],
+    [/XMLHttpRequest|WebSocket|EventSource|sendBeacon/, 'network API'], [/localStorage|sessionStorage|indexedDB|document\.cookie/, 'storage API'],
+    [/window\.open|(?<![\w.$])(top|parent|opener)\s*\.|window\.(top|parent|opener)\b/, 'window.open or top/parent/opener access'],
+    [/<(iframe|object|embed|frame|meta|base|link|form)[\s>]/i, '<iframe>, <object>, <embed>, <meta>, <base>, <link> or <form>'],
+    [/<script[^>]*\ssrc=/i, 'external <script src>'], [/@import/, '@import'],
+  ];
+  for (const [re, what] of forbidden) if (re.test(html)) errs.push(`${p}.html uses ${what}`);
+  if (/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/.test(html)) errs.push(`${p}.html uses a literal colour; use var(--fig-*) only`);
+  for (const m of html.matchAll(/var\((--[\w-]+)/g)) if (!/^--fig-(ink|muted|line|bg|panel|accent|accent2|ok|bad|warn)$/.test(m[1])) { errs.push(`${p} unknown colour variable ${m[1]}`); break; }
+  if (/prefers-color-scheme/.test(html)) errs.push(`${p}.html must not query prefers-color-scheme (the host themes the --fig-* variables)`);
+  if (/requestAnimationFrame|setInterval|@keyframes|animation\s*:/.test(html) && !/prefers-reduced-motion/.test(html)) errs.push(`${p}.html animates but never checks prefers-reduced-motion`);
+  if (!/<input[^>]*type="range"|<button/.test(html)) errs.push(`${p}.html needs a real <input type="range"> or <button> control`);
+  for (const m of html.matchAll(/<input\b[^>]*>/g)) {
+    const id = (m[0].match(/\sid="([^"]+)"/) || [])[1];
+    if (!/aria-label="[^"]+"/.test(m[0]) && !(id && html.includes(`for="${id}"`))) { errs.push(`${p}.html <input> needs a <label for> or aria-label`); break; }
+  }
+}
+
 function checkPatterns(b, p, errs) {
   if (!Array.isArray(b.patterns) || b.patterns.length < 4 || b.patterns.length > 12) { errs.push(`${p}.patterns needs 4-12 items`); return; }
   const uses = new Set();
@@ -67,8 +97,9 @@ function checkTopic(t, p, errs) {
   if (!Array.isArray(t.lesson) || t.lesson.length < 6) errs.push(`${p}.lesson needs >= 6 blocks`);
   (t.lesson || []).forEach((b, i) => {
     const bp = `${p}.lesson[${i}]`;
-    if (!['p', 'h', 'list', 'code', 'callout', 'figure', 'patterns'].includes(b.type)) errs.push(`${bp}.type invalid: ${b.type}`);
+    if (!['p', 'h', 'list', 'code', 'callout', 'figure', 'interactive', 'patterns'].includes(b.type)) errs.push(`${bp}.type invalid: ${b.type}`);
     if (b.type === 'figure') checkFigure(b, bp, errs);
+    else if (b.type === 'interactive') checkInteractive(b, bp, errs);
     else if (b.type === 'patterns') checkPatterns(b, bp, errs);
     else if (b.type === 'list') { if (!Array.isArray(b.items) || !b.items.length) errs.push(`${bp}.items required`); }
     else if (typeof b.text !== 'string' || !b.text.trim()) errs.push(`${bp}.text required`);

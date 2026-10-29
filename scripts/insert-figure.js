@@ -1,12 +1,15 @@
-// Inserts (or replaces) a figure block in a section file.
+// Inserts (or replaces) a figure or interactive block in a section file.
 //   node scripts/insert-figure.js <section.js> <topicId> <afterBlockIndex> <figureId> <file.svg> "<caption>"
+//   node scripts/insert-figure.js <section.js> <topicId> <afterBlockIndex> <figureId> <file.html> "<caption>" <height>
 // afterBlockIndex is the index of the lesson block the figure should follow (-1 = first).
-// If a figure with the same id already exists it is replaced in place and afterBlockIndex is ignored.
+// A .html source makes an interactive block (content/INTERACTIVE.md); <height> is its height in px (200-520).
+// If a block with the same id already exists it is replaced in place and afterBlockIndex is ignored.
 const fs = require('fs');
 const vm = require('vm');
 
-const [file, topicId, after, figId, svgFile, caption] = process.argv.slice(2);
-if (!caption) { console.error('usage: insert-figure.js <section.js> <topicId> <afterBlockIndex> <figureId> <file.svg> "<caption>"'); process.exit(2); }
+const [file, topicId, after, figId, srcFile, caption, height] = process.argv.slice(2);
+const interactive = /\.html$/.test(srcFile || '');
+if (!caption || (interactive && !height)) { console.error('usage: insert-figure.js <section.js> <topicId> <afterBlockIndex> <figureId> <file.svg|file.html> "<caption>" [height]'); process.exit(2); }
 
 const ctx = { window: {} };
 vm.runInNewContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
@@ -14,9 +17,11 @@ const section = ctx.window.CURRICULUM_SECTIONS[0];
 const topic = section.topics.find((t) => t.id === topicId);
 if (!topic) { console.error(`no topic "${topicId}" in ${file}; topics: ${section.topics.map((t) => t.id).join(', ')}`); process.exit(1); }
 
-const svg = fs.readFileSync(svgFile, 'utf8').trim().replace(/\s*\n\s*/g, ' ');
-const block = { type: 'figure', id: figId, caption, svg };
-const existing = topic.lesson.findIndex((b) => b.type === 'figure' && b.id === figId);
+const src = fs.readFileSync(srcFile, 'utf8').trim();
+const block = interactive
+  ? { type: 'interactive', id: figId, caption, height: Number(height), html: src }
+  : { type: 'figure', id: figId, caption, svg: src.replace(/\s*\n\s*/g, ' ') };
+const existing = topic.lesson.findIndex((b) => (b.type === 'figure' || b.type === 'interactive') && b.id === figId);
 if (existing >= 0) topic.lesson[existing] = block;
 else topic.lesson.splice(Number(after) + 1, 0, block);
 

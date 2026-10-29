@@ -322,6 +322,32 @@
     app.innerHTML = html;
   }
 
+  // ---------- Interactive figures (content/INTERACTIVE.md) ----------
+  // Sandboxed without allow-same-origin, so the frame cannot read the page: it gets the theme as values, by srcdoc and postMessage.
+  const FIG_VARS = ['ink', 'muted', 'line', 'bg', 'panel', 'accent', 'accent2', 'ok', 'bad', 'warn'];
+  const INTERACTIVE_CSP = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:";
+  const INTERACTIVE_BASE = 'html,body{margin:0;height:100%;overflow:hidden;background:transparent;color:var(--fig-ink)}' +
+    'body{font-size:14px;line-height:1.4;-webkit-user-select:none;user-select:none}' +
+    'button{font:inherit;color:var(--fig-ink);background:var(--fig-panel);border:1px solid var(--fig-line);border-radius:8px;padding:4px 12px;cursor:pointer}' +
+    'input{accent-color:var(--fig-accent)}:focus-visible{outline:2px solid var(--fig-accent);outline-offset:2px}' +
+    '@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}';
+  function figTheme() {
+    const cs = getComputedStyle(document.documentElement);
+    return FIG_VARS.map((k) => '--fig-' + k + ':' + cs.getPropertyValue('--fig-' + k).trim()).join(';') +
+      ';color-scheme:' + (cs.getPropertyValue('color-scheme').trim() === 'dark' ? 'dark' : 'light') + ';font-family:' + getComputedStyle(document.body).fontFamily;
+  }
+  function interactiveDoc(b) {
+    return '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="' + INTERACTIVE_CSP + '">' +
+      '<style id="fig-theme">:root{' + figTheme() + '}</style><style>' + INTERACTIVE_BASE + '</style>' +
+      '<script>addEventListener("message",function(e){if(e.source===parent&&e.data&&typeof e.data.figTheme==="string")document.getElementById("fig-theme").textContent=":root{"+e.data.figTheme+"}"})<\/script>' +
+      '</head><body>' + b.html + '</body></html>';
+  }
+  const retheme = (f) => f.contentWindow && f.contentWindow.postMessage({ figTheme: figTheme() }, '*');
+  const rethemeAll = () => document.querySelectorAll('iframe.ia-frame').forEach(retheme);
+  document.addEventListener('load', (e) => { if (e.target.classList && e.target.classList.contains('ia-frame')) retheme(e.target); }, true);
+  if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', rethemeAll);
+  new MutationObserver(rethemeAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class', 'style'] });
+
   function renderTopic(si, ti) {
     const s = SECTIONS[si], t = s.topics[ti];
     const ts = tstate(s.id, t.id);
@@ -329,6 +355,7 @@
       if (b.type === 'h') return '<h3>' + md(b.text) + '</h3>';
       // Figure SVG is curriculum content checked by scripts/validate-content.js (no scripts, handlers or external refs).
       if (b.type === 'figure') return '<figure class="fig"><div class="fig-art">' + b.svg + '</div><figcaption>' + md(b.caption) + '</figcaption></figure>';
+      if (b.type === 'interactive') return '<figure class="fig"><div class="fig-art fig-ia"><iframe class="ia-frame" sandbox="allow-scripts" title="' + esc(b.caption) + '" style="height:' + Math.min(520, Math.max(200, b.height | 0)) + 'px" srcdoc="' + esc(interactiveDoc(b)) + '"></iframe></div><figcaption>' + md(b.caption) + '</figcaption></figure>';
       if (b.type === 'patterns') return '<section class="patterns"><h3>Patterns</h3><p class="pat-hint">When you notice the signal, reach for the move.</p><ol>' +
         b.patterns.map((p) => '<li class="pat"><span class="pat-k">When</span><p class="pat-signal">' + md(p.signal) + '</p><span class="pat-k">Use</span><p class="pat-use">' + md(p.use) + '</p><p class="pat-why">' + md(p.why) + '</p></li>').join('') + '</ol></section>';
       if (b.type === 'list') return '<ul>' + b.items.map((i) => '<li>' + md(i) + '</li>').join('') + '</ul>';

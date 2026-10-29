@@ -17,6 +17,9 @@ struct LessonBlock: Codable, Hashable {
     let id: String?
     let caption: String?
     let svg: String?
+    // Interactive blocks (content/INTERACTIVE.md): sandboxed HTML and its height in points
+    let html: String?
+    let height: Int?
     // Patterns blocks: signal you notice -> move to make
     let patterns: [PatternItem]?
 }
