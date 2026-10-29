@@ -68,11 +68,11 @@ function checkInteractive(b, p, errs) {
   if (/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/.test(html)) errs.push(`${p}.html uses a literal colour; use var(--fig-*) only`);
   for (const m of html.matchAll(/var\((--[\w-]+)/g)) if (!/^--fig-(ink|muted|line|bg|panel|accent|accent2|ok|bad|warn)$/.test(m[1])) { errs.push(`${p} unknown colour variable ${m[1]}`); break; }
   if (/prefers-color-scheme/.test(html)) errs.push(`${p}.html must not query prefers-color-scheme (the host themes the --fig-* variables)`);
-  if (/requestAnimationFrame|setInterval|@keyframes|animation\s*:/.test(html) && !/prefers-reduced-motion/.test(html)) errs.push(`${p}.html animates but never checks prefers-reduced-motion`);
+  if (/requestAnimationFrame|setInterval|setTimeout|@keyframes|animation\s*:/.test(html) && !/prefers-reduced-motion/.test(html)) errs.push(`${p}.html animates but never checks prefers-reduced-motion`);
   if (!/<input[^>]*type="range"|<button/.test(html)) errs.push(`${p}.html needs a real <input type="range"> or <button> control`);
   for (const m of html.matchAll(/<input\b[^>]*>/g)) {
     const id = (m[0].match(/\sid="([^"]+)"/) || [])[1];
-    if (!/aria-label="[^"]+"/.test(m[0]) && !(id && html.includes(`for="${id}"`))) { errs.push(`${p}.html <input> needs a <label for> or aria-label`); break; }
+    if (!/aria-label="[^"]+"/.test(m[0]) && !(id && new RegExp(`<label\\b[^>]*\\sfor="${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`).test(html))) { errs.push(`${p}.html <input> needs a <label for> or aria-label`); break; }
   }
 }
 

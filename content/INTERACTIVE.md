@@ -34,8 +34,8 @@ The CSP, base stylesheet and variable names are written in both apps. `scripts/c
 - `html` is a fragment under 20,000 characters. No `<!doctype>`, `<html>`, `<head>` or `<body>`, because the host supplies the document.
 - No network, storage or escape hatches: no `http:`/`https:` or `//` URLs, `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`, `sendBeacon`, `localStorage`, `sessionStorage`, `indexedDB`, `document.cookie`, `window.open`, `top.`/`parent.`/`opener.` access, `<iframe>`, `<object>`, `<embed>`, `<meta>`, `<base>`, `<link>`, `<form>`, `<script src>` or `@import`.
 - Colours only through `var(--fig-*)`, the same ten variables as figures. No hex, `rgb()` or `hsl()`, and never use `prefers-color-scheme`, because the host sets the variables. Avoid `#` followed by hex-like letters anywhere (for example `'#add'`): use `getElementById`.
-- Controls are real elements: at least one `<input type="range">` or `<button>`, and every `<input>` has a `<label for>` or `aria-label`. Pointer dragging is a bonus and never the only way to change a value. Put changing readouts in an `<output>` (with `aria-live="polite"` for step-by-step messages).
-- Motion: any `requestAnimationFrame`, `setInterval`, `@keyframes` or `animation:` must be paired with a `prefers-reduced-motion` check. Nothing animates until the reader asks. Under reduced motion a Run button jumps to the end state.
+- Controls are real elements: at least one `<input type="range">` or `<button>`, and every `<input>` has a `<label for>` or `aria-label` (an `<output for>` does not count). Pointer dragging is a bonus and never the only way to change a value. Put changing readouts in an `<output>` (with `aria-live="polite"` for step-by-step messages).
+- Motion: any `requestAnimationFrame`, `setInterval`, `setTimeout`, `@keyframes` or `animation:` must be paired with a `prefers-reduced-motion` check. Nothing animates until the reader asks. Under reduced motion a Run button jumps to the end state.
 
 ## Authoring tips
 
