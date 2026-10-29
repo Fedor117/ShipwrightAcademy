@@ -24,6 +24,8 @@ for (const id of IDS) {
   section.topics.push(ctx.window.TOPIC_PART[0]);
   section.exam.push(...JSON.parse(fs.readFileSync(path.join(dir, id + '.exam.json'), 'utf8')));
 }
+// Exam questions that span several case studies.
+section.exam.push(...JSON.parse(fs.readFileSync(path.join(dir, 'cases-extra.exam.json'), 'utf8')));
 
 const out = path.join(root, 'content/cases.js');
 fs.writeFileSync(out, 'window.CURRICULUM_SECTIONS = window.CURRICULUM_SECTIONS || [];\nwindow.CURRICULUM_SECTIONS.push(' + JSON.stringify(section, null, 2) + ');\n');

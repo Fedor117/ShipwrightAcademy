@@ -5,3 +5,6 @@ build/
 *.xcodeproj/xcuserdata/
 
 .DS_Store
+
+# Agent worktrees
+.claude/worktrees/
