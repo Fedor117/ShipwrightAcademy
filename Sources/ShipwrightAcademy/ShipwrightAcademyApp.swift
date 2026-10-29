@@ -37,6 +37,7 @@ struct ContentView: View {
                         case .lesson(let si, let ti): LessonView(si: si, ti: ti)
                         case .quiz: QuizView()
                         case .result: ResultView()
+                        case .cheatSheet(let si): CheatSheetView(si: si)
                         }
                     }
             }

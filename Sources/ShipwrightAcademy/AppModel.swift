@@ -11,6 +11,7 @@ enum Route: Hashable {
     case lesson(Int, Int)
     case quiz
     case result
+    case cheatSheet(Int)
 }
 
 struct QuizItem: Identifiable {

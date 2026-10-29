@@ -40,6 +40,12 @@ struct SectionView: View {
         }
         .background(Backdrop())
         .navigationTitle(section.title)
+        .toolbar {
+            ToolbarItem(placement: .navigation) {
+                Button("Cheat sheet", systemImage: "doc.text") { model.path = [.cheatSheet(si)] }
+                    .help("Key points and patterns for every topic in this section")
+            }
+        }
     }
 }
 
