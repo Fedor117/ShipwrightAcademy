@@ -13,6 +13,7 @@ enum Route: Hashable {
     case quiz
     case result
     case search
+    case cheatSheet(Int)
 }
 
 struct QuizItem: Identifiable {

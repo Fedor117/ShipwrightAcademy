@@ -118,6 +118,7 @@
   const key = (sid, tid) => sid + '/' + tid;
   const tstate = (sid, tid) => state.topics[key(sid, tid)] || {};
   const estate = (sid) => state.exams[sid] || {};
+  const patternsOf = (t) => (t.lesson.find((b) => b.type === 'patterns') || {}).patterns || [];
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const ICON = {
@@ -127,6 +128,7 @@
     check: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>',
     gate: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg>',
     undo: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7L3 8"/></svg>',
+    sheet: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/><path d="M9 13h8M9 17h6"/></svg>',
     repeat: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg>',
   };
 
@@ -368,6 +370,7 @@
     if (view.name === 'result') return renderResult();
     if (view.name === 'badges') return renderBadges();
     if (view.name === 'search') return renderSearch();
+    if (view.name === 'cheat') return renderCheat(view.si);
   }
 
   function renderHome() {
@@ -411,7 +414,8 @@
       if (n === 0 && TRACKS.length > 1) html += '<h2 class="track-title">' + esc(trackOf(s)) + '</h2>';
       html += '<section class="section" id="sec-' + esc(s.id) + '"><div class="sec-head"><div><span class="eyebrow">Section ' + (n + 1) + '</span><h2>' + esc(s.title) + '</h2><p>' + md(s.tagline) + '</p></div>' +
         '<div class="sec-meta"><span>' + done + ' / ' + s.topics.length + '</span><div class="meter sec-meter"><i style="width:' + Math.round(done / s.topics.length * 100) + '%"></i></div>' +
-        (ex.passed ? '<span class="pill pill-ok">' + ICON.check + ' Exam ' + ex.best + '%</span>' : '') + '</div></div>';
+        (ex.passed ? '<span class="pill pill-ok">' + ICON.check + ' Exam ' + ex.best + '%</span>' : '') +
+        '<button class="icon-btn" type="button" data-action="cheat" data-si="' + si + '">' + ICON.sheet + 'Cheat sheet</button></div></div>';
       if (!open) html += '<div class="locked-note">' + ICON.lock + ' Pass the ' + esc(SECTIONS[prevInTrack(si)].title) + ' exam to unlock this section.</div>';
       html += '<ol class="route">';
       s.topics.forEach((t, ti) => {
@@ -682,6 +686,49 @@
       '<h3 style="margin:30px 0 0;font-size:20px">Answer review</h3><div class="review-list">' + review + '</div></div>';
   }
 
+  // Cheat sheet Markdown: same template as CheatSheet.markdown in CheatSheet.swift (README, "Cheat sheets").
+  function cheatMarkdown(s) {
+    const out = ['# ' + s.title + ' cheat sheet', '', s.tagline];
+    s.topics.forEach((t, ti) => {
+      out.push('', '## ' + (ti + 1) + '. ' + t.title, '', t.summary, '', '**Key points**', '');
+      t.keyPoints.forEach((k) => out.push('- ' + k));
+      const ps = patternsOf(t);
+      if (ps.length) { out.push('', '**Patterns**', ''); ps.forEach((p) => out.push('- ' + p.signal + ' → **' + p.use + '**. ' + p.why)); }
+    });
+    return out.join('\n') + '\n';
+  }
+  // Every topic is shown; ones not passed yet are dimmed unless free roam is on.
+  function renderCheat(si) {
+    const s = SECTIONS[si];
+    const n = TRACKS.find((t) => t.sections.includes(si)).sections.indexOf(si);
+    const topics = s.topics.map((t, ti) => {
+      const studied = state.freeRoam || !!tstate(s.id, t.id).passed;
+      const ps = patternsOf(t);
+      return '<li class="cheat-topic' + (studied ? '' : ' dim') + '"><div class="cheat-th"><h2><span class="cheat-n">' + (ti + 1) + '.</span> ' + esc(t.title) + '</h2>' +
+        (studied ? '' : '<span class="pill pill-mute">Not yet studied</span>') + '</div><p class="cheat-sum">' + md(t.summary) + '</p>' +
+        '<h3>Key points</h3><ul>' + t.keyPoints.map((k) => '<li>' + md(k) + '</li>').join('') + '</ul>' +
+        (ps.length ? '<h3>Patterns</h3><ul class="cheat-pats">' + ps.map((p) => '<li><span class="pat-k">When</span> ' + md(p.signal) + ' <span class="cheat-arrow">→</span> <strong>' + md(p.use) + '</strong><span class="cheat-why">' + md(p.why) + '</span></li>').join('') + '</ul>' : '') + '</li>';
+    }).join('');
+    app.innerHTML = '<div class="narrow cheat" style="max-width:860px">' +
+      '<nav class="crumbs no-print"><button type="button" data-action="home">Path</button><span>/</span><span>' + esc(s.title) + '</span><span>/</span><span>Cheat sheet</span></nav>' +
+      '<header class="cheat-head"><span class="eyebrow">' + esc(trackOf(s)) + ' · Section ' + (n + 1) + ' · Cheat sheet</span><h1 class="page-title">' + esc(s.title) + '</h1><p class="page-sub">' + md(s.tagline) + '</p>' +
+      '<div class="btn-row no-print"><button class="btn btn-primary" data-action="cheat-print">Print / Save as PDF</button><button class="btn btn-ghost" data-action="cheat-copy" data-si="' + si + '">Copy as Markdown</button></div></header>' +
+      '<ol class="cheat-list">' + topics + '</ol></div>';
+  }
+  function copyText(text) {
+    const done = (ok) => toast(ok ? 'Copied as Markdown' : 'Copy failed: your browser blocked clipboard access');
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { /* unsupported */ }
+      ta.remove(); done(ok);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => done(true), fallback);
+    else fallback();
+  }
+
   let confirmReset = false;
   function renderBadges() {
     const earned = BADGES.filter((b) => state.badges[b.id]).length;
@@ -771,6 +818,9 @@
       return go(ti < 0 ? { name: 'home', anchor: el.dataset.anchor } : { name: 'topic', si, ti, anchor: el.dataset.anchor });
     }
     if (a === 'quiz') return startQuiz(si, ti);
+    if (a === 'cheat') return go({ name: 'cheat', si });
+    if (a === 'cheat-print') return window.print();
+    if (a === 'cheat-copy') return copyText(cheatMarkdown(SECTIONS[si]));
     if (a === 'exam') return startExam(si);
     if (a === 'mistakes') return startMistakes();
     if (a === 'quit') { const S = session; session = null; return go(S.kind === 'topic' ? { name: 'topic', si: S.si, ti: S.ti } : { name: 'home' }); }

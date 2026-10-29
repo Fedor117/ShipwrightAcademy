@@ -38,7 +38,7 @@ Lesson blocks are `p`, `h`, `list`, `code`, `callout` (`tip`, `warn` or `agent`)
 | Script | Purpose |
 | --- | --- |
 | `validate-content.js content/*.js` | Checks the schema, figure rules and quiz balance |
-| `check-rules.js` | Checks that the web and macOS apps use the same progression rules and section order |
+| `check-rules.js` | Checks that the web and macOS apps use the same progression rules, section order and cheat sheet Markdown template |
 | `build-curriculum.js` | Regenerates `curriculum.json` |
 | `build-cases.js` | Assembles `content/cases.js` from `figures/cases/` |
 | `insert-topic.js`, `insert-figure.js` | Add or replace a single topic or figure |
@@ -97,6 +97,34 @@ Both apps search the whole course: section and topic titles, summaries, headings
 - **Locks:** locked topics are listed and marked locked, but can't be opened unless free roam is on. Picking a result opens the lesson and scrolls to the matching block.
 
 The index is built from the curriculum at launch, so new content is searchable with no extra step. The thresholds and the label and weight for each kind of text are written twice: `SEARCH_*` in `app.js` and `SearchRules` in `Search.swift`. `check-rules.js` compares them.
+
+## Cheat sheets
+
+Each section has a one-page cheat sheet that lists every topic in order, with its summary, key points and patterns. On the web, open it with **Cheat sheet** in the section header on the path. On macOS, use **Cheat sheet** in the section's toolbar.
+
+- The cheat sheet is always available. A topic you have not passed yet is dimmed and marked "Not yet studied", unless free roam is on.
+- **Print / Save as PDF** (web) uses the browser's print dialog with a print stylesheet: no app chrome, black on white. **Export PDF…** (macOS) writes US Letter pages. In both, a page never breaks inside a pattern, and a topic's heading stays with its key points.
+- **Copy as Markdown** gives the same text in both apps. It does not include progress. The template is:
+
+```
+# <section title> cheat sheet
+
+<section tagline>
+
+## <n>. <topic title>
+
+<topic summary>
+
+**Key points**
+
+- <key point>
+
+**Patterns**
+
+- <signal> → **<use>**. <why>
+```
+
+Topics are separated by one blank line, and the text ends with a newline. The template is written twice: `cheatMarkdown` in `app.js` and `CheatSheet.markdown` in `CheatSheetView.swift`. `check-rules.js` checks that their string literals match. The cheat sheet uses the content as it is, so authors need nothing extra: a topic's `summary`, `keyPoints` and `patterns` block should make sense on their own, without the rest of the lesson.
 
 ## Progress
 

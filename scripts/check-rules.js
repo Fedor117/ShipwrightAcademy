@@ -1,5 +1,5 @@
 // Checks that the web app (app.js) and the macOS app (ProgressStore.swift, Search.swift) apply the same progression and search rules,
-// and that every place listing the section order agrees.
+// that every place listing the section order agrees, and that both cheat sheet Markdown renderers use the same template.
 //   node scripts/check-rules.js
 const fs = require('fs');
 const path = require('path');
@@ -77,6 +77,12 @@ same('section order (app.js vs index.html scripts)', webOrder,
 const onDisk = fs.readdirSync(path.join(root, 'content')).filter((f) => f.endsWith('.js'))
   .map((f) => f.replace(/\.js$/, '')).filter((id) => !webOrder.includes(id));
 if (onDisk.length) errs.push(`content/ files not in ORDER: ${onDisk.join(', ')}`);
+
+// Cheat sheet Markdown: both renderers must use the same template, so their string literals must match in order.
+const lits = (body, q) => [...(body || '').matchAll(new RegExp(q + '((?:[^' + q + '\\\\]|\\\\.)*)' + q, 'g'))].map((m) => m[1]);
+same('cheat sheet Markdown template',
+  lits(one(js, /function cheatMarkdown\(s\) \{([\s\S]*?)\n  \}\n/, 'cheatMarkdown in app.js'), "'"),
+  lits(one(read('Sources/ShipwrightAcademy/CheatSheetView.swift'), /static func markdown\(_ s: CourseSection\) -> String \{([\s\S]*?)\n    \}\n/, 'CheatSheet.markdown in CheatSheetView.swift'), '"'));
 
 if (errs.length) { errs.forEach((e) => console.log('FAIL ' + e)); process.exit(1); }
 console.log('ok: web and macOS rules match');

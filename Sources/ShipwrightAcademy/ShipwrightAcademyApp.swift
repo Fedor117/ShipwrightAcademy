@@ -45,6 +45,7 @@ struct ContentView: View {
                         case .quiz: QuizView()
                         case .result: ResultView()
                         case .search: SearchView()
+                        case .cheatSheet(let si): CheatSheetView(si: si)
                         }
                     }
             }
