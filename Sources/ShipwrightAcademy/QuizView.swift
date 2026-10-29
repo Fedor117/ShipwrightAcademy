@@ -38,10 +38,26 @@ struct QuizView: View {
                 }
                 .padding(.top, 18)
 
-                GlassEffectContainer(spacing: 10) {
-                    VStack(spacing: 10) {
-                        ForEach(Array(item.order.enumerated()), id: \.element) { pos, orig in
-                            option(s, pos: pos, orig: orig)
+                switch item.question.kind {
+                case .mc:
+                    if item.question.code != nil { CodeLines(question: item.question) }
+                    GlassEffectContainer(spacing: 10) {
+                        VStack(spacing: 10) {
+                            ForEach(Array(item.order.enumerated()), id: \.element) { pos, orig in
+                                option(s, pos: pos, orig: orig)
+                            }
+                        }
+                    }
+                case .line:
+                    CodeLines(question: item.question, picked: s.picked, checked: s.checked) { i in
+                        withAnimation(.spring(duration: 0.3)) { s.picked = i }
+                    }
+                case .order:
+                    GlassEffectContainer(spacing: 10) {
+                        VStack(spacing: 10) {
+                            ForEach(Array(s.arranged.enumerated()), id: \.element) { pos, orig in
+                                step(s, pos: pos, orig: orig)
+                            }
                         }
                     }
                 }
@@ -51,6 +67,13 @@ struct QuizView: View {
                         Text(answer.correct ? "Correct." : "Not quite.")
                             .font(.headline)
                             .foregroundStyle(answer.correct ? .green : .red)
+                        if !answer.correct, item.question.kind == .line {
+                            Text("The bug is on line \(item.question.answer + 1).").font(.body.weight(.semibold))
+                        }
+                        if !answer.correct, item.question.kind == .order {
+                            Text(inline("Correct order: " + item.question.steps.enumerated().map { "\($0 + 1). \($1)" }.joined(separator: "  ")))
+                                .font(.body.weight(.semibold))
+                        }
                         Text(inline(item.question.explain)).font(.body).lineSpacing(3)
                     }
                     .padding(20)
@@ -68,9 +91,9 @@ struct QuizView: View {
                     .buttonStyle(.glassProminent)
                     .controlSize(.extraLarge)
                     .keyboardShortcut(.defaultAction)
-                    .disabled(s.picked == nil)
+                    .disabled(!s.canCheck)
 
-                    Text("Press 1–\(item.order.count) to choose, Return to continue.")
+                    Text(hint(item))
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 .padding(.top, 4)
@@ -136,9 +159,105 @@ struct QuizView: View {
         .glassEffectID(orig, in: glass)
     }
 
+    private func step(_ s: QuizSession, pos: Int, orig: Int) -> some View {
+        let tint: Color? = s.checked ? (pos == orig ? .green : .red) : nil
+        return HStack(spacing: 14) {
+            ZStack {
+                Circle().fill(tint ?? Color.secondary.opacity(0.15))
+                Text("\(pos + 1)").font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(tint == nil ? Color.secondary : .white)
+            }
+            .frame(width: 28, height: 28)
+            Text(inline(s.current.question.steps[orig]))
+                .font(.system(size: 17))
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+            if !s.checked {
+                Button("Move up", systemImage: "chevron.up") { withAnimation(.spring(duration: 0.3)) { s.move(pos, by: -1) } }
+                    .disabled(pos == 0)
+                Button("Move down", systemImage: "chevron.down") { withAnimation(.spring(duration: 0.3)) { s.move(pos, by: 1) } }
+                    .disabled(pos == s.arranged.count - 1)
+            }
+        }
+        .labelStyle(.iconOnly)
+        .buttonStyle(.borderless)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 15)
+        .glassEffect(tint.map { Glass.regular.tint($0.opacity(0.3)) } ?? .regular, in: .rect(cornerRadius: 18))
+        .glassEffectID(orig, in: glass)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Position \(pos + 1): \(s.current.question.steps[orig])")
+    }
+
+    private func hint(_ item: QuizItem) -> String {
+        switch item.question.kind {
+        case .mc: "Press 1–\(item.order.count) to choose, Return to continue."
+        case .line: "Click the line with the bug (or press its number), then Return."
+        case .order: "Use the arrows to put the steps in order, then press Return."
+        }
+    }
+
     private func pipColor(_ s: QuizSession, _ i: Int) -> Color {
         if i < s.answers.count { return s.answers[i].correct ? .green : .red }
         if i == s.index { return .accentColor }
         return .secondary.opacity(0.25)
+    }
+}
+
+/// A code snippet with numbered lines. With `pick`, each line is a button ("spot the bug").
+struct CodeLines: View {
+    let question: Question
+    var picked: Int? = nil
+    var checked = false
+    var pick: ((Int) -> Void)? = nil
+
+    var body: some View {
+        let lines = question.lines
+        let width = String(lines.count).count
+        ScrollView(.horizontal, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(lines.indices, id: \.self) { i in
+                    let row = HStack(spacing: 14) {
+                        Text(String(repeating: " ", count: width - String(i + 1).count) + "\(i + 1)")
+                            .foregroundStyle(Color(white: 0.5))
+                        Text(lines[i].isEmpty ? " " : lines[i]).foregroundStyle(Color(white: 0.95))
+                        Spacer(minLength: 0)
+                    }
+                    .font(.system(size: 13.5, design: .monospaced))
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 3)
+                    .background(tint(i).opacity(0.35))
+                    .contentShape(.rect)
+                    if let pick {
+                        Button { pick(i) } label: { row }
+                            .buttonStyle(.plain)
+                            .disabled(checked)
+                            .accessibilityLabel("Line \(i + 1): \(lines[i])")
+                            .keyboardShortcut(i < 9 ? KeyboardShortcut(KeyEquivalent(Character("\(i + 1)")), modifiers: []) : nil)
+                    } else {
+                        row
+                    }
+                }
+            }
+            .padding(.vertical, 14)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(red: 0.11, green: 0.11, blue: 0.12), in: .rect(cornerRadius: 18))
+        .overlay(alignment: .topTrailing) {
+            if let lang = question.lang, !lang.isEmpty {
+                Text(lang.uppercased()).font(.caption2.weight(.semibold)).foregroundStyle(Color(white: 0.6)).padding(10)
+            }
+        }
+    }
+
+    private func tint(_ i: Int) -> Color {
+        if checked {
+            if i == question.answer { return .green }
+            if i == picked { return .red }
+        } else if i == picked {
+            return .accentColor
+        }
+        return .clear
     }
 }

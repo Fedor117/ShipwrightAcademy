@@ -352,18 +352,35 @@
       '<button class="btn btn-primary" data-action="quiz" data-si="' + si + '" data-ti="' + ti + '">' + (ts.attempts ? 'Retake the quiz' : 'Take the quiz') + '</button></div></div></div>';
   }
 
-  function makeQ(q, src) {
-    return { q: q.q, options: q.options, answer: q.answer, explain: q.explain, src, order: shuffle(q.options.map((_, i) => i)) };
+  // Question kinds (README "Questions"): mc (options + answer, optional code), order (steps), line (code + answer line).
+  // session.picked holds the learner's answer: an option index (mc), a line index (line) or an arrangement of step indexes (order).
+  const kindOf = (q) => q.kind || 'mc';
+  const codeLines = (q) => String(q.code || '').split('\n');
+  function scrambled(n) {
+    const sorted = [...Array(n).keys()];
+    if (n < 2) return sorted;
+    let o;
+    do o = shuffle(sorted); while (o.every((v, i) => v === i));
+    return o;
   }
+  function makeQ(q, src) {
+    const k = kindOf(q);
+    const order = k === 'mc' ? shuffle(q.options.map((_, i) => i)) : k === 'order' ? scrambled(q.steps.length) : [];
+    return { kind: k, q: q.q, options: q.options, answer: q.answer, steps: q.steps, code: q.code, lang: q.lang, explain: q.explain, src, order };
+  }
+  const firstPick = (q) => (q.kind === 'order' ? q.order.slice() : null);
+  const isRight = (q, picked) => (q.kind === 'order' ? picked.every((v, i) => v === i) : picked === q.answer);
   function startQuiz(si, ti) {
     const s = SECTIONS[si], t = s.topics[ti];
-    session = { kind: 'topic', si, ti, review: reviewDue(s.id, t.id), qs: shuffle(t.quiz).map((q) => makeQ(q, ti)), i: 0, picked: null, checked: false, answers: [] };
+    session = { kind: 'topic', si, ti, review: reviewDue(s.id, t.id), qs: shuffle(t.quiz).map((q) => makeQ(q, ti)), i: 0, checked: false, answers: [] };
+    session.picked = firstPick(session.qs[0]);
     view = { name: 'quiz' }; render(); window.scrollTo(0, 0);
   }
   function startExam(si) {
     const s = SECTIONS[si];
     const fromTopics = s.topics.map((t, ti) => makeQ(t.quiz[Math.floor(Math.random() * t.quiz.length)], ti));
-    session = { kind: 'exam', si, qs: shuffle(s.exam.map((q) => makeQ(q, null)).concat(fromTopics)), i: 0, picked: null, checked: false, answers: [] };
+    session = { kind: 'exam', si, qs: shuffle(s.exam.map((q) => makeQ(q, null)).concat(fromTopics)), i: 0, checked: false, answers: [] };
+    session.picked = firstPick(session.qs[0]);
     view = { name: 'quiz' }; render(); window.scrollTo(0, 0);
   }
 
@@ -376,27 +393,47 @@
       return '<span class="pip ' + (a ? (a.correct ? 'ok' : 'bad') : (i === S.i ? 'cur' : '')) + '"></span>';
     }).join('');
     const letters = 'ABCDE';
-    const opts = q.order.map((orig, pos) => {
-      let cls = '';
-      if (S.checked) { if (orig === q.answer) cls = 'right'; else if (orig === S.picked) cls = 'wrong'; }
-      else if (orig === S.picked) cls = 'sel';
-      return '<button type="button" class="opt ' + cls + '" data-action="pick" data-o="' + orig + '"' + (S.checked ? ' disabled' : '') + '><span class="key">' + letters[pos] + '</span><span>' + md(q.options[orig]) + '</span></button>';
-    }).join('');
+    const mark = (i) => (S.checked ? (i === q.answer ? 'right' : (i === S.picked ? 'wrong' : '')) : (i === S.picked ? 'sel' : ''));
+    let opts;
+    if (q.kind === 'order') {
+      opts = '<ol class="steps" aria-label="Steps, top to bottom">' + S.picked.map((orig, pos) => '<li class="step ' + (S.checked ? (orig === pos ? 'right' : 'wrong') : '') + '"><span class="key">' + (pos + 1) + '</span><span>' + md(q.steps[orig]) + '</span>' +
+        (S.checked ? '' : '<span class="mv"><button type="button" data-action="up" data-p="' + pos + '" aria-label="Move up"' + (pos === 0 ? ' disabled' : '') + '>&uarr;</button>' +
+          '<button type="button" data-action="down" data-p="' + pos + '" aria-label="Move down"' + (pos === S.picked.length - 1 ? ' disabled' : '') + '>&darr;</button></span>') + '</li>').join('') + '</ol>';
+    } else if (q.kind === 'line') {
+      opts = codeBlock(q, (line, i) => '<button type="button" class="cl ' + mark(i) + '" data-action="pick" data-o="' + i + '" aria-label="Line ' + (i + 1) + '"' + (S.checked ? ' disabled' : '') + '>' + line + '</button>');
+    } else {
+      opts = (q.code ? codeBlock(q) : '') + '<div class="opts" role="group" aria-label="Answers">' + q.order.map((orig, pos) =>
+        '<button type="button" class="opt ' + mark(orig) + '" data-action="pick" data-o="' + orig + '"' + (S.checked ? ' disabled' : '') + '><span class="key">' + letters[pos] + '</span><span>' + md(q.options[orig]) + '</span></button>').join('') + '</div>';
+    }
     let fb = '';
     if (S.checked) {
-      const ok = S.picked === q.answer;
-      fb = '<div class="feedback ' + (ok ? 'ok' : 'bad') + '"><b>' + (ok ? 'Correct' : 'Not quite') + '</b>' + md(q.explain) + '</div>';
+      const ok = S.answers[S.i].correct;
+      let fix = '';
+      if (!ok && q.kind === 'line') fix = '<p>The bug is on line ' + (q.answer + 1) + '.</p>';
+      if (!ok && q.kind === 'order') fix = '<p>Correct order:</p><ol>' + q.steps.map((x) => '<li>' + md(x) + '</li>').join('') + '</ol>';
+      fb = '<div class="feedback ' + (ok ? 'ok' : 'bad') + '"><b>' + (ok ? 'Correct' : 'Not quite') + '</b>' + fix + md(q.explain) + '</div>';
     }
+    const hint = q.kind === 'order' ? 'Use the arrows to put the steps in order, then Enter to check'
+      : q.kind === 'line' ? 'Click the line with the bug (keys 1–' + Math.min(9, codeLines(q).length) + '), Enter to continue'
+      : 'Keys: 1–' + q.options.length + ' to choose, Enter to continue';
     const last = S.i === S.qs.length - 1;
     app.innerHTML = '<div class="narrow">' +
       '<nav class="crumbs"><button type="button" data-action="quit">Leave ' + (S.kind === 'exam' ? 'exam' : 'quiz') + '</button><span>·</span><span>Progress is not saved until you finish</span></nav>' +
       '<div class="quiz-top"><h1>' + esc(title) + '</h1><span class="pill pill-mute">Question ' + (S.i + 1) + ' of ' + S.qs.length + '</span></div>' +
       '<div class="pips">' + pips + '</div>' +
-      '<div class="qcard"><h2>' + md(q.q) + '</h2><div class="opts" role="group" aria-label="Answers">' + opts + '</div>' + fb +
+      '<div class="qcard"><h2>' + md(q.q) + '</h2>' + opts + fb +
       '<div class="quiz-actions">' + (S.checked
         ? '<button class="btn btn-primary" data-action="next">' + (last ? 'See results' : 'Next question') + '</button>'
         : '<button class="btn btn-primary" data-action="check"' + (S.picked === null ? ' disabled' : '') + '>Check answer</button>') + '</div>' +
-      '<div class="hint">Keys: 1–' + q.options.length + ' to choose, Enter to continue</div></div></div>';
+      '<div class="hint">' + hint + '</div></div></div>';
+  }
+  // Numbered code lines; `wrap(lineHtml, i)` turns each line into a pickable element.
+  function codeBlock(q, wrap) {
+    const lines = codeLines(q).map((l, i) => {
+      const html = '<span class="ln">' + (i + 1) + '</span><code>' + (esc(l) || ' ') + '</code>';
+      return wrap ? wrap(html, i) : '<span class="cl">' + html + '</span>';
+    });
+    return '<pre class="qcode"' + (q.lang ? ' data-lang="' + esc(q.lang) + '"' : '') + (wrap ? ' role="group" aria-label="Code lines"' : '') + '>' + lines.join('') + '</pre>';
   }
 
   function finish() {
@@ -484,10 +521,19 @@
     const review = r.qs.map((q, i) => {
       const a = r.answers[i];
       const pos = (o) => letters[q.order.indexOf(o)];
+      const say = (label, html, strong) => '<span class="ra">' + (strong ? '<strong>' : '') + label + ': ' + html + (strong ? '</strong>' : '') + '</span>';
+      let ans;
+      if (q.kind === 'order') {
+        const list = (o) => o.map((x, n) => (n + 1) + '. ' + md(q.steps[x])).join(' &nbsp;');
+        ans = say('Your order', list(a.chosen)) + (a.correct ? '' : say('Correct', list(q.steps.map((_, n) => n)), true));
+      } else if (q.kind === 'line') {
+        const line = (n) => 'line ' + (n + 1) + ': <code>' + esc(codeLines(q)[n].trim()) + '</code>';
+        ans = say('Your answer', line(a.chosen)) + (a.correct ? '' : say('Correct', line(q.answer), true));
+      } else {
+        ans = say('Your answer', pos(a.chosen) + '. ' + md(q.options[a.chosen])) + (a.correct ? '' : say('Correct', pos(q.answer) + '. ' + md(q.options[q.answer]), true));
+      }
       return '<div class="rv ' + (a.correct ? '' : 'miss') + '"><span class="rt">' + (q.src !== null && r.kind === 'exam' ? esc(s.topics[q.src].title) : 'Question ' + (i + 1)) + '</span><span class="rq">' + md(q.q) + '</span>' +
-        (a.correct ? '<span class="ra">Your answer: ' + pos(q.answer) + '. ' + md(q.options[q.answer]) + '</span>'
-          : '<span class="ra">Your answer: ' + pos(a.chosen) + '. ' + md(q.options[a.chosen]) + '</span><span class="ra"><strong>Correct: ' + pos(q.answer) + '. ' + md(q.options[q.answer]) + '</strong></span>') +
-        '<span class="ra">' + md(q.explain) + '</span></div>';
+        (q.code ? '<pre class="rcode">' + esc(q.code) + '</pre>' : '') + ans + '<span class="ra">' + md(q.explain) + '</span></div>';
     }).join('');
 
     app.innerHTML = '<div class="narrow"><div class="result">' + ring + '<h1>' + headline + '</h1><p>' + body + '</p>' + gains + weak + '<div class="btn-row" style="justify-content:center">' + actions.join('') + '</div></div>' +
@@ -521,6 +567,7 @@
     if (a === 'exam') return startExam(si);
     if (a === 'quit') { const S = session; session = null; return go(S.kind === 'exam' ? { name: 'home' } : { name: 'topic', si: S.si, ti: S.ti }); }
     if (a === 'pick' && session && !session.checked) { session.picked = +el.dataset.o; return renderQuiz(); }
+    if ((a === 'up' || a === 'down') && session && !session.checked) return move(+el.dataset.p, a === 'up' ? -1 : 1);
     if (a === 'check') return check();
     if (a === 'next') return advance();
     if (a === 'freeroam') { state.freeRoam = el.checked; save(); return; }
@@ -534,14 +581,23 @@
     const S = session;
     if (!S || S.picked === null || S.checked) return;
     S.checked = true;
-    S.answers[S.i] = { chosen: S.picked, correct: S.picked === S.qs[S.i].answer };
+    S.answers[S.i] = { chosen: S.picked, correct: isRight(S.qs[S.i], S.picked) };
     renderQuiz();
+  }
+  function move(p, d) {
+    const o = session.picked, to = p + d;
+    if (to < 0 || to >= o.length) return;
+    [o[p], o[to]] = [o[to], o[p]];
+    renderQuiz();
+    // Keep keyboard focus on the moved step's arrow (or its other arrow at the ends).
+    const btn = $('[data-action="' + (d < 0 ? 'up' : 'down') + '"][data-p="' + to + '"]');
+    (btn && !btn.disabled ? btn : $('[data-action="' + (d < 0 ? 'down' : 'up') + '"][data-p="' + to + '"]')).focus();
   }
   function advance() {
     const S = session;
     if (!S || !S.checked) return;
     if (S.i === S.qs.length - 1) return finish();
-    S.i++; S.picked = null; S.checked = false;
+    S.i++; S.picked = firstPick(S.qs[S.i]); S.checked = false;
     renderQuiz();
     window.scrollTo(0, 0);
   }
@@ -549,8 +605,13 @@
     if (view.name !== 'quiz' || !session || e.metaKey || e.ctrlKey || e.altKey) return;
     const q = session.qs[session.i];
     const n = parseInt(e.key, 10);
-    if (n >= 1 && n <= q.options.length && !session.checked) { session.picked = q.order[n - 1]; renderQuiz(); }
-    else if (e.key === 'Enter') { e.preventDefault(); session.checked ? advance() : check(); }
+    const choices = q.kind === 'mc' ? q.options.length : q.kind === 'line' ? codeLines(q).length : 0;
+    if (n >= 1 && n <= choices && !session.checked) { session.picked = q.kind === 'mc' ? q.order[n - 1] : n - 1; renderQuiz(); }
+    else if (e.key === 'Enter' && !(e.target.closest && e.target.closest('.mv'))) {
+      e.preventDefault();
+      if (!session.checked && e.target.matches && e.target.matches('button.cl')) session.picked = +e.target.dataset.o;
+      session.checked ? advance() : check();
+    }
   });
 
   render();

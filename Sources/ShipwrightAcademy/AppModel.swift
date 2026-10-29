@@ -16,14 +16,17 @@ enum Route: Hashable {
 struct QuizItem: Identifiable {
     let id = UUID()
     let question: Question
-    /// Display order of the original option indexes.
+    /// Display order of the original option indexes (mc), or the starting arrangement of step indexes (order).
     let order: [Int]
     /// The topic this question came from, for exam answer review.
     let topicIndex: Int?
 }
 
 struct QuizAnswer {
-    let chosen: Int
+    /// mc: the original option index. line: the line index.
+    let chosen: Int?
+    /// order: the learner's arrangement of original step indexes.
+    let arranged: [Int]
     let correct: Bool
 }
 
@@ -40,11 +43,14 @@ final class QuizSession {
     let items: [QuizItem]
     var index = 0
     var picked: Int?
+    /// order questions: the current arrangement of original step indexes.
+    var arranged: [Int] = []
     var answers: [QuizAnswer] = []
 
     var checked: Bool { answers.count > index }
     var current: QuizItem { items[index] }
     var isLast: Bool { index == items.count - 1 }
+    var canCheck: Bool { current.question.kind == .order || picked != nil }
     var sectionIndex: Int {
         switch kind {
         case .topic(let si, _), .exam(let si): si
@@ -55,17 +61,27 @@ final class QuizSession {
         self.kind = kind
         self.isReview = isReview
         self.items = items
+        arranged = items.first?.order ?? []
     }
 
     func check() {
-        guard let picked, !checked else { return }
-        answers.append(QuizAnswer(chosen: picked, correct: picked == current.question.answer))
+        guard canCheck, !checked else { return }
+        let q = current.question
+        let correct = q.kind == .order ? arranged == Array(q.steps.indices) : picked == q.answer
+        answers.append(QuizAnswer(chosen: picked, arranged: arranged, correct: correct))
+    }
+
+    func move(_ pos: Int, by delta: Int) {
+        let to = pos + delta
+        guard !checked, arranged.indices.contains(pos), arranged.indices.contains(to) else { return }
+        arranged.swapAt(pos, to)
     }
 
     func advance() {
         guard checked, !isLast else { return }
         index += 1
         picked = nil
+        arranged = current.order
     }
 }
 
@@ -121,7 +137,20 @@ final class AppModel {
     }
 
     private func makeItem(_ q: Question, topicIndex: Int?) -> QuizItem {
-        QuizItem(question: q, order: Array(q.options.indices).shuffled(), topicIndex: topicIndex)
+        switch q.kind {
+        case .mc: QuizItem(question: q, order: Array(q.options.indices).shuffled(), topicIndex: topicIndex)
+        case .order: QuizItem(question: q, order: scrambled(q.steps.count), topicIndex: topicIndex)
+        case .line: QuizItem(question: q, order: [], topicIndex: topicIndex)
+        }
+    }
+
+    /// A shuffle of 0..<n that is never already in order.
+    private func scrambled(_ n: Int) -> [Int] {
+        let sorted = Array(0..<n)
+        guard n > 1 else { return sorted }
+        var order = sorted.shuffled()
+        while order == sorted { order.shuffle() }
+        return order
     }
 
     func finishQuiz() {

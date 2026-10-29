@@ -9,12 +9,36 @@ const topicsMode = args[0] === '--topics';
 const files = topicsMode ? args.slice(1) : args;
 let failed = false;
 
+// Question kinds (README "Questions"): mc (default), order, line.
+const kindOf = (x) => x.kind || 'mc';
 function checkQuestion(x, p, errs) {
   const str = (v, k) => { if (typeof v !== 'string' || !v.trim()) errs.push(`${p}.${k} must be a non-empty string`); };
+  const none = (...ks) => ks.forEach((k) => { if (k in x) errs.push(`${p}.${k} is not used by kind "${kindOf(x)}"`); });
   str(x.q, 'q'); str(x.explain, 'explain');
-  if (!Array.isArray(x.options) || x.options.length < 2 || x.options.length > 5) errs.push(`${p}.options must have 2-5 items`);
-  else x.options.forEach((o, i) => { if (typeof o !== 'string' || !o.trim()) errs.push(`${p}.options[${i}] empty`); });
-  if (!Number.isInteger(x.answer) || x.answer < 0 || !x.options || x.answer >= x.options.length) errs.push(`${p}.answer out of range`);
+  if (x.lang !== undefined) str(x.lang, 'lang');
+  const k = kindOf(x);
+  if (k === 'mc') {
+    if (!Array.isArray(x.options) || x.options.length < 2 || x.options.length > 5) errs.push(`${p}.options must have 2-5 items`);
+    else x.options.forEach((o, i) => { if (typeof o !== 'string' || !o.trim()) errs.push(`${p}.options[${i}] empty`); });
+    if (!Number.isInteger(x.answer) || x.answer < 0 || !x.options || x.answer >= x.options.length) errs.push(`${p}.answer out of range`);
+    if (x.code !== undefined) str(x.code, 'code');
+    if (x.lang !== undefined && x.code === undefined) errs.push(`${p}.lang needs code`);
+    none('steps');
+  } else if (k === 'order') {
+    if (!Array.isArray(x.steps) || x.steps.length < 3 || x.steps.length > 6) errs.push(`${p}.steps must have 3-6 items`);
+    else {
+      x.steps.forEach((o, i) => { if (typeof o !== 'string' || !o.trim()) errs.push(`${p}.steps[${i}] empty`); });
+      if (new Set(x.steps).size !== x.steps.length) errs.push(`${p}.steps must be distinct`);
+    }
+    none('options', 'answer', 'code', 'lang');
+  } else if (k === 'line') {
+    str(x.code, 'code');
+    const lines = typeof x.code === 'string' ? x.code.split('\n') : [];
+    if (lines.length < 3) errs.push(`${p}.code needs >= 3 lines`);
+    if (!Number.isInteger(x.answer) || x.answer < 0 || x.answer >= lines.length) errs.push(`${p}.answer must be a 0-based line index of code`);
+    else if (!lines[x.answer].trim()) errs.push(`${p}.answer points at a blank line`);
+    none('options', 'steps');
+  } else errs.push(`${p}.kind must be mc|order|line, got ${JSON.stringify(x.kind)}`);
 }
 
 // Figures are inline SVG rendered in both apps; see content/FIGURES.md for the contract.
@@ -81,7 +105,9 @@ function checkTopic(t, p, errs) {
   (t.quiz || []).forEach((x, i) => checkQuestion(x, `${p}.quiz[${i}]`, errs));
 }
 
-function checkBalance(questions, errs) {
+function checkBalance(all, errs) {
+  // Answer balance and giveaways only make sense for multiple choice.
+  const questions = all.filter((x) => kindOf(x) === 'mc' && Array.isArray(x.options));
   const counts = {};
   questions.forEach((x) => { counts[x.answer] = (counts[x.answer] || 0) + 1; });
   const max = Math.max(...Object.values(counts));
@@ -93,7 +119,7 @@ function checkBalance(questions, errs) {
     return L[x.answer] === m && m > second * 1.3;
   });
   if (giveaways.length) errs.push(`${giveaways.length} question(s) where the correct option is >30% longer than every other: ${giveaways.map((x) => JSON.stringify(x.q.slice(0, 50))).join('; ')}`);
-  if (/�/.test(JSON.stringify(questions))) errs.push('contains U+FFFD replacement character');
+  if (/�/.test(JSON.stringify(all)))errs.push('contains U+FFFD replacement character');
 }
 
 for (const file of files) {
