@@ -2281,6 +2281,93 @@ window.CURRICULUM_SECTIONS.push({
       ],
       "answer": 2,
       "explain": "Without a neutral party neither state can be proved right, so the match should be a no-contest with no rating change, and the design should send checksums or inputs through a service that can replay them. Picking by rating or ping rewards the wrong thing, and continuing a diverged match gives results that no one can verify."
+    },
+    {
+      "kind": "order",
+      "q": "Put the steps of one rollback netcode tick in order, as the lesson's `Tick()` runs them.",
+      "steps": [
+        "Poll the network for remote inputs",
+        "Store the local pad input for frame `frame + inputDelay`",
+        "Find the first frame whose predicted remote input was wrong and load the snapshot saved before it",
+        "Resimulate from that frame up to the current one, re-saving each snapshot",
+        "Save the current state and step the current frame",
+        "Render the resulting state once"
+      ],
+      "explain": "Inputs must arrive (poll) before you can know a prediction was wrong, and the local input is scheduled with the fixed delay. Correction comes next: load the snapshot before the first mispredicted frame and replay forward with the real inputs. Only then is the new frame saved and stepped, and the picture is drawn once at the end, never in the middle of a resimulation."
+    },
+    {
+      "kind": "order",
+      "q": "An FPS client receives a server snapshot. Put its reconciliation steps in the order the lesson's `OnSnapshot` runs them.",
+      "steps": [
+        "Discard buffered commands up to the snapshot's last processed command",
+        "Take the server's authoritative player state for that tick",
+        "Replay the remaining unacknowledged commands with the shared movement step",
+        "Measure the distance between the old prediction and the replayed state",
+        "Snap if the error is large, otherwise add it to a decaying render offset"
+      ],
+      "explain": "Acknowledged commands are already inside the server state, so they are dropped first; replaying them would apply them twice. The replay starts from the authoritative state and uses the same `Movement.Step` as the server. Only after the replay is there a corrected position to compare, and the size of that error decides between snapping (over 1 m) and smoothing."
+    },
+    {
+      "kind": "order",
+      "q": "Put the parts of one chess search node (`Search`) in the order the lesson runs them.",
+      "steps": [
+        "Return 0 if the position is a repetition or a 50-move draw (below the root)",
+        "Probe the transposition table for a cutoff score and a hash move",
+        "Search the ordered moves, skipping illegal ones and stopping at a beta cutoff",
+        "If no legal move was found, return a mate score if in check, else 0",
+        "Store the best score, best move and bound type in the transposition table"
+      ],
+      "explain": "The draw test comes before the table probe because a stored score for this position may come from a line where it was not a repetition. The hash move from the probe is needed to order the moves. Mate or stalemate can only be decided after the loop has counted legal moves, and the table entry is written last, once the bound (upper, lower or exact) is known."
+    },
+    {
+      "kind": "line",
+      "q": "This incremental Zobrist update gives a different hash than recomputing it from scratch after captures. Click the line with the bug.",
+      "code": "ulong h = pos.Hash;\nh ^= PieceKey[piece, from];                   // lift the piece off\nh ^= PieceKey[piece, to];                     // put it down\nif (captured >= 0) h ^= PieceKey[captured, from];\nh ^= CastleKey[oldCastling] ^ CastleKey[newCastling];\nif (oldEp >= 0) h ^= EpFileKey[oldEp & 7];\nif (newEp >= 0) h ^= EpFileKey[newEp & 7];\nh ^= SideKey;                                 // flip the side to move",
+      "lang": "csharp",
+      "answer": 3,
+      "explain": "Line 4 removes the captured piece from `from`, but for an ordinary capture the victim stood on `to`. Fix: `if (captured >= 0) h ^= PieceKey[captured, to];`. As written it XORs in a key for a piece that was never on `from` and leaves the victim's key in the hash, so transposition-table lookups and repetition checks go wrong after every capture."
+    },
+    {
+      "kind": "line",
+      "q": "Players riding along a cell border see the same cells load and unload over and over, with I/O spikes and hitches. Click the line with the bug.",
+      "code": "void UpdateStreaming(Vector3 player, Vector3 view)\n{\n    foreach (Cell c in grid.CellsNear(player, unloadRadius + cellSize))\n    {\n        float d = Vector3.Distance(c.Center, player);\n        if (c.State == CellState.Unloaded && d <= loadRadius)\n            Enqueue(c, Priority(c, player, view));\n        else if (c.State == CellState.Loaded && d > loadRadius)\n            Release(c);\n    }\n}",
+      "lang": "csharp",
+      "answer": 7,
+      "explain": "Line 8 unloads at `loadRadius`, the same distance cells load at, so a player pacing the border crosses both thresholds back and forth. Fix: `d > unloadRadius`, with the unload radius about one cell larger than the load radius. That gap (hysteresis) makes border pacing free."
+    },
+    {
+      "kind": "line",
+      "q": "A peer-to-peer rollback fighting game desyncs: the per-frame checksums stop matching after the first hit. Click the line with the bug.",
+      "code": "public struct GameState {\n    public int Frame; public uint Rng;\n    public Fighter P1, P2;\n}\npublic static void Step(ref GameState s, ushort in1, ushort in2) {\n    s.Frame++;\n    Apply(ref s.P1, in1);\n    Apply(ref s.P2, in2);\n    if (Hit(s.P1, s.P2))\n        s.P2.Hp -= 80 + UnityEngine.Random.Range(0, 11);\n}\nstatic uint Rand(ref uint x) { x ^= x << 13; x ^= x >> 17; x ^= x << 5; return x; }",
+      "lang": "csharp",
+      "answer": 9,
+      "explain": "Line 10 rolls damage with `UnityEngine.Random`, whose state lives outside `GameState`: each peer gets a different number, and a rollback cannot restore it. Fix: `s.P2.Hp -= 80 + (int)(Rand(ref s.Rng) % 11);`, so the seeded generator is part of the state that is saved, restored and identical on both machines."
+    },
+    {
+      "q": "Captures are ordered by MVV-LVA (P = 1, N = 3, R = 5, Q = 9). What does this print?",
+      "code": "int Score(int victim, int attacker) => 10 * victim - attacker;\n\nvar caps = new[] {\n    (\"QxP\", Score(1, 9)), (\"PxQ\", Score(9, 1)),\n    (\"NxR\", Score(5, 3)), (\"RxR\", Score(5, 5)),\n};\nforeach (var c in caps.OrderByDescending(c => c.Item2))\n    Console.Write(c.Item1 + \" \");",
+      "lang": "csharp",
+      "options": [
+        "`PxQ NxR RxR QxP`",
+        "`PxQ RxR NxR QxP`",
+        "`QxP PxQ NxR RxR`",
+        "`RxR NxR PxQ QxP`"
+      ],
+      "answer": 0,
+      "explain": "The scores are PxQ 89, NxR 47, RxR 45 and QxP 1. The victim's value times 10 dominates, so the most valuable victim comes first, and among equal victims the cheaper attacker (knight before rook) wins the tie-break."
+    },
+    {
+      "q": "A stat uses the lesson's base-plus-modifiers rule. Modifiers were equipped in this order. What does this print?",
+      "code": "float baseValue = 110f, add = 0f, mul = 1f;\nvar mods = new[] {\n    (Stage.Multiplicative, 1.5f), (Stage.Additive, 20f),\n    (Stage.Multiplicative, 0.5f), (Stage.Additive, 10f),\n};\nforeach (var (stage, v) in mods)\n    if (stage == Stage.Additive) add += v; else mul *= v;\nConsole.WriteLine((baseValue + add) * mul);",
+      "lang": "csharp",
+      "options": [
+        "102.5",
+        "210",
+        "70",
+        "105"
+      ],
+      "answer": 3,
+      "explain": "Additive modifiers are summed (+30) and multiplicative ones multiplied (x0.75) separately, then combined as (110 + 30) x 0.75 = 105. Equip order does not matter. 102.5 is what applying each modifier in place, in order, would give, which is why in-place stat updates drift."
     }
   ]
 });

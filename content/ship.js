@@ -1476,6 +1476,90 @@ window.CURRICULUM_SECTIONS.push({
       ],
       "answer": 1,
       "explain": "One artifact plus injected configuration keeps what you tested identical to what you deploy. Baking values into images or branches breaks that, and credentials never belong in code."
+    },
+    {
+      "kind": "order",
+      "q": "Put the stages of a CI pipeline in the order that gives the fastest feedback, as in the lesson's example.",
+      "steps": [
+        "Check out the commit",
+        "Install exact dependencies with `npm ci`",
+        "Run lint and typecheck",
+        "Run unit tests",
+        "Run integration tests, only if the fast checks passed"
+      ],
+      "explain": "Nothing runs without the code, and nothing builds without dependencies from the lockfile. After that, the cheapest checks go first: lint and typecheck fail in seconds, unit tests next, and the slow integration job runs only once the fast stage is green (`needs: fast-checks`)."
+    },
+    {
+      "kind": "order",
+      "q": "Order the deploys of a zero-downtime rename of `users.name` to `users.full_name` (expand/contract).",
+      "steps": [
+        "Add `full_name` as a nullable column; old code is unaffected",
+        "App writes both columns and still reads `name`; backfill old rows in batches",
+        "App reads `full_name` while still writing `name`",
+        "Drop `name` once nothing reads or writes it"
+      ],
+      "explain": "Expand first, contract last. Each step stays compatible with the version running before it, so any deploy can be rolled back. Reading `full_name` before the backfill would return nulls, and dropping `name` before the last reader is gone crashes old instances and makes rollback impossible."
+    },
+    {
+      "kind": "order",
+      "q": "Order the steps of a blue/green deployment, with blue serving live traffic at the start.",
+      "steps": [
+        "Deploy the new version to the idle green environment",
+        "Test green under production-like conditions",
+        "Switch the router so all traffic goes to green",
+        "If errors rise, switch the router back to blue"
+      ],
+      "explain": "Green is deployed and tested while it takes no traffic, then the router flips all traffic at once. Blue stays intact, so rollback is another near-instant flip rather than a redeploy."
+    },
+    {
+      "kind": "line",
+      "q": "This Terraform defines the production orders database. Click the line with the bug.",
+      "code": "resource \"aws_db_instance\" \"orders\" {\n  identifier          = \"orders-${var.env}\"\n  engine              = \"postgres\"\n  engine_version      = \"16.4\"\n  instance_class      = var.db_instance_class\n  allocated_storage   = 50\n  deletion_protection = true\n  username            = \"orders_app\"\n  password            = \"Tr0ub4dor&3\"\n}",
+      "lang": "hcl",
+      "answer": 8,
+      "explain": "Line 9 hard-codes a secret in a file that lives in version control, so everyone with repo access, and every clone, has the production password. Use `password = var.db_password` injected from a secret store, and since it was committed, revoke and rotate it. A username is not a secret, so line 8 is fine."
+    },
+    {
+      "kind": "line",
+      "q": "This handler logs failed logins for later investigation. Click the line with the bug.",
+      "code": "function onLoginFailed(req, ctx, reason) {\n  logger.warn({\n    event: 'login_failed',\n    reason,\n    user_id: req.body.userId,\n    password: req.body.password,\n    trace_id: ctx.traceId,\n    ip: req.ip,\n  });\n}",
+      "lang": "js",
+      "answer": 5,
+      "explain": "Line 6 writes the password the user typed into the logs, where many people and tools can read it, and a failed attempt is often a typo of the real password. Never log secrets: delete the field. The rest is good structured logging, with an event name, a reason and a trace ID to correlate."
+    },
+    {
+      "kind": "line",
+      "q": "This migration runs in the first deploy of renaming `users.name` to `users.full_name`, while the old app version is still serving traffic. Click the line with the bug.",
+      "code": "-- Deploy 1: rename users.name to users.full_name\nALTER TABLE users ADD COLUMN full_name text;\n\n-- Backfill in small batches to avoid long locks\nUPDATE users SET full_name = name\n  WHERE full_name IS NULL AND id BETWEEN 1 AND 10000;\n\nALTER TABLE users DROP COLUMN name;",
+      "lang": "sql",
+      "answer": 7,
+      "explain": "Line 8 drops `name` in the same deploy that adds its replacement, while the running code still reads it: old instances fail at once and rolling back the code cannot bring the data back. The contract step belongs in a later deploy, after the app reads `full_name` and nothing uses `name`."
+    },
+    {
+      "q": "A service logs these ten request latencies. What does this print?",
+      "code": "const ms = [100, 100, 100, 100, 100, 100, 100, 100, 100, 5000];\nconst mean = ms.reduce((a, b) => a + b) / ms.length;\nconst sorted = [...ms].sort((a, b) => a - b);\nconst p50 = sorted[Math.floor(0.5 * sorted.length)];\nconsole.log(mean, p50);",
+      "lang": "js",
+      "options": [
+        "100 100",
+        "590 100",
+        "590 590",
+        "100 5000"
+      ],
+      "answer": 1,
+      "explain": "The sum is 900 + 5000 = 5900, so the mean is 590 ms, a latency no request actually had. The median is `sorted[5]`, 100 ms. One slow request drags the mean six-fold and leaves p50 untouched, which is why you watch percentiles, including the tail (p99), instead of averages."
+    },
+    {
+      "q": "This applies Semantic Versioning bumps to a release history. What does it print?",
+      "code": "function bump(v, change) {\n  const [major, minor, patch] = v.split('.').map(Number);\n  if (change === 'breaking') return `${major + 1}.0.0`;\n  if (change === 'feature') return `${major}.${minor + 1}.0`;\n  return `${major}.${minor}.${patch + 1}`;\n}\nlet v = '2.3.1';\nfor (const c of ['fix', 'feature', 'fix', 'breaking', 'feature']) v = bump(v, c);\nconsole.log(v);",
+      "lang": "js",
+      "options": [
+        "3.2.2",
+        "3.4.0",
+        "2.5.2",
+        "3.1.0"
+      ],
+      "answer": 3,
+      "explain": "2.3.1 → 2.3.2 (fix) → 2.4.0 (feature resets PATCH) → 2.4.1 (fix) → 3.0.0 (breaking resets MINOR and PATCH) → 3.1.0 (feature). A MAJOR bump always zeroes the lower numbers."
     }
   ]
 });

@@ -1505,6 +1505,58 @@ window.CURRICULUM_SECTIONS.push({
       "lang": "python",
       "answer": 2,
       "explain": "`hi` is inclusive (`len(xs) - 1`), so when `lo == hi` one candidate is still left to check. `while lo < hi` stops before checking it. With inclusive bounds the loop must be `while lo <= hi`."
+    },
+    {
+      "kind": "order",
+      "q": "A JVM service starts cold and gets faster under load. Order what happens to a hot method from source code to fast execution.",
+      "steps": [
+        "`javac` compiles the source to bytecode ahead of time",
+        "The JVM starts by interpreting that bytecode",
+        "The runtime profiles which methods run often and with which types",
+        "The JIT compiles the hot methods to machine code using those observed types",
+        "Later calls run the compiled machine code: the warm-up is over"
+      ],
+      "explain": "Java is compiled twice: to bytecode before shipping, and selectively to machine code at runtime. The JIT can only compile hot code after it has interpreted it long enough to observe it, which is why benchmarks need warm-up before their numbers mean anything."
+    },
+    {
+      "kind": "order",
+      "q": "Order the steps of a tracing garbage collection cycle.",
+      "steps": [
+        "Find the roots: stack variables and globals",
+        "Mark every object reachable by following references from the roots",
+        "Treat every unmarked object as garbage",
+        "Reclaim the memory of the unmarked objects for reuse"
+      ],
+      "explain": "A tracing collector decides liveness by reachability from the roots, so marking must start from the roots and finish before anything is freed. This is also why GC does not prevent leaks: an ever-growing cache is still reachable, so it is marked and never reclaimed."
+    },
+    {
+      "kind": "line",
+      "q": "This function should return the fewest hops from `start` to `goal`. With `graph = {\"A\": [\"B\", \"C\"], \"B\": [\"D\"], \"C\": [\"E\"], \"D\": [], \"E\": [\"D\"]}`, `shortest_hops(graph, \"A\", \"D\")` returns 3 instead of 2. Click the line with the bug.",
+      "code": "from collections import deque\n\ndef shortest_hops(graph, start, goal):\n    queue = deque([(start, 0)])\n    seen = {start}\n    while queue:\n        node, dist = queue.pop()\n        if node == goal:\n            return dist\n        for nxt in graph[node]:\n            if nxt not in seen:\n                seen.add(nxt)\n                queue.append((nxt, dist + 1))\n    return -1",
+      "lang": "python",
+      "answer": 6,
+      "explain": "Line 7 uses `queue.pop()`, which takes from the right end, so the deque acts as a stack and the search runs depth-first. It reaches D through C and E (3 hops) and marks it seen before the 2-hop path via B. BFS needs first-in, first-out order: `queue.popleft()`."
+    },
+    {
+      "kind": "line",
+      "q": "This function should keep only the `k` largest numbers from a huge stream in O(k) memory. On 100 million numbers it runs out of memory and returns far more than `k` items. Click the line with the bug.",
+      "code": "import heapq\n\ndef top_k(stream, k):\n    heap = []\n    for x in stream:\n        if len(heap) < k:\n            heapq.heappush(heap, x)\n        elif x > heap[0]:\n            heapq.heappush(heap, x)\n    return sorted(heap, reverse=True)",
+      "lang": "python",
+      "answer": 8,
+      "explain": "Line 9 pushes the larger value without removing the current minimum, so the heap keeps growing past `k` toward the size of the stream. It must replace the minimum: `heapq.heapreplace(heap, x)` (pop the smallest, then push `x`), which keeps the heap at size `k` with O(log k) work per item."
+    },
+    {
+      "q": "In JavaScript, what does this print? (`é` here is the single code point U+00E9.)",
+      "code": "const s = \"café🚀\";\nconsole.log(s.length);",
+      "lang": "js",
+      "options": [
+        "6",
+        "5",
+        "9",
+        "4"
+      ],
+      "answer": 0,
+      "explain": "JavaScript `length` counts UTF-16 code units. `c`, `a`, `f` and `é` take one unit each, and the rocket (U+1F680, outside the Basic Multilingual Plane) takes a surrogate pair of two, so 6. 5 is the number of code points, and 9 is the UTF-8 byte count (1 + 1 + 1 + 2 + 4)."
     }
   ]
 });

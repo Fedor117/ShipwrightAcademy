@@ -1476,6 +1476,91 @@ window.CURRICULUM_SECTIONS.push({
       ],
       "answer": 1,
       "explain": "Vendoring gives offline, reproducible builds and lets you review exactly what ships, at the cost of owning updates and security patches. Ranges and live registry fetches need network access and drift over time, and a scanner only knows published advisories."
+    },
+    {
+      "kind": "order",
+      "q": "Put the steps of a safe refactoring loop in order.",
+      "steps": [
+        "Get the tests green, adding characterization tests if coverage is thin",
+        "Make one small structural change",
+        "Run the tests: commit on green, revert on red",
+        "Once the code is easy to change, make the actual feature change on top"
+      ],
+      "explain": "Tests come first because they are the safety net that proves behaviour is preserved. Each small change is checked and committed (or reverted) on its own, and the feature change comes last, in a separate step, so refactoring and behaviour change never share a commit."
+    },
+    {
+      "kind": "order",
+      "q": "Checkout errors spike right after a deploy. Put the incident response in order.",
+      "steps": [
+        "Declare the incident and assign an incident commander",
+        "Correlate the error spike with recent changes",
+        "Roll back the suspect deploy",
+        "Confirm the error rate is back to baseline",
+        "Hold a blameless postmortem to find the root cause"
+      ],
+      "explain": "Someone must coordinate before the debugging starts. The responders tie the spike to deploy timing, then mitigate first with a rollback and confirm that it worked. Root cause analysis waits for the postmortem, after users stop hurting."
+    },
+    {
+      "kind": "order",
+      "q": "Put the steps of a performance improvement in order.",
+      "steps": [
+        "Define a goal, such as p95 under 500 ms",
+        "Measure the current state",
+        "Find the bottleneck with a profiler",
+        "Change one thing",
+        "Measure again"
+      ],
+      "explain": "A goal tells you when to stop, and a baseline measurement shows the gap. The profiler finds where time really goes, which is often not where intuition says. Changing one thing at a time and measuring again is the only way to know whether each change helped."
+    },
+    {
+      "kind": "line",
+      "q": "This exchange-rate cache is meant to expire entries after 60 seconds. Click the line with the bug.",
+      "lang": "python",
+      "code": "import time\n\nTTL_SECONDS = 60\n_cache = {}\n\ndef get_rates(currency):\n    hit = _cache.get(currency)\n    if hit and time.time() - hit[1] > TTL_SECONDS:\n        return hit[0]\n    rates = fetch_rates(currency)\n    _cache[currency] = (rates, time.time())\n    return rates",
+      "answer": 7,
+      "explain": "Line 8 has the comparison backwards: it returns the cached value only once it is older than the TTL, so it serves stale rates and refetches fresh ones. It should be `time.time() - hit[1] < TTL_SECONDS`."
+    },
+    {
+      "kind": "line",
+      "q": "This function was rewritten to fix an N+1 query problem, but the problem is still there. Click the line that causes it.",
+      "lang": "python",
+      "code": "def orders_with_customers(db):\n    orders = db.query(\"SELECT * FROM orders ORDER BY created_at DESC LIMIT 50\")\n    ids = list({o.customer_id for o in orders})\n    customers = {c.id: c for c in db.query(\n        \"SELECT * FROM customers WHERE id = ANY(%s)\", [ids])}\n    result = []\n    for o in orders:\n        customer = db.query_one(\"SELECT * FROM customers WHERE id = %s\", [o.customer_id])\n        result.append((o, customer))\n    return result",
+      "answer": 7,
+      "explain": "Line 8 still runs one query per order, ignoring the batch that lines 4-5 already loaded, so the page makes 51 round trips. It should look up `customers[o.customer_id]`."
+    },
+    {
+      "kind": "line",
+      "q": "This backfill for an expand-and-contract migration is meant to run in batches and be safe to re-run. Click the line with the bug.",
+      "lang": "python",
+      "code": "BATCH = 1000\n\ndef backfill_full_name(db):\n    while True:\n        rows = db.query(\"SELECT id, first, last FROM users LIMIT %s\", [BATCH])\n        if not rows:\n            break\n        for r in rows:\n            db.execute(\"UPDATE users SET full_name = %s WHERE id = %s\",\n                       [f\"{r.first} {r.last}\", r.id])\n        db.commit()",
+      "answer": 4,
+      "explain": "Line 5 does not skip rows that are already done, so it returns the same first 1,000 users forever and the loop never ends. Adding `WHERE full_name IS NULL` makes each batch pick up new work and makes the job safe to re-run."
+    },
+    {
+      "q": "With no lockfile, which version does `npm install` resolve for this dependency?",
+      "lang": "jsonc",
+      "code": "// package.json\n\"lodash\": \"~4.17.21\"\n\n// versions published on the registry:\n// 4.17.20, 4.17.21, 4.17.23, 4.18.0, 5.0.0",
+      "options": [
+        "4.17.21",
+        "4.18.0",
+        "5.0.0",
+        "4.17.23"
+      ],
+      "answer": 3,
+      "explain": "A tilde range allows patch updates only (>=4.17.21 <4.18.0), and npm picks the highest match, 4.17.23. A caret range would have allowed 4.18.0, and only a wildcard or a new major range would allow 5.0.0."
+    },
+    {
+      "q": "What does this print?",
+      "lang": "python",
+      "code": "latencies_ms = [100] * 98 + [2000, 4000]\navg = sum(latencies_ms) / len(latencies_ms)\np99 = sorted(latencies_ms)[int(0.99 * len(latencies_ms))]\nprint(round(avg), p99)",
+      "options": [
+        "158 4000",
+        "100 2000",
+        "158 2000",
+        "100 4000"
+      ],
+      "answer": 0,
+      "explain": "The sum is 9,800 + 6,000 = 15,800 over 100 requests, so the average is 158. The p99 index is 99, the last sorted value, 4000. The average looks healthy while 1 request in 100 takes 4 seconds, which is why you watch percentiles."
     }
   ]
 });

@@ -1630,6 +1630,91 @@ window.CURRICULUM_SECTIONS.push({
       ],
       "answer": 0,
       "explain": "Tying the documented procedure to automation that CI exercises keeps it from drifting again. Manual fixes and chat pastes decay or vanish."
+    },
+    {
+      "kind": "order",
+      "q": "Put the phases of an agentic change to several unfamiliar files in the recommended order.",
+      "steps": [
+        "**Explore**: the agent reads the relevant code and reports back, with no edits",
+        "**Plan**: agree on the approach, files to change and tests to add",
+        "**Implement**: the agent executes the plan in small steps",
+        "**Verify**: run tests, linters and type checks, then review the diff yourself"
+      ],
+      "explain": "Explore, plan, implement, verify. Skipping to implementation lets the agent commit to its first plausible approach; reading a plan first is the cheapest review, and verification comes after the code exists."
+    },
+    {
+      "kind": "order",
+      "q": "Order what happens in one iteration of the agent loop when the model decides to read a file.",
+      "steps": [
+        "The host sends the accumulated messages and tool definitions to the model",
+        "The model emits a structured call: `read_file` with `path=src/app.py`",
+        "The host checks the call against the permission policy",
+        "The host runs the `read_file` function",
+        "The host appends the tool result to the messages for the next turn"
+      ],
+      "explain": "The model only emits a request; the host validates it against permissions, executes it and appends the observation to context. The next model call sees that result, which is the only way the agent learns what the file contains."
+    },
+    {
+      "kind": "order",
+      "q": "An agent is fixing a bug where a coupon is applied twice. Order the steps so the fix is verified by tests, not by the agent's opinion.",
+      "steps": [
+        "Write a test that reproduces the double discount",
+        "Run it and confirm it fails for the right reason",
+        "Have the agent change the code, leaving the test untouched",
+        "Run the full suite and confirm everything passes",
+        "Review the diff for deleted, skipped or weakened tests"
+      ],
+      "explain": "A test that has never failed proves nothing, so confirm the failure before the fix. The fix must change code, not the test's expectation, and the final diff review catches an agent that made tests pass by weakening them."
+    },
+    {
+      "kind": "line",
+      "q": "This agent loop stops before it ever runs a tool. Click the buggy line.",
+      "code": "messages = [system_prompt, user_task]\nwhile True:\n    reply = model(messages, tools=TOOLS)\n    messages.append(reply)\n    if reply.tool_calls:\n        break\n    for call in reply.tool_calls:\n        if not permitted(call):\n            result = 'denied'\n        else:\n            result = TOOLS[call.name](**call.args)\n        messages.append(tool_result(call.id, result))",
+      "lang": "python",
+      "answer": 4,
+      "explain": "Line 5 inverts the stop condition: the loop must end when the reply has **no** tool calls. Fix: `if not reply.tool_calls:`. As written it breaks exactly when the model asks for a tool, and loops on plain-text replies."
+    },
+    {
+      "kind": "line",
+      "q": "An agent wrote this for an API whose pages are 1-based. The test with page=0 passed. Click the buggy line.",
+      "code": "def paginate(items, page, size):\n    \"\"\"Return one page of items. Pages are 1-based: page=1 is the first page.\"\"\"\n    if size <= 0:\n        raise ValueError('size must be positive')\n    start = page * size\n    return items[start:start + size]",
+      "lang": "python",
+      "answer": 4,
+      "explain": "Line 5 computes a 0-based offset, so page=1 returns the second page and the last page comes back empty. Fix: `start = (page - 1) * size`. It is plausible but wrong: it reads fine and passes a test that uses the wrong convention."
+    },
+    {
+      "kind": "line",
+      "q": "This script should report the tuned prompt's accuracy on cases it never saw. Click the one line whose fix makes the report honest.",
+      "code": "cases = load_cases('evals/tickets.jsonl')\nrandom.shuffle(cases)\ntune, held_out = cases[:80], cases[80:]\nprompt = tune_prompt(BASE_PROMPT, tune)\nhits = sum(classify(prompt, c['input']) == c['expect'] for c in tune)\nprint(f'held-out accuracy {hits}/{len(held_out)}')",
+      "lang": "python",
+      "answer": 4,
+      "explain": "Line 5 scores the prompt on the `tune` cases it was optimized on, so the result measures overfitting, not generalization. Fix: iterate over `held_out` instead of `tune`. Line 6 already divides by the held-out count; it only looks wrong because line 5 counts hits on the other split."
+    },
+    {
+      "q": "This simulates the agent loop's context. Each inner list is the tool calls in one model reply. What does it print?",
+      "code": "messages = ['system', 'task']\nreplies = [['read_file'], ['run_tests', 'edit_file'], []]\nfor calls in replies:\n    messages.append('reply')\n    if not calls:\n        break\n    for c in calls:\n        messages.append('result:' + c)\nprint(len(messages))",
+      "lang": "python",
+      "options": [
+        "5",
+        "6",
+        "9",
+        "8"
+      ],
+      "answer": 3,
+      "explain": "2 starting messages, then reply + 1 result, reply + 2 results, and a final reply with no calls that ends the loop: 2 + 2 + 3 + 1 = 8. Every reply and tool result stays in context and is resent on the next turn."
+    },
+    {
+      "q": "The API documents pages as 1-based. What does this print?",
+      "code": "def paginate(items, page, size):\n    return items[page * size : (page + 1) * size]\n\nitems = list(range(1, 26))  # 25 items: 1..25\nprint(paginate(items, 1, 10)[0], len(paginate(items, 3, 10)))",
+      "lang": "python",
+      "options": [
+        "1 5",
+        "11 5",
+        "11 0",
+        "IndexError"
+      ],
+      "answer": 2,
+      "explain": "page=1 slices `items[10:20]`, so the first page a client asks for starts at 11. page=3 slices `items[30:40]`, which Python returns as an empty list rather than raising, so the real last page (21-25) is lost: `11 0`."
     }
   ]
 });

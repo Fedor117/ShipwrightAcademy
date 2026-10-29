@@ -2544,6 +2544,92 @@ window.CURRICULUM_SECTIONS.push({
       ],
       "answer": 0,
       "explain": "Frustum culling uses the mesh bounds, which come from the stored vertex positions rather than the shader's output. Displaced vertices can be on screen while the rest-pose box is not. Widening the bounds fixes it; depth precision, index width and cache order do not cause popping at the screen edge."
+    },
+    {
+      "kind": "order",
+      "q": "Put the stages of the GPU rasterisation pipeline in the order a triangle passes through them.",
+      "steps": [
+        "Input assembly: fetch vertices and indices, form primitives",
+        "Vertex stage: transform each vertex to clip space",
+        "Primitive assembly, clipping and back-face culling",
+        "Rasterization: find covered pixels and generate fragments",
+        "Fragment stage: sample textures and compute lighting",
+        "Output merger: depth/stencil test, blend and write"
+      ],
+      "explain": "Vertices are fetched, then shaded to clip space. Only then can triangles be clipped against the frustum and culled by winding, because both need projected positions. The rasteriser turns surviving triangles into fragments, the fragment shader colours them, and the output merger (ROP) depth-tests, blends and writes them."
+    },
+    {
+      "kind": "order",
+      "q": "Order the coordinate spaces a vertex position moves through, from the vertex buffer to a pixel on screen.",
+      "steps": [
+        "Object space, as stored in the vertex buffer",
+        "World space, after the model matrix",
+        "View space, after the view matrix",
+        "Clip space, after the projection matrix",
+        "NDC, after the perspective divide by `w`",
+        "Screen space, after the viewport transform"
+      ],
+      "explain": "The model matrix takes object space to world space, the view matrix (the inverse of the camera's world matrix) to view space, and the projection matrix to clip space, which the vertex shader outputs. The hardware divides by `w` to get NDC and the viewport transform maps NDC to pixels."
+    },
+    {
+      "kind": "order",
+      "q": "An import pipeline runs meshoptimizer on every mesh. In what order should these passes run?",
+      "steps": [
+        "`meshopt_optimizeVertexCache`: reorder triangles for post-transform cache reuse",
+        "`meshopt_optimizeOverdraw`: reorder triangle groups roughly front to back",
+        "`meshopt_optimizeVertexFetch`: renumber vertices in first-use order"
+      ],
+      "explain": "Cache optimisation sets the triangle order; the overdraw pass then reorders clusters, trading a little cache efficiency for better early-Z rejection; vertex fetch runs last because it renumbers vertices to match the final index order, so memory reads are sequential. Running fetch first would be undone by the later reorders."
+    },
+    {
+      "kind": "line",
+      "q": "This fragment shader produces lighting that is too dark in the middle of large triangles. Click the line with the bug.",
+      "lang": "hlsl",
+      "code": "float4 PS(VSOut i) : SV_Target\n{\n    float3 n = i.nrmW;\n    float3 l = normalize(_LightDir);\n    float  ndl = saturate(dot(n, l));\n    float3 albedo = _Albedo.Sample(_Samp, i.uv).rgb * _Tint.rgb;\n    return float4(albedo * (0.1 + ndl), 1.0);\n}",
+      "answer": 2,
+      "explain": "Line 3 uses the interpolated normal as is. Interpolating between unit-length vertex normals gives a shorter vector inside the triangle, so `dot(n, l)` is too small there. Fix: `float3 n = normalize(i.nrmW);`."
+    },
+    {
+      "kind": "line",
+      "q": "Every object drawn with this vertex shader ignores its position and stays at a fixed offset from the camera, following it like a skybox, though rotation and scale are right. Click the line with the bug.",
+      "lang": "hlsl",
+      "code": "VSOut VS(VSIn i)\n{\n    VSOut o;\n    float4 world = mul(_Model, float4(i.pos, 0.0));\n    o.clip = mul(_ViewProj, world);\n    o.nrmW = mul((float3x3)_Model, i.nrm);   // models use uniform scale\n    o.uv   = i.uv;\n    return o;\n}",
+      "answer": 3,
+      "explain": "Line 4 builds the position with `w = 0`, which marks it as a direction, so the translation column of every matrix it passes through is ignored: the model's and the view's. The object is placed as if it and the camera both sat at the origin, so it moves with the camera. A point needs `w = 1`: `mul(_Model, float4(i.pos, 1.0))`. The clip-space `w` then also comes out wrong, breaking perspective."
+    },
+    {
+      "kind": "line",
+      "q": "This procedural terrain never appears: Unity logs an error when the vertices are assigned and the mesh comes out empty. Click the line with the bug.",
+      "lang": "csharp",
+      "code": "var mesh = new Mesh { name = \"Terrain\" };\nint size = 300;                              // 300 x 300 = 90,000 vertices\nvar verts = new Vector3[size * size];\nfor (int z = 0; z < size; z++)\n    for (int x = 0; x < size; x++)\n        verts[z * size + x] = new Vector3(x, heights[x, z], z);\nmesh.indexFormat = IndexFormat.UInt16;\nmesh.vertices = verts;\nmesh.triangles = BuildGridIndices(size);\nmesh.RecalculateNormals();\nmesh.RecalculateBounds();",
+      "answer": 6,
+      "explain": "Line 7 picks 16-bit indices, which address at most 65,535 vertices, but the grid has 90,000. Unity rejects the vertex array with an error, and the triangle assignment after it fails too, leaving an empty mesh. Fix: `mesh.indexFormat = IndexFormat.UInt32;` before assigning the data."
+    },
+    {
+      "q": "What does this log?",
+      "lang": "csharp",
+      "code": "Matrix4x4 m = Matrix4x4.Translate(new Vector3(5, 0, 0));\nVector3 p = m.MultiplyPoint(new Vector3(1, 2, 3));\nVector3 d = m.MultiplyVector(new Vector3(1, 2, 3));\nDebug.Log(p.x + d.x);",
+      "options": [
+        "7",
+        "12",
+        "2",
+        "6"
+      ],
+      "answer": 0,
+      "explain": "`MultiplyPoint` treats the input as a point (`w = 1`), so it picks up the translation: `p.x = 6`. `MultiplyVector` treats it as a direction (`w = 0`) and ignores translation: `d.x = 1`. The sum is 7."
+    },
+    {
+      "q": "How many shader variants does this pass compile, ignoring stripping?",
+      "lang": "hlsl",
+      "code": "#pragma multi_compile _ FOG_ON\n#pragma multi_compile _ NORMALMAP_ON\n#pragma multi_compile _ SHADOWS_SOFT\n#pragma multi_compile QUALITY_LOW QUALITY_MED QUALITY_HIGH",
+      "options": [
+        "9",
+        "16",
+        "24",
+        "48"
+      ],
+      "answer": 2,
+      "explain": "Each `multi_compile` line is an independent keyword group and the variant count is the product of the group sizes: 2 x 2 x 2 x 3 = 24. Adding the group sizes (9) is the common mistake; this multiplication is why keyword counts explode."
     }
   ]
 });

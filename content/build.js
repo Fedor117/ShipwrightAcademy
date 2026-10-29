@@ -1505,6 +1505,89 @@ window.CURRICULUM_SECTIONS.push({
       ],
       "answer": 1,
       "explain": "Asynchronous consumers lag the write by design. A short delay is the eventual-consistency trade-off, not lost or duplicated messages."
+    },
+    {
+      "kind": "order",
+      "q": "A user reports that discounts stack incorrectly. Put the test-first bug-fix steps in order.",
+      "steps": [
+        "Write a test that reproduces the reported discount bug",
+        "Run it and confirm it fails for the expected reason (red)",
+        "Make the smallest code change that makes it pass (green)",
+        "Clean up the code while the whole suite stays green (refactor)"
+      ],
+      "explain": "Red, green, refactor. Seeing the new test fail first proves it actually detects the bug; the simplest passing change fixes it; refactoring comes last, with the tests as a safety net, and the test stays as a regression guard."
+    },
+    {
+      "kind": "order",
+      "q": "Put the path of a change from your editor to the shared remote in order.",
+      "steps": [
+        "Edit files in the working directory",
+        "Stage the change with `git add`",
+        "Record a snapshot with `git commit`",
+        "Publish the commit with `git push`"
+      ],
+      "explain": "Edits live only on disk until staged; `git add` puts them in the staging area, `git commit` turns the staged state into an immutable snapshot in your local repository, and `git push` sends that commit to the remote others pull from."
+    },
+    {
+      "kind": "order",
+      "q": "A public API must rename the field `user_name` to `username` without breaking clients. Put the expand-and-contract steps in order.",
+      "steps": [
+        "Add `username` alongside `user_name`, filling both",
+        "Migrate every consumer to read `username`",
+        "Confirm no caller still reads `user_name`",
+        "Remove `user_name` from the API"
+      ],
+      "explain": "Expand first with an additive change so old and new clients both work, migrate consumers, verify nobody depends on the old form, and only then contract by removing it. Removing or renaming first is a breaking change."
+    },
+    {
+      "kind": "line",
+      "q": "This test passes on some runs and fails on others. Click the line that makes it nondeterministic.",
+      "code": "from datetime import datetime, timedelta\n\ndef test_trial_expires_after_14_days():\n    clock = FakeClock(datetime(2024, 1, 1))\n    account = Account.start_trial(clock)\n    clock.advance(timedelta(days=14))\n    assert account.is_expired(now=datetime.now())",
+      "lang": "python",
+      "answer": 6,
+      "explain": "Line 7 checks expiry against the real clock (`datetime.now()`) instead of the injected fake, so the result depends on when the test runs. Use `now=clock.now()` so the test only sees the controlled time."
+    },
+    {
+      "kind": "line",
+      "q": "This function parses a currency code from an HTTP request. Click the line that breaks its contract.",
+      "code": "type Currency = \"USD\" | \"EUR\" | \"GBP\";\n\nfunction parseCurrency(raw: string): Currency {\n  if (raw === \"USD\" || raw === \"EUR\" || raw === \"GBP\") {\n    return raw;\n  }\n  return raw as Currency;\n}",
+      "lang": "ts",
+      "answer": 6,
+      "explain": "Line 7 casts unchecked input to `Currency`, so a value like \"XYZ\" passes as trusted and the type check means nothing at runtime. A boundary parser must reject bad input: `throw new Error(\"unknown currency: \" + raw)` or return an error value."
+    },
+    {
+      "kind": "line",
+      "q": "This consumer must be idempotent, because the broker may redeliver an event. Click the line with the bug.",
+      "code": "def handle_payment_captured(event, db):\n    with db.transaction():\n        if db.processed_events.exists(event.id):\n            return\n        db.processed_events.add(event.order_id)\n        order = db.orders.get(event.order_id)\n        order.paid_cents += event.amount_cents\n        db.orders.save(order)",
+      "lang": "python",
+      "answer": 4,
+      "explain": "Line 5 records `event.order_id`, but line 3 checks `event.id`, so the check never matches and a redelivered event credits the order twice. Record `event.id`."
+    },
+    {
+      "q": "What does this print?",
+      "code": "class Rectangle:\n    def __init__(self, w, h):\n        self.w, self.h = w, h\n    def set_width(self, w):\n        self.w = w\n    def area(self):\n        return self.w * self.h\n\nclass Square(Rectangle):\n    def __init__(self, side):\n        super().__init__(side, side)\n    def set_width(self, w):\n        self.w = self.h = w\n\ndef stretch(r):\n    r.set_width(10)\n    return r.area()\n\nprint(stretch(Rectangle(2, 5)), stretch(Square(5)))",
+      "lang": "python",
+      "options": [
+        "50 50",
+        "20 100",
+        "50 100",
+        "50 25"
+      ],
+      "answer": 2,
+      "explain": "The rectangle becomes 10 x 5 = 50, but the square also changes its height, giving 10 x 10 = 100. A caller of `stretch` expecting the height to stay fixed is surprised: a Liskov Substitution violation."
+    },
+    {
+      "q": "What does this print?",
+      "code": "def parse_qty(raw):\n    try:\n        return int(raw)\n    except ValueError:\n        return 0\n\norders = [\"3\", \"two\", \"5\"]\nprint(sum(parse_qty(x) for x in orders))",
+      "lang": "python",
+      "options": [
+        "8",
+        "10",
+        "0",
+        "A ValueError traceback"
+      ],
+      "answer": 0,
+      "explain": "`int(\"two\")` raises ValueError, which is swallowed and turned into 0, so the sum is 3 + 0 + 5 = 8. The bad order vanishes silently instead of failing loudly: the error-swallowing pattern the lesson warns about."
     }
   ]
 });

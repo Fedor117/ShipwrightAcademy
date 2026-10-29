@@ -3384,6 +3384,94 @@ window.CURRICULUM_SECTIONS.push({
       ],
       "answer": 0,
       "explain": "Six slices of 2 ms take 6 frames, about 100 ms, so a target may have moved. Stamp requests with a version and check on delivery. Slicing spreads the same 12 ms and does not reduce it. The result is not available the same frame. Slices run wherever the job runs, so no GPU move is needed."
+    },
+    {
+      "kind": "order",
+      "q": "Put one frame of a fixed-timestep game loop with interpolation in order.",
+      "steps": [
+        "Measure the time since the last frame and clamp it, for example to 0.25 s",
+        "Add the clamped frame time to the accumulator",
+        "While the accumulator holds at least one step: save the previous state, simulate one fixed step, subtract the step",
+        "Compute `alpha = accumulator / Step` from the leftover time",
+        "Render the state interpolated between previous and current by `alpha`, then present"
+      ],
+      "explain": "The clamp must come before the accumulator, or one long hitch queues hundreds of steps (the spiral of death). Fixed steps drain the accumulator next, and only what is left over is known, so `alpha` comes after the step loop. Rendering last blends the two newest simulated states, so motion stays smooth when render and simulation rates differ."
+    },
+    {
+      "kind": "order",
+      "q": "A client with prediction presses a button that becomes input #57. Put the client-side prediction and server reconciliation steps in order.",
+      "steps": [
+        "The client applies input #57 locally, stores it in `pending` and sends it to the server",
+        "The server processes #57 and sends back its state with `lastProcessed = 57`",
+        "The client sets its state to the server state and drops pending inputs up to #57",
+        "The client replays the remaining pending inputs (#58, #59, #60) on top of the server state",
+        "The client smooths a small difference from the old prediction, or snaps if it is large"
+      ],
+      "explain": "Prediction applies the input at once so the game feels instant, and keeps it until the server acknowledges it. On a server update the client rewinds to authority and drops acknowledged inputs, then replays the newer, unacknowledged ones to get back to the present. Only then is the corrected position known, so the smooth-or-snap decision comes last."
+    },
+    {
+      "kind": "order",
+      "q": "Four lockstep clients disagree on scores after two minutes. Put the desync investigation from the lessons in order.",
+      "steps": [
+        "Compare per-tick state checksums across clients to confirm they diverge",
+        "Bisect the recorded replays to find the first tick where the hashes differ",
+        "At that tick, compare per-system hashes to find the system that diverged",
+        "Diff that system's entities to find the decision that differs (unit 213's target)",
+        "Remove the machine-local input, for example iterate by entity id instead of by pointer"
+      ],
+      "explain": "Each step narrows the previous one. Checksums show that and roughly when the clients diverge. Once hashes differ they stay different, so bisection finds the first bad tick (13 probes for 7,200 ticks). Per-system hashes at that tick name the system, an entity diff names the decision, and only then is the root cause (pointer-ordered iteration, camera-based update rates) visible to fix."
+    },
+    {
+      "kind": "line",
+      "q": "This game loop is meant to keep the simulation at real-time speed even when rendering drops to 30 fps. Click the line with the bug.",
+      "code": "const double Step = 1.0 / 60.0;\ndouble accumulator = 0, previous = Now();\n\nwhile (running)\n{\n    double current = Now();\n    accumulator += Math.Min(current - previous, 0.25);\n    previous = current;\n\n    if (accumulator >= Step)\n    {\n        Simulate(Step);\n        accumulator -= Step;\n    }\n    Render(Lerp(prevState, currState, accumulator / Step));\n}",
+      "lang": "csharp",
+      "answer": 9,
+      "explain": "Line 10 runs at most one fixed step per frame. At 30 fps each frame adds two steps of time but drains one, so the game runs at half speed and the accumulator grows without bound. It must be `while (accumulator >= Step)`, so the simulation catches up with as many steps as real time demands."
+    },
+    {
+      "kind": "line",
+      "q": "Objects at the edge of the screen pop out of view while part of them is still visible. Plane normals point into the frustum. Click the line with the bug.",
+      "code": "bool InsideFrustum(const Sphere& s, const Plane planes[6]) {\n    for (int i = 0; i < 6; ++i) {\n        float dist = Dot(planes[i].normal, s.center) + planes[i].d;\n        if (dist < s.radius) return false;\n    }\n    return true;\n}",
+      "lang": "cpp",
+      "answer": 3,
+      "explain": "Line 4 rejects a sphere whenever its centre is closer than its radius to a plane, which includes spheres that still cross into the frustum. A sphere is fully outside only when the centre is more than one radius behind the plane: `if (dist < -s.radius) return false;`. Culling must be conservative and keep anything that intersects."
+    },
+    {
+      "kind": "line",
+      "q": "With this pool, two bullets sometimes share one object and move together. Click the line with the bug.",
+      "code": "public sealed class Pool<T> where T : class\n{\n    readonly Stack<T> free = new Stack<T>();\n    readonly Func<T> create;\n    readonly Action<T> onGet, onRelease;\n\n    public T Get()\n    {\n        T t = free.Count > 0 ? free.Peek() : create();\n        onGet(t);\n        return t;\n    }\n    public void Release(T t) { onRelease(t); free.Push(t); }\n}",
+      "lang": "csharp",
+      "answer": 8,
+      "explain": "Line 9 uses `Peek`, which returns the top object but leaves it on the free stack, so the next `Get` hands out the same instance again. It must be `free.Pop()`, which removes the object so each instance has exactly one owner until it is released."
+    },
+    {
+      "kind": "mc",
+      "q": "A panel slides in with this easing function. What does it print?",
+      "code": "static float EaseOutCubic(float u) { u = 1f - u; return 1f - u * u * u; }\n\nDebug.Log(EaseOutCubic(0.5f).ToString(\"F3\"));",
+      "lang": "csharp",
+      "options": [
+        "0.125",
+        "0.500",
+        "0.875",
+        "0.750"
+      ],
+      "answer": 2,
+      "explain": "u becomes 1 - 0.5 = 0.5, and 1 - 0.5^3 = 1 - 0.125 = 0.875. Halfway through the duration an ease-out has already covered 87.5 percent of the distance, which is why it reads as a fast start and a gentle stop. 0.125 is the ease-in value (u^3), and 0.5 would be linear."
+    },
+    {
+      "kind": "mc",
+      "q": "A camera follows a target 8 m away using the half-life form of exponential smoothing at 60 fps. The target does not move. What does it print?",
+      "code": "static float DecayK(float halfLife, float dt) => 1f - Mathf.Pow(0.5f, dt / halfLife);\n\nfloat distance = 8f, dt = 1f / 60f;\nfor (int frame = 0; frame < 30; frame++)   // 0.5 s\n    distance -= distance * DecayK(0.25f, dt);\nDebug.Log(distance.ToString(\"F1\"));",
+      "lang": "csharp",
+      "options": [
+        "2.0",
+        "4.0",
+        "0.0",
+        "1.0"
+      ],
+      "answer": 0,
+      "explain": "Each frame keeps 0.5^(dt / halfLife) of the distance, so after 30 frames 0.5^(0.5 / 0.25) = 0.25 remains: 8 m x 0.25 = 2.0 m. The distance halves every 0.25 s whatever the frame rate, which is the point of the exponential form. 4.0 is one half-life, and the decay never reaches 0."
     }
   ]
 });

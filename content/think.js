@@ -1342,6 +1342,90 @@ window.CURRICULUM_SECTIONS.push({
       ],
       "answer": 1,
       "explain": "Bisect depends on a trustworthy good/bad signal and does not average anything. A flaky verdict leads it to the wrong commit, so stabilise or repeat the repro first."
+    },
+    {
+      "kind": "order",
+      "q": "Put the stages of the duplicate-file finder in data-flow order.",
+      "steps": [
+        "Walk the directory tree to list every file path",
+        "Group the paths by file size",
+        "Hash only the files whose size is shared with another file",
+        "Group the hashed files by content hash and keep groups of 2+"
+      ],
+      "explain": "Each stage consumes the previous one's output. Grouping by size first is the cheap filter: a file with a unique size cannot have a duplicate, so it is never read or hashed. Only the final hash grouping proves the bytes are identical."
+    },
+    {
+      "kind": "order",
+      "q": "Put the steps of the scientific debugging loop in order.",
+      "steps": [
+        "**Observe**: collect facts such as the exact error, inputs and environment",
+        "**Hypothesize**: propose a specific, falsifiable explanation",
+        "**Predict**: work out what else must be true if the hypothesis holds",
+        "**Experiment**: run the cheapest test that could prove it wrong",
+        "**Conclude**: keep or discard the hypothesis, then repeat"
+      ],
+      "explain": "Facts come before explanations, a hypothesis must exist before you can derive a prediction from it, and the experiment checks that prediction. The conclusion then feeds the next round of the loop."
+    },
+    {
+      "kind": "order",
+      "q": "Order the steps of the back-of-the-envelope estimate for the feed service (20M daily users, 10 opens a day).",
+      "steps": [
+        "Requests per day: 20M x 10 = 200M",
+        "Average load: 200M / ~100k seconds per day = ~2,000/s",
+        "Peak load: average x 5 = ~10,000/s",
+        "Capacity: ~10,000/s / ~1,000/s per server = ~10 servers, plus headroom"
+      ],
+      "explain": "Each number is derived from the previous one: daily volume gives average QPS, the peak factor turns average into peak, and you size servers for the peak, not the average."
+    },
+    {
+      "kind": "line",
+      "q": "This binary search sometimes never returns. Click the line with the bug.",
+      "code": "def search(items, target):\n    lo, hi = 0, len(items) - 1\n    while lo <= hi:\n        mid = (lo + hi) // 2\n        if items[mid] == target:\n            return mid\n        if items[mid] < target:\n            lo = mid\n        else:\n            hi = mid - 1\n    return -1",
+      "lang": "python",
+      "answer": 7,
+      "explain": "Line 8, `lo = mid`, keeps the invariant true but can stop the range from shrinking: with `lo == hi` and `items[mid] < target`, the loop repeats forever. Since `items[mid]` is already ruled out, the fix is `lo = mid + 1`."
+    },
+    {
+      "kind": "line",
+      "q": "This duplicate finder reports files with different contents as duplicates. Click the line with the bug.",
+      "code": "def find_duplicates(root):\n    by_size = group_by(walk_files(root), key=file_size)\n    candidates = [g for g in by_size.values() if len(g) > 1]\n    result = []\n    for group in candidates:\n        by_hash = group_by(group, key=file_size)\n        result += [g for g in by_hash.values() if len(g) > 1]\n    return result",
+      "lang": "python",
+      "answer": 5,
+      "explain": "Line 6 groups each candidate group by `file_size` again, which changes nothing, so any same-size files are reported as duplicates. It must use `key=content_hash` so only files with identical bytes end up together."
+    },
+    {
+      "kind": "line",
+      "q": "A test passes a `FakeClock` set to last year, yet `isExpired` still returns true. Click the line with the bug.",
+      "code": "interface Clock { now(): Date }\n\nclass SystemClock implements Clock { now() { return new Date(); } }\nclass FakeClock implements Clock {\n  constructor(private t: Date) {}\n  now() { return this.t; }\n}\n\nfunction isExpired(token: { expiresAt: Date }, clock: Clock) {\n  return new Date() > token.expiresAt;\n}",
+      "lang": "ts",
+      "answer": 9,
+      "explain": "Line 10 reads the real time with `new Date()` and ignores the `clock` parameter, so the logic depends on the implementation rather than the `Clock` interface and tests cannot control time. The fix is `return clock.now() > token.expiresAt;`. `new Date()` on line 3 is correct: that is the real clock's implementation."
+    },
+    {
+      "q": "What does this print?",
+      "code": "items = [1, 3, 5, 7, 9, 11]\nlo, hi = 0, len(items) - 1\nmids = []\nwhile lo <= hi:\n    mid = (lo + hi) // 2\n    mids.append(mid)\n    if items[mid] == 7:\n        break\n    if items[mid] < 7:\n        lo = mid + 1\n    else:\n        hi = mid - 1\nprint(mids)",
+      "lang": "python",
+      "options": [
+        "`[2, 3]`",
+        "`[2, 4, 3]`",
+        "`[3]`",
+        "`[2, 5, 3]`"
+      ],
+      "answer": 1,
+      "explain": "First `mid = (0 + 5) // 2 = 2`; `items[2]` is 5 < 7, so `lo = 3`. Then `mid = (3 + 5) // 2 = 4`; `items[4]` is 9 > 7, so `hi = 3`. Then `mid = 3`, `items[3]` is 7 and the loop breaks: `[2, 4, 3]`."
+    },
+    {
+      "q": "What does this print?",
+      "code": "files = {\"a\": \"hello\", \"b\": \"world\", \"c\": \"hello\", \"d\": \"hi\"}\n\ndef group_by(names, key):\n    groups = {}\n    for n in names:\n        groups.setdefault(key(n), []).append(n)\n    return groups\n\nby_size = group_by(files, key=lambda n: len(files[n]))\ncandidates = [g for g in by_size.values() if len(g) > 1]\nhashed = sum(len(g) for g in candidates)\ndupes = [g for g in group_by(candidates[0], key=lambda n: files[n]).values() if len(g) > 1]\nprint(hashed, dupes)",
+      "lang": "python",
+      "options": [
+        "`4 [['a', 'c']]`",
+        "`3 [['a', 'b', 'c']]`",
+        "`3 [['a', 'c']]`",
+        "`4 [['a', 'c'], ['d']]`"
+      ],
+      "answer": 2,
+      "explain": "By size, `a`, `b` and `c` (5 characters) form one group and `d` (2) is alone, so only 3 files are compared by content and `d` is never read. Grouping those 3 by content separates `b`, leaving one duplicate group: `3 [['a', 'c']]`."
     }
   ]
 });

@@ -3797,6 +3797,95 @@ window.CURRICULUM_SECTIONS.push({
       ],
       "answer": 0,
       "explain": "Icons that represent physical or media direction, like play, are not mirrored. Navigation arrows, tab order and progress fill follow the reading direction and do flip in a right-to-left layout."
+    },
+    {
+      "kind": "order",
+      "q": "A component sits on an active GameObject in a scene that loads, plays a few frames, and is then destroyed. Put its callbacks in the order they first run.",
+      "steps": [
+        "`Awake`",
+        "`OnEnable`",
+        "`Start`",
+        "`Update`",
+        "`OnDisable`",
+        "`OnDestroy`"
+      ],
+      "explain": "Awake runs on load, OnEnable right after it, and Start once before the first Update, after every Awake and OnEnable in the scene. On destruction OnDisable runs first, then OnDestroy."
+    },
+    {
+      "kind": "order",
+      "q": "Put the stages of a player build in the order Unity runs them.",
+      "steps": [
+        "Compile scripts with the target platform's define symbols",
+        "Collect build scenes, their references and `Resources` content",
+        "Convert assets to platform formats and compile shader variants",
+        "Serialize the converted assets into content files",
+        "Strip managed assemblies, then convert them with IL2CPP",
+        "Package the player or hand off to Xcode or Gradle"
+      ],
+      "explain": "Scripts compile first, then the content set is collected and converted (texture compression, shader variants, audio) and serialized. Managed assemblies are stripped before IL2CPP converts them, and the result is packaged or handed to the native toolchain. Shader variants and IL2CPP are usually the slow steps."
+    },
+    {
+      "kind": "order",
+      "q": "Within one frame where physics steps once, order these from first to last.",
+      "steps": [
+        "`FixedUpdate`",
+        "Physics simulation and collision callbacks",
+        "`Update`",
+        "Animator update for normally updated animators",
+        "`LateUpdate`",
+        "Rendering and `WaitForEndOfFrame` coroutines"
+      ],
+      "explain": "FixedUpdate and the physics step (with trigger and collision callbacks) run before Update; the Animator evaluates between Update and LateUpdate, which is why follow cameras go in LateUpdate; rendering and end-of-frame coroutines come last."
+    },
+    {
+      "kind": "line",
+      "q": "The turret's target can be destroyed by another system. Click the line that throws or misbehaves once that happens.",
+      "code": "public class Turret : MonoBehaviour\n{\n    [SerializeField] Enemy target;\n    [SerializeField] int damage = 10;\n\n    void Update()\n    {\n        target?.TakeDamage(damage);\n    }\n}",
+      "lang": "csharp",
+      "answer": 7,
+      "explain": "Line 8: `?.` checks the C# reference, not Unity's overloaded `==`, so after Destroy the fake-null wrapper passes the check and `TakeDamage` touches a dead object. Write `if (target) target.TakeDamage(damage);`."
+    },
+    {
+      "kind": "line",
+      "q": "This flash effect throws `MissingReferenceException` when the object is destroyed mid-flash. Click the buggy line.",
+      "code": "async Awaitable FlashAsync()\n{\n    var token = destroyCancellationToken;\n    try\n    {\n        for (int i = 0; i < 6; i++)\n        {\n            sprite.enabled = !sprite.enabled;\n            await Awaitable.WaitForSecondsAsync(0.1f);\n        }\n    }\n    catch (System.OperationCanceledException) { }\n}",
+      "lang": "csharp",
+      "answer": 8,
+      "explain": "Line 9: the token is fetched but never passed, so the await resumes after the object is destroyed and line 8 touches a dead SpriteRenderer. Use `WaitForSecondsAsync(0.1f, token)` so destruction cancels the wait and the catch handles it."
+    },
+    {
+      "kind": "line",
+      "q": "Players with a German system locale lose their volume setting every launch. Click the buggy line.",
+      "code": "using System.Globalization;\nusing UnityEngine;\n\npublic static class AudioSettings\n{\n    public static void Save(float volume) =>\n        PlayerPrefs.SetString(\"volume\", volume.ToString(CultureInfo.InvariantCulture));\n\n    public static float Load() =>\n        float.Parse(PlayerPrefs.GetString(\"volume\", \"0.8\"));\n}",
+      "lang": "csharp",
+      "answer": 9,
+      "explain": "Line 10: the value is written with the invariant culture (`0.8`) but parsed with the current culture, which in German expects `0,8` and misreads it. Parse with `float.Parse(text, CultureInfo.InvariantCulture)`."
+    },
+    {
+      "q": "What does this log, in the same frame?",
+      "code": "var go = new GameObject(\"Temp\");\nDestroy(go);\nDebug.Log(go == null);\nDebug.Log(ReferenceEquals(go, null));",
+      "lang": "csharp",
+      "options": [
+        "`False`, then `False`",
+        "`True`, then `False`",
+        "`True`, then `True`",
+        "`False`, then `True`"
+      ],
+      "answer": 0,
+      "explain": "`Destroy` is deferred to the end of the frame, so the native object still exists and Unity's `==` reports it as alive. `ReferenceEquals` checks the C# wrapper, which is never null here; after the frame ends, the first line would log `True`."
+    },
+    {
+      "q": "Over the next few frames, what does this component log?",
+      "code": "IEnumerator Count()\n{\n    for (int i = 1; i <= 3; i++)\n    {\n        Debug.Log(i);\n        yield return null;\n    }\n}\n\nvoid Start()\n{\n    StartCoroutine(Count());\n    enabled = false;\n}",
+      "lang": "csharp",
+      "options": [
+        "`1`, then nothing more",
+        "`1`, `2` and `3`",
+        "Nothing is ever logged",
+        "`1` and `2` only"
+      ],
+      "answer": 1,
+      "explain": "`StartCoroutine` runs the body up to the first yield immediately, logging `1`. Disabling the component does not stop its coroutines; only deactivating or destroying the GameObject does, so `2` and `3` follow on the next frames."
     }
   ]
 });

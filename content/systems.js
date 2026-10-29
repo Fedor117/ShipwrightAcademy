@@ -1490,6 +1490,91 @@ window.CURRICULUM_SECTIONS.push({
       ],
       "answer": 2,
       "explain": "5xx responses like 503 signal a server-side, often transient problem, and Retry-After says when to try again. 4xx errors mean the request itself must change; resending it unchanged will fail the same way."
+    },
+    {
+      "kind": "order",
+      "q": "Put the steps of a first visit to `https://shop.example.com/cart` in order (nothing is cached yet).",
+      "steps": [
+        "DNS resolves `shop.example.com` to an IP address",
+        "TCP handshake to that IP on port 443",
+        "TLS handshake: the browser verifies the certificate and agrees keys",
+        "Browser sends `GET /cart` over the encrypted connection",
+        "Browser parses the HTML and fetches its CSS, JS and images"
+      ],
+      "explain": "You need an IP before you can open a connection, a TCP connection before TLS can run over it, and an encrypted session before the HTTP request is sent. Subresources are only discovered once the HTML arrives."
+    },
+    {
+      "kind": "order",
+      "q": "Kubernetes stops a pod running a well-behaved HTTP server. Put the shutdown in order.",
+      "steps": [
+        "Kubernetes sends `SIGTERM` to the process",
+        "The handler stops accepting new requests",
+        "In-flight requests finish (drain)",
+        "Buffers are flushed",
+        "The process exits with status 0 before the grace period ends"
+      ],
+      "explain": "`SIGTERM` starts a graceful shutdown. The server closes the door to new work first, then finishes what it already accepted, flushes, and exits. If it is still running when the grace period ends, it gets `SIGKILL`, which cannot be caught."
+    },
+    {
+      "kind": "order",
+      "q": "A consumer reads from an at-least-once queue and must charge each order effectively once. Order its steps.",
+      "steps": [
+        "Receive the message",
+        "Look up the message id in a processed-ids table and skip it if already there",
+        "Apply the effect and record the message id in one transaction",
+        "Acknowledge the message to the queue"
+      ],
+      "explain": "Acknowledge last: a crash before the ack means the message is redelivered, and the processed-ids check turns that duplicate into a no-op. Recording the id in the same transaction as the effect means you can never have one without the other."
+    },
+    {
+      "kind": "line",
+      "q": "Click the line that makes this query unsafe.",
+      "lang": "python",
+      "code": "def find_orders(db, email, status):\n    status = status.lower()\n    if status not in ('open', 'shipped', 'cancelled'):\n        raise ValueError('bad status')\n    sql = ('SELECT o.id, o.total_cents FROM orders o '\n           'JOIN customers c ON c.id = o.customer_id '\n           \"WHERE c.email = '\" + email + \"' AND o.status = %s\")\n    rows = db.execute(sql, (status,))\n    return [dict(r) for r in rows]",
+      "answer": 6,
+      "explain": "Line 7 concatenates the user-supplied `email` into the SQL text, so an input like `' OR '1'='1` changes the query (SQL injection). `status` is already allow-listed and parameterized. Fix: use `WHERE c.email = %s AND o.status = %s` and pass `(email, status)`."
+    },
+    {
+      "kind": "line",
+      "q": "This retry loop can charge a customer twice. Click the buggy line.",
+      "lang": "python",
+      "code": "def charge(order_id, amount):\n    for attempt in range(5):\n        key = str(uuid.uuid4())\n        try:\n            return payments.post('/charges', json={'amount': amount},\n                                 headers={'Idempotency-Key': key}, timeout=3)\n        except (Timeout, ConnectionError, Http5xx):\n            sleep(min(30, 0.2 * 2 ** attempt) * random.uniform(0.5, 1.5))\n    raise ChargeUnknown(order_id)",
+      "answer": 2,
+      "explain": "Line 3 makes a new idempotency key on every attempt. If the first request succeeded but timed out on the way back, the retry carries a different key and the server charges again. Fix: derive the key once, before the loop, from the business operation, e.g. `key = 'charge-' + order_id`."
+    },
+    {
+      "kind": "line",
+      "q": "This server never shuts down gracefully. Click the buggy line.",
+      "lang": "python",
+      "code": "import signal, sys\n\ndef shutdown(signum, frame):\n    server.stop_accepting()\n    server.drain(timeout=20)\n    sys.exit(0)\n\nsignal.signal(signal.SIGKILL, shutdown)\nserver.serve_forever()",
+      "answer": 7,
+      "explain": "Line 8 registers the handler for `SIGKILL`, which cannot be caught or ignored (Python raises an error here). Process managers send `SIGTERM` first, so register for that: `signal.signal(signal.SIGTERM, shutdown)`."
+    },
+    {
+      "q": "What does this print?",
+      "lang": "python",
+      "code": "import os, subprocess\n\nos.environ['MODE'] = 'debug'\nsubprocess.run(['sh', '-c', 'export MODE=prod; echo $MODE'])\nprint(os.environ['MODE'])",
+      "options": [
+        "`debug` then `debug`",
+        "`prod` then `prod`",
+        "`prod` then `debug`",
+        "`debug` then `prod`"
+      ],
+      "answer": 2,
+      "explain": "The child inherits `MODE=debug`, then its own `export` changes its copy, so it prints `prod`. Changes in a child never propagate back to the parent, so Python still sees `debug`."
+    },
+    {
+      "q": "What does this print?",
+      "lang": "python",
+      "code": "cache = {}\ndb = {'A-100': 500}\n\ndef get_price(sku):\n    if sku not in cache:\n        cache[sku] = db[sku]\n    return cache[sku]\n\nprint(get_price('A-100'))\ndb['A-100'] = 450\nprint(get_price('A-100'))",
+      "options": [
+        "`500` then `450`",
+        "`500` then `500`",
+        "`450` then `450`",
+        "A `KeyError` on the second call"
+      ],
+      "answer": 1,
+      "explain": "Cache-aside only reads the database on a miss. The first call fills the cache with `500`; the update writes only to `db` and nothing deletes the key or expires it, so the second call returns the stale `500`."
     }
   ]
 });

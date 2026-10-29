@@ -895,8 +895,8 @@
     const n = parseInt(e.key, 10);
     const choices = q.kind === 'mc' ? q.options.length : q.kind === 'line' ? codeLines(q).length : 0;
     if (n >= 1 && n <= choices && !session.checked) { session.picked = q.kind === 'mc' ? q.order[n - 1] : n - 1; renderQuiz(); }
-    else if (e.key === 'Enter' && !(e.target.closest && e.target.closest('.mv'))) {
-      e.preventDefault();
+    else if (e.key === 'Enter') {
+      e.preventDefault(); // also stops Enter on a focused step arrow from moving it again
       if (!session.checked && e.target.matches && e.target.matches('button.cl')) session.picked = +e.target.dataset.o;
       session.checked ? advance() : check();
     }
