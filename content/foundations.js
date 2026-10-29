@@ -1471,6 +1471,40 @@ window.CURRICULUM_SECTIONS.push({
       ],
       "answer": 0,
       "explain": "The work is CPU-bound, and in the standard build the GIL lets only one thread execute Python bytecode at a time. A process pool (or native code that releases the GIL, or the free-threaded build) gives real parallelism. More threads add contention, and async only helps waiting-heavy work."
+    },
+    {
+      "q": "What does this program print?",
+      "code": "a = [1, 2, 3]\nb = a\nb.append(4)\nprint(len(a))",
+      "lang": "python",
+      "options": [
+        "3",
+        "4",
+        "1",
+        "It raises a NameError"
+      ],
+      "answer": 1,
+      "explain": "`b = a` binds a second name to the same list object; it does not copy it. `append` mutates that one list, so `a` sees four items. Use `a.copy()` or `list(a)` when you need an independent list."
+    },
+    {
+      "kind": "order",
+      "q": "Order these growth rates from slowest-growing to fastest-growing as n gets large.",
+      "steps": [
+        "`O(1)`: hash table lookup",
+        "`O(log n)`: binary search",
+        "`O(n)`: linear scan",
+        "`O(n log n)`: comparison sort",
+        "`O(n^2)`: comparing every pair",
+        "`O(2^n)`: trying every subset"
+      ],
+      "explain": "Constant beats logarithmic, which beats linear. `n log n` sits just above linear, quadratic grows far faster, and exponential outgrows every polynomial. At n = 1,000, log n is about 10, n^2 is a million and 2^n has over 300 digits."
+    },
+    {
+      "kind": "line",
+      "q": "This binary search returns -1 for some targets that are in the sorted list, for example `search([5], 5)`. Click the line with the bug.",
+      "code": "def search(xs, target):\n    lo, hi = 0, len(xs) - 1\n    while lo < hi:\n        mid = (lo + hi) // 2\n        if xs[mid] == target:\n            return mid\n        if xs[mid] < target:\n            lo = mid + 1\n        else:\n            hi = mid - 1\n    return -1",
+      "lang": "python",
+      "answer": 2,
+      "explain": "`hi` is inclusive (`len(xs) - 1`), so when `lo == hi` one candidate is still left to check. `while lo < hi` stops before checking it. With inclusive bounds the loop must be `while lo <= hi`."
     }
   ]
 });

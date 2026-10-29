@@ -1,10 +1,35 @@
 import Foundation
 
+/// A quiz or exam question. `kind` defaults to multiple choice; see README "Questions".
 struct Question: Codable, Hashable {
+    enum Kind: String, Codable { case mc, order, line }
+
+    let kind: Kind
     let q: String
+    /// mc: the choices.
     let options: [String]
+    /// mc: index of the correct option. line: 0-based index of the buggy line.
     let answer: Int
     let explain: String
+    /// mc (optional, "predict the output") and line: a snippet shown with the question.
+    let code: String?
+    let lang: String?
+    /// order: the steps in the correct order.
+    let steps: [String]
+
+    var lines: [String] { (code ?? "").components(separatedBy: "\n") }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        kind = try c.decodeIfPresent(Kind.self, forKey: .kind) ?? .mc
+        q = try c.decode(String.self, forKey: .q)
+        options = try c.decodeIfPresent([String].self, forKey: .options) ?? []
+        answer = try c.decodeIfPresent(Int.self, forKey: .answer) ?? 0
+        explain = try c.decode(String.self, forKey: .explain)
+        code = try c.decodeIfPresent(String.self, forKey: .code)
+        lang = try c.decodeIfPresent(String.self, forKey: .lang)
+        steps = try c.decodeIfPresent([String].self, forKey: .steps) ?? []
+    }
 }
 
 struct LessonBlock: Codable, Hashable {

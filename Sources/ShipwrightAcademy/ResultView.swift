@@ -141,11 +141,28 @@ struct ReviewRow: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(topicTitle ?? "Question \(number)").font(.caption).foregroundStyle(.secondary)
                 Text(inline(q.q)).font(.body.weight(.semibold))
-                if answer.correct {
-                    Text("Your answer: \(letter(q.answer)). \(inline(q.options[q.answer]))").foregroundStyle(.secondary)
-                } else {
-                    Text("Your answer: \(letter(answer.chosen)). \(inline(q.options[answer.chosen]))").foregroundStyle(.secondary)
-                    Text("Correct: \(letter(q.answer)). \(inline(q.options[q.answer]))").bold()
+                if q.code != nil {
+                    Text(q.code ?? "").font(.system(size: 12.5, design: .monospaced)).foregroundStyle(.secondary)
+                }
+                switch q.kind {
+                case .mc:
+                    let chosen = answer.chosen ?? q.answer
+                    if answer.correct {
+                        Text("Your answer: \(letter(q.answer)). \(inline(q.options[q.answer]))").foregroundStyle(.secondary)
+                    } else {
+                        Text("Your answer: \(letter(chosen)). \(inline(q.options[chosen]))").foregroundStyle(.secondary)
+                        Text("Correct: \(letter(q.answer)). \(inline(q.options[q.answer]))").bold()
+                    }
+                case .line:
+                    let lines = q.lines
+                    let line = { (i: Int) in "line \(i + 1): `\(lines[i].trimmingCharacters(in: .whitespaces))`" }
+                    let chosen = answer.chosen ?? q.answer
+                    Text(inline("Your answer: " + line(chosen))).foregroundStyle(.secondary)
+                    if !answer.correct { Text(inline("Correct: " + line(q.answer))).bold() }
+                case .order:
+                    let list = { (order: [Int]) in order.enumerated().map { "\($0 + 1). \(q.steps[$1])" }.joined(separator: "  ") }
+                    Text(inline("Your order: " + list(answer.arranged))).foregroundStyle(.secondary)
+                    if !answer.correct { Text(inline("Correct: " + list(Array(q.steps.indices)))).bold() }
                 }
                 Text(inline(q.explain)).font(.callout).foregroundStyle(.secondary)
             }

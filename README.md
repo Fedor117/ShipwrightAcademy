@@ -47,6 +47,24 @@ Lesson blocks are `p`, `h`, `list`, `code`, `callout` (`tip`, `warn` or `agent`)
 
 Each script's header comment documents its arguments.
 
+### Questions
+
+Topic quizzes and section exams share one question schema. Every question has `q` and `explain`. The optional `kind` picks the type and defaults to `"mc"`. Kinds can be mixed freely, and an exam shuffles them together.
+
+| Kind | Fields | The learner |
+| --- | --- | --- |
+| `mc` (default) | `options` (2-5), `answer` (correct option index), optional `code` + `lang` | Picks one option. With `code`, the snippet is shown above the options, for "predict the output" questions. |
+| `order` | `steps` (3-6, distinct, in the correct order) | Gets the steps shuffled and puts them in order with up/down buttons. It counts as correct only if the whole order matches. |
+| `line` | `code` (at least 3 lines), optional `lang`, `answer` (0-based index of the buggy line) | Clicks the line with the bug ("spot the bug"). Lines are shown numbered from 1. |
+
+```js
+{ q: 'What does this print?', code: 'a = [1]\nb = a\nb.append(2)\nprint(len(a))', lang: 'python', options: ['1', '2'], answer: 1, explain: '...' }
+{ kind: 'order', q: 'Order these from slowest- to fastest-growing.', steps: ['`O(1)`', '`O(log n)`', '`O(n)`'], explain: '...' }
+{ kind: 'line', q: 'Click the line with the bug.', code: 'def f(xs):\n    for i in range(len(xs) + 1):\n        print(xs[i])', lang: 'python', answer: 1, explain: '...' }
+```
+
+`validate-content.js` checks the fields of each kind and rejects fields a kind does not use. The answer-balance and giveaway checks apply only to `mc` questions. `steps` and `options` support inline `code` and `**bold**`. `code` is shown verbatim.
+
 ### Adding a section
 
 Add its id in **all** of these places: `ORDER` in `app.js` and in `scripts/build-curriculum.js`, a `<script>` tag in `index.html`, and an SF Symbol in `Curriculum.swift`. `check-rules.js` catches the first three if they disagree.
