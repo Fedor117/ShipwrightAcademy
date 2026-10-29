@@ -55,7 +55,7 @@ struct HomeView: View {
                 }
                 let deck = store.mistakeDeck.count
                 if deck > 0 {
-                    Button("Review \(deck) \(deck == 1 ? "mistake" : "mistakes")") { model.startMistakes() }
+                    Button("Review \(min(deck, Rules.mistakeSession)) \(deck == 1 ? "mistake" : "mistakes")") { model.startMistakes() }
                         .buttonStyle(.glass)
                         .controlSize(.extraLarge)
                 }
