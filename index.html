@@ -88,6 +88,12 @@ h1, h2, h3 { font-family: var(--f-display); letter-spacing: -0.01em; line-height
 .meter > i { display: block; height: 100%; background: var(--xp); border-radius: inherit; transition: width .6s ease; }
 .icon-btn { background: none; border: 1px solid var(--rule); border-radius: 8px; padding: 6px 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink-2); }
 .icon-btn:hover { border-color: var(--ink-3); color: var(--ink); }
+.search { flex: 1 1 180px; max-width: 300px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--rule); border-radius: 8px; padding: 0 8px 0 10px; color: var(--ink-3); background: var(--paper); }
+.search:focus-within { border-color: var(--accent); }
+.search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: inherit; font-size: 14px; color: var(--ink); padding: 7px 0; }
+.search input::-webkit-search-cancel-button { display: none; }
+.search kbd { font: 500 11px/1 var(--f-mono); border: 1px solid var(--rule); border-radius: 4px; padding: 3px 5px; }
+.search:focus-within kbd { display: none; }
 
 /* Page */
 main { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 80px; }
@@ -256,7 +262,27 @@ main { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: m
 .empty { padding: 40px 20px; text-align: center; color: var(--ink-2); background: var(--sheet); border: 1px dashed var(--rule); border-radius: 14px; }
 .sync { font-size: 12px; color: var(--ink-3); }
 
+/* Search results */
+.results { display: flex; flex-direction: column; gap: 14px; }
+.hit-group { background: var(--sheet); border: 1px solid var(--rule); border-radius: 12px; padding: 12px 14px; }
+.hit-group ol { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.hit-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-3); }
+.hit-head b { color: var(--ink); font-size: 15px; }
+.hit { width: 100%; text-align: left; display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 10px; padding: 8px 10px; border: 0; border-radius: 8px; background: none; cursor: pointer; font-size: 15px; line-height: 1.5; }
+.hit:hover, .hit.active { background: var(--accent-soft); }
+.hit-kind { font: 500 11px/22px var(--f-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
+.hit-snip { color: var(--ink-2); }
+.hit mark { background: var(--xp-soft); color: var(--ink); border-radius: 3px; padding: 0 1px; }
+.hit-group.locked .hit { cursor: default; opacity: .6; }
+.hit-group.locked .hit:hover { background: none; }
+.hit-more { margin: 4px 10px 0; font-size: 13px; color: var(--ink-3); }
+.prose > *, .keypoints li, .section { scroll-margin-top: 90px; }
+.hit-flash { animation: hit-flash 2s ease; }
+@keyframes hit-flash { 0%, 40% { background-color: var(--xp-soft); box-shadow: 0 0 0 6px var(--xp-soft); } 100% { box-shadow: 0 0 0 6px transparent; } }
+
 @media (max-width: 720px) {
+  .search { order: 3; max-width: none; flex-basis: 100%; }
+  .search kbd { display: none; }
   .hero { grid-template-columns: minmax(0, 1fr); }
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lvl { min-width: 120px; }
@@ -275,6 +301,11 @@ main { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: m
       <span class="brand-mark" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17h16l-2 4H6z"/><path d="M12 3v14"/><path d="M12 4l6 9h-6"/></svg></span>
       <span class="brand-name">Shipwright Academy</span>
     </button>
+    <label class="search" title="Search lessons (⌘K or /)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <input id="q" type="search" placeholder="Search lessons" autocomplete="off" spellcheck="false" aria-label="Search lessons" aria-controls="results">
+      <kbd>⌘K</kbd>
+    </label>
     <div class="stats" id="stats"></div>
   </div>
 </header>

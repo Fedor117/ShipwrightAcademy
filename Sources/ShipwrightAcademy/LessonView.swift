@@ -4,6 +4,7 @@ struct LessonView: View {
     @Environment(AppModel.self) private var model
     let si: Int
     let ti: Int
+    @State private var flash: String?
 
     var body: some View {
         let store = model.store
@@ -11,59 +12,66 @@ struct LessonView: View {
         let topic = section.topics[ti]
         let t = store.topic(si, ti)
         let need = Int((Rules.topicPass * Double(topic.quiz.count)).rounded(.up))
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Eyebrow(text: "\(section.title) · Topic \(ti + 1) of \(section.topics.count)", color: .orange)
-                Text(topic.title).font(.system(size: 46, weight: .bold)).tracking(-1.1)
-                Text(topic.summary).font(.title2).foregroundStyle(.secondary)
-                HStack(spacing: 8) {
-                    Chip(text: "\(topic.minutes) min read", symbol: "clock")
-                    Chip(text: "\(topic.quiz.count)-question quiz", symbol: "checklist")
-                    if t.passed { Chip(text: "Passed \(t.best)/\(t.total)", color: .green, symbol: "checkmark") }
-                    if store.reviewDue(si, ti) { Chip(text: "Review due · +20 XP", color: .accentColor, symbol: "arrow.trianglehead.2.clockwise") }
-                }
-                Divider().padding(.vertical, 10)
-
-                ForEach(Array(topic.lesson.enumerated()), id: \.offset) { _, block in
-                    BlockView(block: block)
-                }
-
-                VStack(alignment: .leading, spacing: 14) {
-                    Text("Key points").font(.title2.bold())
-                    ForEach(topic.keyPoints, id: \.self) { point in
-                        Label { Text(inline(point)) } icon: {
-                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.white, .green)
-                        }
-                        .font(.body)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    Eyebrow(text: "\(section.title) · Topic \(ti + 1) of \(section.topics.count)", color: .orange)
+                    Text(topic.title).font(.system(size: 46, weight: .bold)).tracking(-1.1)
+                    Text(topic.summary).font(.title2).foregroundStyle(.secondary)
+                    HStack(spacing: 8) {
+                        Chip(text: "\(topic.minutes) min read", symbol: "clock")
+                        Chip(text: "\(topic.quiz.count)-question quiz", symbol: "checklist")
+                        if t.passed { Chip(text: "Passed \(t.best)/\(t.total)", color: .green, symbol: "checkmark") }
+                        if store.reviewDue(si, ti) { Chip(text: "Review due · +20 XP", color: .accentColor, symbol: "arrow.trianglehead.2.clockwise") }
                     }
-                }
-                .padding(28)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(.secondary.opacity(0.08), in: .rect(cornerRadius: 22))
-                .padding(.top, 12)
+                    Divider().padding(.vertical, 10)
 
-                VStack(spacing: 12) {
-                    Text(t.passed ? "Want a higher score?" : "Ready to check your understanding?").font(.title.bold())
-                    Text("\(topic.quiz.count) questions. Get \(need) right to \(ti + 1 < section.topics.count ? "unlock \(section.topics[ti + 1].title)" : "unlock the section exam").")
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                    Button(t.attempts > 0 ? "Retake quiz" : "Start quiz") { model.startQuiz(si, ti) }
-                        .buttonStyle(.glassProminent)
-                        .controlSize(.extraLarge)
-                        .padding(.top, 4)
+                    ForEach(Array(topic.lesson.enumerated()), id: \.offset) { bi, block in
+                        BlockView(block: block)
+                            .id("blk-\(bi)")
+                            .background(flash == "blk-\(bi)" ? Palette.xp.opacity(0.15) : .clear, in: .rect(cornerRadius: 12))
+                    }
+
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("Key points").font(.title2.bold())
+                        ForEach(Array(topic.keyPoints.enumerated()), id: \.offset) { ki, point in
+                            Label { Text(inline(point)) } icon: {
+                                Image(systemName: "checkmark.circle.fill").foregroundStyle(.white, .green)
+                            }
+                            .font(.body)
+                            .id("kp-\(ki)")
+                            .background(flash == "kp-\(ki)" ? Palette.xp.opacity(0.15) : .clear, in: .rect(cornerRadius: 8))
+                        }
+                    }
+                    .padding(28)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.secondary.opacity(0.08), in: .rect(cornerRadius: 22))
+                    .padding(.top, 12)
+
+                    VStack(spacing: 12) {
+                        Text(t.passed ? "Want a higher score?" : "Ready to check your understanding?").font(.title.bold())
+                        Text("\(topic.quiz.count) questions. Get \(need) right to \(ti + 1 < section.topics.count ? "unlock \(section.topics[ti + 1].title)" : "unlock the section exam").")
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                        Button(t.attempts > 0 ? "Retake quiz" : "Start quiz") { model.startQuiz(si, ti) }
+                            .buttonStyle(.glassProminent)
+                            .controlSize(.extraLarge)
+                            .padding(.top, 4)
+                    }
+                    .padding(32)
+                    .frame(maxWidth: .infinity)
+                    .glassEffect(.regular, in: .rect(cornerRadius: 26))
+                    .padding(.top, 8)
                 }
-                .padding(32)
+                .textSelection(.enabled)
+                .frame(maxWidth: 700, alignment: .leading)
+                .padding(.horizontal, 40)
+                .padding(.vertical, 56)
                 .frame(maxWidth: .infinity)
-                .glassEffect(.regular, in: .rect(cornerRadius: 26))
-                .padding(.top, 8)
             }
-            .textSelection(.enabled)
-            .frame(maxWidth: 700, alignment: .leading)
-            .padding(.horizontal, 40)
-            .padding(.vertical, 56)
-            .frame(maxWidth: .infinity)
+            .background(Color(nsColor: .textBackgroundColor))
+            .task(id: model.lessonAnchor) { await reveal(proxy) }
         }
-        .background(Color(nsColor: .textBackgroundColor))
         .navigationTitle(topic.title)
         .toolbar {
             ToolbarItem(placement: .navigation) {
@@ -71,6 +79,21 @@ struct LessonView: View {
                     .help("Take the topic quiz")
             }
         }
+    }
+}
+
+extension LessonView {
+    /// Scrolls to the block a search result pointed at and briefly highlights it.
+    private func reveal(_ proxy: ScrollViewProxy) async {
+        guard let anchor = model.lessonAnchor else { return }
+        try? await Task.sleep(for: .milliseconds(150))
+        guard !Task.isCancelled else { return }
+        withAnimation { proxy.scrollTo(anchor, anchor: .center) }
+        flash = anchor
+        try? await Task.sleep(for: .seconds(1.6))
+        guard !Task.isCancelled else { return }
+        withAnimation(.easeOut(duration: 0.6)) { flash = nil }
+        model.lessonAnchor = nil
     }
 }
 

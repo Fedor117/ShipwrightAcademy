@@ -11,6 +11,7 @@ enum Route: Hashable {
     case lesson(Int, Int)
     case quiz
     case result
+    case search
 }
 
 struct QuizItem: Identifiable {
@@ -84,6 +85,11 @@ final class AppModel {
     var session: QuizSession?
     var outcome: QuizOutcome?
     var toasts: [Toast] = []
+    var searchText = ""
+    /// Bumped by the Search menu commands; ContentView focuses the search field.
+    var searchFocusRequests = 0
+    /// Lesson block to scroll to once the lesson opens (see Search).
+    var lessonAnchor: String?
 
     var sections: [CourseSection] { store.sections }
 
@@ -93,7 +99,37 @@ final class AppModel {
     }
 
     func openLesson(_ si: Int, _ ti: Int) {
+        lessonAnchor = nil
         path = [.lesson(si, ti)]
+    }
+
+    /// Shows results while there is a query and returns to the previous screen when it is cleared.
+    func searchChanged() {
+        let active = !searchText.trimmingCharacters(in: .whitespaces).isEmpty
+        if active, path.last != .search { path.append(.search) }
+        else if !active, path.last == .search { path.removeLast() }
+    }
+
+    func searchOpenable(_ si: Int, _ ti: Int?) -> Bool {
+        ti.map { store.topicUnlocked(si, $0) } ?? true
+    }
+
+    func open(_ hit: SearchEntry) {
+        guard searchOpenable(hit.si, hit.ti) else { return }
+        session = nil
+        if let ti = hit.ti {
+            lessonAnchor = hit.anchor
+            path = [.lesson(hit.si, ti)]
+        } else {
+            select(.section(hit.si))
+        }
+    }
+
+    /// Enter in the search field: open the best result that is not locked.
+    func openFirstResult() {
+        guard let terms = Search.terms(searchText),
+              let hit = Search.run(terms).first(where: { searchOpenable($0.si, $0.ti) })?.hits.first else { return }
+        open(hit)
     }
 
     func go(to step: ProgressStore.Step) {
