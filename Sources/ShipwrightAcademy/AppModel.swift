@@ -88,6 +88,8 @@ final class AppModel {
     var searchText = ""
     /// Bumped by the Search menu commands; ContentView focuses the search field.
     var searchFocusRequests = 0
+    /// While the search field has focus, screen shortcuts (quiz digits, Return) stand down, as on the web.
+    var searchFocused = false
     /// Lesson block to scroll to once the lesson opens (see Search).
     var lessonAnchor: String?
 
@@ -108,6 +110,12 @@ final class AppModel {
         let active = !searchText.trimmingCharacters(in: .whitespaces).isEmpty
         if active, path.last != .search { path.append(.search) }
         else if !active, path.last == .search { path.removeLast() }
+    }
+
+    /// Focusing the field shows the results for the current query again, like the web.
+    func searchFocusChanged(_ focused: Bool) {
+        searchFocused = focused
+        if focused { searchChanged() }
     }
 
     func searchOpenable(_ si: Int, _ ti: Int?) -> Bool {

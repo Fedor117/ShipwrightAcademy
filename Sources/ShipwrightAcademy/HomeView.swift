@@ -51,7 +51,7 @@ struct HomeView: View {
                     }
                     .buttonStyle(.glassProminent)
                     .controlSize(.extraLarge)
-                    .keyboardShortcut(.defaultAction)
+                    .keyboardShortcut(model.searchFocused ? nil : .defaultAction)
                 }
                 Button("View badges") { model.select(.badges) }
                     .buttonStyle(.glass)

@@ -86,6 +86,8 @@ extension LessonView {
     /// Scrolls to the block a search result pointed at and briefly highlights it.
     private func reveal(_ proxy: ScrollViewProxy) async {
         guard let anchor = model.lessonAnchor else { return }
+        // Also clear it when the lesson goes away mid-reveal, so a later visit does not jump.
+        defer { if model.lessonAnchor == anchor { model.lessonAnchor = nil } }
         try? await Task.sleep(for: .milliseconds(150))
         guard !Task.isCancelled else { return }
         withAnimation { proxy.scrollTo(anchor, anchor: .center) }
@@ -93,7 +95,6 @@ extension LessonView {
         try? await Task.sleep(for: .seconds(1.6))
         guard !Task.isCancelled else { return }
         withAnimation(.easeOut(duration: 0.6)) { flash = nil }
-        model.lessonAnchor = nil
     }
 }
 

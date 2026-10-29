@@ -67,7 +67,7 @@ struct QuizView: View {
                     }
                     .buttonStyle(.glassProminent)
                     .controlSize(.extraLarge)
-                    .keyboardShortcut(.defaultAction)
+                    .keyboardShortcut(model.searchFocused ? nil : .defaultAction)
                     .disabled(s.picked == nil)
 
                     Text("Press 1–\(item.order.count) to choose, Return to continue.")
@@ -130,7 +130,7 @@ struct QuizView: View {
         }
         .buttonStyle(.plain)
         .disabled(s.checked)
-        .keyboardShortcut(KeyEquivalent(Character("\(pos + 1)")), modifiers: [])
+        .keyboardShortcut(model.searchFocused ? nil : KeyboardShortcut(KeyEquivalent(Character("\(pos + 1)")), modifiers: []))
         .glassEffect(state.tint.map { Glass.regular.tint($0.opacity(0.3)).interactive() } ?? .regular.interactive(),
                      in: .rect(cornerRadius: 18))
         .glassEffectID(orig, in: glass)

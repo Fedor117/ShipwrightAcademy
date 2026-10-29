@@ -55,6 +55,7 @@ struct ContentView: View {
         .onSubmit(of: .search) { model.openFirstResult() }
         .onChange(of: model.searchText) { model.searchChanged() }
         .onChange(of: model.searchFocusRequests) { searchFocused = true }
+        .onChange(of: searchFocused) { model.searchFocusChanged(searchFocused) }
         .overlay(alignment: .top) { ToastStack() }
         .onAppear { NSApplication.shared.activate() }
     }
