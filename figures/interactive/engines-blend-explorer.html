@@ -1,0 +1,71 @@
+<style>
+.w { display: flex; flex-direction: column; height: 100%; gap: 8px; }
+svg { flex: 1; min-height: 0; width: 100%; display: block; }
+.g { stroke: var(--fig-line); stroke-width: 1; }
+.ax { stroke: var(--fig-muted); stroke-width: 1.5; }
+.cv { fill: none; stroke-width: 3; stroke-linejoin: round; }
+.k0 { stroke: var(--fig-muted); } .k1 { stroke: var(--fig-accent); } .k2 { stroke: var(--fig-accent2); }
+.f0 { fill: var(--fig-muted); } .f1 { fill: var(--fig-accent); } .f2 { fill: var(--fig-accent2); }
+.mk { stroke: var(--fig-warn); stroke-width: 2.5; }
+.t { fill: var(--fig-ink); font-size: 14px; }
+.m { fill: var(--fig-muted); font-size: 12px; }
+.mid { text-anchor: middle; } .end { text-anchor: end; }
+.tr { fill: var(--fig-panel); }
+.c { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 10px; align-items: center; }
+.c input { width: 100%; }
+output { font-variant-numeric: tabular-nums; color: var(--fig-muted); }
+</style>
+<div class="w">
+<svg viewBox="0 0 640 300" role="img" aria-label="A 1D blend tree on speed with idle at 0, walk at 2 and run at 6 metres per second. Each clip has a triangular weight curve; the marker at the chosen speed reads off the weights, which always sum to 1.">
+  <line class="g" x1="70" y1="40" x2="550" y2="40"/>
+  <line class="ax" x1="70" y1="140" x2="550" y2="140"/>
+  <text class="m end" x="62" y="44">1</text><text class="m end" x="62" y="144">0</text>
+  <g id="ticks"></g>
+  <path class="cv k0" d="M70 40 L230 140 L550 140"/>
+  <path class="cv k1" d="M70 140 L230 40 L550 140"/>
+  <path class="cv k2" d="M70 140 L230 140 L550 40"/>
+  <text class="t f0" x="78" y="32">idle</text><text class="t f1 mid" x="230" y="32">walk</text><text class="t f2 end" x="550" y="32">run</text>
+  <line id="mk" class="mk" y1="34" y2="146"/>
+  <circle id="c0" class="f0" r="5"/><circle id="c1" class="f1" r="5"/><circle id="c2" class="f2" r="5"/>
+  <g id="bars"></g>
+  <text id="eq" class="m" x="70" y="290"></text>
+</svg>
+<div class="c">
+  <label for="sp">Speed</label><input id="sp" type="range" min="0" max="6" step="0.1" value="3"><output id="spo" for="sp"></output>
+</div>
+</div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var clips = [{ n: 'idle', at: 0 }, { n: 'walk', at: 2 }, { n: 'run', at: 6 }];
+  var X = function (s) { return 70 + s * 80; }, Y = function (w) { return 140 - w * 100; };
+  var ticks = '';
+  for (var i = 0; i <= 6; i++) ticks += '<text class="m mid" x="' + X(i) + '" y="160">' + i + (i === 6 ? ' m/s' : '') + '</text>';
+  $('ticks').innerHTML = ticks;
+  function weights(s) {
+    var w = [0, 0, 0];
+    for (var k = 0; k < clips.length - 1; k++) {
+      var a = clips[k].at, b = clips[k + 1].at;
+      if (s <= b || k === clips.length - 2) { var t = Math.min(1, Math.max(0, (s - a) / (b - a))); w[k] = 1 - t; w[k + 1] = t; return { w: w, k: k, t: t }; }
+    }
+  }
+  function draw() {
+    var s = +$('sp').value, r = weights(s), w = r.w;
+    $('mk').setAttribute('x1', X(s)); $('mk').setAttribute('x2', X(s));
+    var bars = '';
+    clips.forEach(function (c, i) {
+      $('c' + i).setAttribute('cx', X(s)); $('c' + i).setAttribute('cy', Y(w[i]));
+      var y = 184 + i * 26;
+      bars += '<text class="t" x="70" y="' + (y + 13) + '">' + c.n + '</text><rect class="tr" x="130" y="' + y + '" width="360" height="16" rx="8"/>' +
+        '<rect class="f' + i + '" x="130" y="' + y + '" width="' + (360 * w[i]).toFixed(1) + '" height="16" rx="8"/><text class="t end" x="550" y="' + (y + 13) + '">' + w[i].toFixed(2) + '</text>';
+    });
+    $('bars').innerHTML = bars;
+    var a = clips[r.k], b = clips[r.k + 1];
+    $('eq').textContent = a.n + ' (' + a.at + ') to ' + b.n + ' (' + b.at + '): t = (' + s.toFixed(1) + ' − ' + a.at + ') / ' + (b.at - a.at) + ' = ' + r.t.toFixed(2) +
+      ', so ' + a.n + ' ' + w[r.k].toFixed(2) + ' + ' + b.n + ' ' + w[r.k + 1].toFixed(2) + ' = 1';
+    $('spo').textContent = s.toFixed(1) + ' m/s';
+  }
+  $('sp').addEventListener('input', draw);
+  draw();
+})();
+</script>

@@ -105,6 +105,8 @@ struct BlockView: View {
         switch block.type {
         case "figure":
             FigureView(svg: block.svg ?? "", caption: block.caption ?? "")
+        case "interactive":
+            InteractiveFigureView(html: block.html ?? "", caption: block.caption ?? "", height: block.height ?? 320)
         case "patterns":
             PatternsView(patterns: block.patterns ?? [])
         case "h":
