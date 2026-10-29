@@ -26,20 +26,36 @@
   const TOPIC_PASS = 0.8;   // 4 of 5
   const EXAM_PASS = 0.8;
   const REVIEW_DAYS = [3, 7, 21, 60];
+  const MISTAKE_CLEAR_STREAK = 2;   // right answers in a row, in mistakes reviews, to clear a question
+  const MISTAKE_SESSION = 10;
   const DAY = 86400000;
   const LEVELS = [
     [0, 'Intern'], [200, 'Apprentice'], [600, 'Junior Engineer'], [1200, 'Engineer'],
     [2000, 'Senior Engineer'], [3000, 'Staff Engineer'], [4500, 'Principal Engineer'], [6500, 'Distinguished Engineer'],
   ];
 
+  // Mistakes deck: questions are keyed by a hash of their content, so sections and quizzes can reorder freely.
+  function mistakeKey(q) {
+    const s = [q.q].concat(q.options || []).join('\u0000');
+    let h = 0x811c9dc5;
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+    return (h >>> 0).toString(36);
+  }
+  const QINDEX = {};
+  SECTIONS.forEach((s, si) => {
+    s.exam.forEach((q) => { QINDEX[mistakeKey(q)] = { si, ti: null, q }; });
+    s.topics.forEach((t, ti) => t.quiz.forEach((q) => { QINDEX[mistakeKey(q)] = { si, ti, q }; }));
+  });
+
   // ---------- State & persistence ----------
   const LS_KEY = 'shipwright-academy.v1';
-  const blank = () => ({ v: 1, xp: 0, topics: {}, exams: {}, days: [], badges: {}, reviews: 0, freeRoam: false, updatedAt: 0 });
+  const blank = () => ({ v: 1, xp: 0, topics: {}, exams: {}, days: [], badges: {}, reviews: 0, freeRoam: false, mistakes: {}, updatedAt: 0 });
   let state = blank();
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (raw) state = Object.assign(blank(), JSON.parse(raw));
   } catch (e) { /* storage unavailable: start fresh */ }
+  pruneMistakes();
 
   let remoteRef = null;
   let syncLabel = 'Saved in this browser';
@@ -74,6 +90,7 @@
       const remote = snap.exists ? snap.data() : null;
       if (remote && remote.updatedAt > state.updatedAt) {
         state = Object.assign(blank(), JSON.parse(remote.json));
+        pruneMistakes();
         try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
         syncLabel = 'Synced to your account';
         if (!session) render();
@@ -109,6 +126,7 @@
     lock: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
     check: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>',
     gate: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg>',
+    undo: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7L3 8"/></svg>',
     repeat: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg>',
   };
 
@@ -177,6 +195,20 @@
     return null;
   }
 
+  // ---------- Mistakes deck ----------
+  // Questions whose content is gone from the curriculum drop out silently.
+  function pruneMistakes() {
+    if (!SECTIONS.length) return;
+    Object.keys(state.mistakes).forEach((k) => { if (!QINDEX[k]) delete state.mistakes[k]; });
+  }
+  function miss(k, sid, tid) {
+    state.mistakes[k] = { section: sid, topic: tid, missedAt: Date.now(), streak: 0 };
+  }
+  // Oldest miss first.
+  const mistakeDeck = () => Object.keys(state.mistakes).filter((k) => QINDEX[k])
+    .sort((a, b) => state.mistakes[a].missedAt - state.mistakes[b].missedAt || (a < b ? -1 : 1));
+  const originTitle = (si, ti) => SECTIONS[si].title + ' · ' + (ti === null ? 'Section exam' : SECTIONS[si].topics[ti].title);
+
   // ---------- Badges ----------
   const BADGES = [
     { id: 'first', name: 'First Commit', desc: 'Pass your first topic quiz.', test: () => counts().passed >= 1 },
@@ -208,10 +240,12 @@
     const L = levelInfo(state.xp);
     const st = streak();
     const earned = Object.keys(state.badges).length;
+    const deck = mistakeDeck().length;
     $('#stats').innerHTML =
       '<div class="lvl" title="' + esc(syncLabel) + '"><div class="lvl-top"><span>Lv ' + L.n + ' <b>' + esc(L.name) + '</b></span><span>' + state.xp + (L.next ? ' / ' + L.next : '') + ' XP</span></div>' +
       '<div class="meter"><i style="width:' + Math.round(L.pct * 100) + '%"></i></div></div>' +
       '<span class="stat" title="Day streak">' + ICON.flame + '<b>' + st + '</b><span class="hide-sm">day' + (st === 1 ? '' : 's') + '</span></span>' +
+      (deck ? '<button class="icon-btn" type="button" data-action="mistakes" title="Review mistakes">' + ICON.undo + '<b>' + deck + '</b><span class="hide-sm">mistake' + (deck === 1 ? '' : 's') + '</span></button>' : '') +
       '<button class="icon-btn" type="button" data-action="badges">' + ICON.medal + '<b>' + earned + '</b><span class="hide-sm">/ ' + BADGES.length + '</span></button>';
   }
 
@@ -285,6 +319,9 @@
       '<div class="kpi"><b>' + c.exams + '<span style="font-size:15px;color:var(--ink-3)"> / ' + SECTIONS.length + '</span></b><span>Section exams</span></div>' +
       '<div class="kpi"><b>' + state.xp + '</b><span>Total XP</span></div>' +
       '<div class="kpi"><b>' + streak() + '</b><span>Day streak</span></div></div>';
+    const deck = mistakeDeck().length;
+    if (deck) html += '<div class="mistakes-bar"><span>' + ICON.undo + '<span><b>' + deck + (deck === 1 ? ' question' : ' questions') + '</b> in your mistakes deck. Answer each right ' + MISTAKE_CLEAR_STREAK + ' times in a row to clear it.</span></span>' +
+      '<button class="btn btn-ghost" data-action="mistakes">Review mistakes</button></div>';
 
     SECTIONS.forEach((s, si) => {
       const open = sectionUnlocked(si);
@@ -364,9 +401,9 @@
     return o;
   }
   function makeQ(q, src) {
-    const k = kindOf(q);
-    const order = k === 'mc' ? shuffle(q.options.map((_, i) => i)) : k === 'order' ? scrambled(q.steps.length) : [];
-    return { kind: k, q: q.q, options: q.options, answer: q.answer, steps: q.steps, code: q.code, lang: q.lang, explain: q.explain, src, order };
+    const kind = kindOf(q);
+    const order = kind === 'mc' ? shuffle(q.options.map((_, i) => i)) : kind === 'order' ? scrambled(q.steps.length) : [];
+    return { kind, q: q.q, options: q.options, answer: q.answer, steps: q.steps, code: q.code, lang: q.lang, explain: q.explain, src, k: mistakeKey(q), order };
   }
   const firstPick = (q) => (q.kind === 'order' ? q.order.slice() : null);
   const isRight = (q, picked) => (q.kind === 'order' ? picked.every((v, i) => v === i) : picked === q.answer);
@@ -384,10 +421,17 @@
     view = { name: 'quiz' }; render(); window.scrollTo(0, 0);
   }
 
+  function startMistakes() {
+    const qs = mistakeDeck().slice(0, MISTAKE_SESSION).map((k) => Object.assign(makeQ(QINDEX[k].q, QINDEX[k].ti), { si: QINDEX[k].si }));
+    if (!qs.length) return go({ name: 'home' });
+    session = { kind: 'mistakes', si: qs[0].si, qs, i: 0, picked: null, checked: false, answers: [] };
+    view = { name: 'quiz' }; render(); window.scrollTo(0, 0);
+  }
+
   function renderQuiz() {
     const S = session, s = SECTIONS[S.si];
     const q = S.qs[S.i];
-    const title = S.kind === 'exam' ? s.title + ' · Section exam' : s.topics[S.ti].title;
+    const title = S.kind === 'mistakes' ? 'Mistakes · ' + originTitle(q.si, q.src) : S.kind === 'exam' ? s.title + ' · Section exam' : s.topics[S.ti].title;
     const pips = S.qs.map((_, i) => {
       const a = S.answers[i];
       return '<span class="pip ' + (a ? (a.correct ? 'ok' : 'bad') : (i === S.i ? 'cur' : '')) + '"></span>';
@@ -418,7 +462,7 @@
       : 'Keys: 1–' + q.options.length + ' to choose, Enter to continue';
     const last = S.i === S.qs.length - 1;
     app.innerHTML = '<div class="narrow">' +
-      '<nav class="crumbs"><button type="button" data-action="quit">Leave ' + (S.kind === 'exam' ? 'exam' : 'quiz') + '</button><span>·</span><span>Progress is not saved until you finish</span></nav>' +
+      '<nav class="crumbs"><button type="button" data-action="quit">Leave ' + ({ exam: 'exam', mistakes: 'review' }[S.kind] || 'quiz') + '</button><span>·</span><span>Progress is not saved until you finish</span></nav>' +
       '<div class="quiz-top"><h1>' + esc(title) + '</h1><span class="pill pill-mute">Question ' + (S.i + 1) + ' of ' + S.qs.length + '</span></div>' +
       '<div class="pips">' + pips + '</div>' +
       '<div class="qcard"><h2>' + md(q.q) + '</h2>' + opts + fb +
@@ -443,7 +487,8 @@
     const pct = Math.round(correct / total * 100);
     const gains = [];
     const now = Date.now();
-    let passed;
+    let passed, cleared = [];
+    if (S.kind !== 'mistakes') S.answers.forEach((a, i) => { if (!a.correct) miss(S.qs[i].k, s.id, S.qs[i].src === null ? 'exam' : s.topics[S.qs[i].src].id); });
     if (S.kind === 'topic') {
       const t = s.topics[S.ti];
       const k = key(s.id, t.id);
@@ -456,7 +501,7 @@
       else if (passed && S.review) { gains.push(['Spaced review', 20]); ts.reviewStage = (ts.reviewStage || 0) + 1; ts.lastPassAt = now; state.reviews++; }
       if (correct === total && !ts.perfect) { gains.push(['Perfect score', 25]); ts.perfect = true; }
       if (!passed) ts.failedOnce = true;
-    } else {
+    } else if (S.kind === 'exam') {
       const es = state.exams[s.id] = Object.assign({ best: 0, attempts: 0 }, state.exams[s.id]);
       passed = correct / total >= EXAM_PASS;
       es.attempts++;
@@ -464,6 +509,16 @@
       if (passed && !es.passed) { gains.push(['Section exam passed', 250]); es.passed = true; es.passedAt = now; }
       if (correct === total && !es.perfect) { gains.push(['Flawless exam', 100]); es.perfect = true; }
       if (!passed) es.failedOnce = true;
+    } else {
+      S.qs.forEach((q, i) => {
+        const m = state.mistakes[q.k];
+        if (!m) return;
+        if (!S.answers[i].correct) { m.streak = 0; m.missedAt = now; }
+        else if (++m.streak >= MISTAKE_CLEAR_STREAK) { delete state.mistakes[q.k]; cleared.push(i); }
+      });
+      const n = cleared.length;
+      if (n) gains.push(['Mistake cleared', n * 15]);
+      passed = n > 0;
     }
     const xp = gains.reduce((a, g) => a + g[1], 0);
     const lvBefore = levelInfo(state.xp).n;
@@ -473,11 +528,11 @@
     const fresh = checkBadges();
     save();
     const lvAfter = levelInfo(state.xp);
-    view = { name: 'result', data: { kind: S.kind, si: S.si, ti: S.ti, correct, total, pct, passed, gains, qs: S.qs, answers: S.answers } };
+    view = { name: 'result', data: { kind: S.kind, si: S.si, ti: S.ti, correct, total, pct, passed, gains, cleared, qs: S.qs, answers: S.answers } };
     session = null;
     render();
     window.scrollTo(0, 0);
-    if (passed) confetti();
+    if (passed && S.kind !== 'mistakes') confetti();
     if (lvAfter.n > lvBefore) toast('<span class="seal">' + ICON.medal + '</span><span>Level up: <b>' + esc(lvAfter.name) + '</b></span>');
     fresh.forEach((b, i) => setTimeout(() => toast('<span class="seal">' + ICON.medal + '</span><span>Badge earned: <b>' + esc(b.name) + '</b></span>'), 400 + i * 500));
   }
@@ -486,12 +541,16 @@
     const r = view.data, s = SECTIONS[r.si];
     const passMark = r.kind === 'exam' ? EXAM_PASS : TOPIC_PASS;
     const C = 2 * Math.PI * 60;
-    const color = r.passed ? 'var(--ok)' : 'var(--bad)';
+    const color = r.kind === 'mistakes' ? 'var(--accent)' : r.passed ? 'var(--ok)' : 'var(--bad)';
     const ring = '<div class="score-ring"><svg viewBox="0 0 140 140"><circle cx="70" cy="70" r="60" fill="none" stroke="var(--rule)" stroke-width="12"/>' +
       '<circle cx="70" cy="70" r="60" fill="none" stroke="' + color + '" stroke-width="12" stroke-linecap="round" stroke-dasharray="' + (C * r.pct / 100).toFixed(1) + ' ' + C.toFixed(1) + '"/></svg><span class="v">' + r.pct + '%</span></div>';
-    const what = r.kind === 'exam' ? s.title + ' exam' : s.topics[r.ti].title;
+    const what = r.kind === 'exam' ? s.title + ' exam' : r.kind === 'mistakes' ? 'Mistakes review' : s.topics[r.ti].title;
     let headline, body;
-    if (r.passed) {
+    if (r.kind === 'mistakes') {
+      const left = mistakeDeck().length, n = r.cleared.length;
+      headline = n ? 'Cleared ' + n + (n === 1 ? ' mistake' : ' mistakes') : 'Mistakes reviewed';
+      body = 'You answered ' + r.correct + ' of ' + r.total + ' right. A question leaves the deck after ' + MISTAKE_CLEAR_STREAK + ' right answers in a row here. ' + (left ? left + ' left in your deck.' : 'Your deck is empty.');
+    } else if (r.passed) {
       headline = r.kind === 'exam' ? 'Section cleared' : 'Topic passed';
       body = 'You scored ' + r.correct + ' of ' + r.total + ' on ' + esc(what) + '.' + (r.kind === 'exam' && nextInTrack(r.si) >= 0 ? ' ' + esc(SECTIONS[nextInTrack(r.si)].title) + ' is now open.' : '');
     } else {
@@ -501,6 +560,7 @@
     const gains = r.gains.length ? '<div class="xp-gain">' + r.gains.map((g) => '<span class="pill pill-xp">+' + g[1] + ' XP · ' + esc(g[0]) + '</span>').join('') + '</div>' : '<div class="xp-gain"><span class="pill pill-mute">No new XP this attempt</span></div>';
 
     let weak = '';
+    if (r.cleared && r.cleared.length) weak = '<div class="weak cleared"><h3>Cleared from your deck</h3><ul>' + r.cleared.map((i) => '<li>' + md(r.qs[i].q) + '</li>').join('') + '</ul></div>';
     if (r.kind === 'exam' && !r.passed) {
       const missed = {};
       r.answers.forEach((a, i) => { if (!a.correct && r.qs[i].src !== null) missed[r.qs[i].src] = true; });
@@ -508,9 +568,10 @@
       if (ids.length) weak = '<div class="weak"><h3>Topics to revisit</h3><div class="btn-row">' + ids.map((ti) => '<button class="btn btn-ghost" data-action="topic" data-si="' + r.si + '" data-ti="' + ti + '">' + esc(s.topics[ti].title) + '</button>').join('') + '</div></div>';
     }
     const actions = [];
-    if (!r.passed) actions.push(r.kind === 'exam' ? '<button class="btn btn-primary" data-action="exam" data-si="' + r.si + '">Retake exam</button>' : '<button class="btn btn-primary" data-action="quiz" data-si="' + r.si + '" data-ti="' + r.ti + '">Retake quiz</button>');
+    if (r.kind === 'mistakes') { if (mistakeDeck().length) actions.push('<button class="btn btn-primary" data-action="mistakes">Review more mistakes</button>'); }
+    else if (!r.passed) actions.push(r.kind === 'exam' ? '<button class="btn btn-primary" data-action="exam" data-si="' + r.si + '">Retake exam</button>' : '<button class="btn btn-primary" data-action="quiz" data-si="' + r.si + '" data-ti="' + r.ti + '">Retake quiz</button>');
     if (!r.passed && r.kind === 'topic') actions.push('<button class="btn btn-ghost" data-action="topic" data-si="' + r.si + '" data-ti="' + r.ti + '">Reread the lesson</button>');
-    if (r.passed) {
+    if (r.passed && r.kind !== 'mistakes') {
       const nx = nextStep();
       if (nx && nx.kind === 'exam') actions.push('<button class="btn btn-primary" data-action="exam" data-si="' + nx.si + '">Next: ' + esc(SECTIONS[nx.si].title) + ' exam</button>');
       else if (nx && nx.kind === 'topic') actions.push('<button class="btn btn-primary" data-action="topic" data-si="' + nx.si + '" data-ti="' + nx.ti + '">Next: ' + esc(SECTIONS[nx.si].topics[nx.ti].title) + '</button>');
@@ -532,7 +593,7 @@
       } else {
         ans = say('Your answer', pos(a.chosen) + '. ' + md(q.options[a.chosen])) + (a.correct ? '' : say('Correct', pos(q.answer) + '. ' + md(q.options[q.answer]), true));
       }
-      return '<div class="rv ' + (a.correct ? '' : 'miss') + '"><span class="rt">' + (q.src !== null && r.kind === 'exam' ? esc(s.topics[q.src].title) : 'Question ' + (i + 1)) + '</span><span class="rq">' + md(q.q) + '</span>' +
+      return '<div class="rv ' + (a.correct ? '' : 'miss') + '"><span class="rt">' + (r.kind === 'mistakes' ? esc(originTitle(q.si, q.src)) : q.src !== null && r.kind === 'exam' ? esc(s.topics[q.src].title) : 'Question ' + (i + 1)) + '</span><span class="rq">' + md(q.q) + '</span>' +
         (q.code ? '<pre class="rcode">' + esc(q.code) + '</pre>' : '') + ans + '<span class="ra">' + md(q.explain) + '</span></div>';
     }).join('');
 
@@ -565,7 +626,8 @@
     if (a === 'topic') return go({ name: 'topic', si, ti });
     if (a === 'quiz') return startQuiz(si, ti);
     if (a === 'exam') return startExam(si);
-    if (a === 'quit') { const S = session; session = null; return go(S.kind === 'exam' ? { name: 'home' } : { name: 'topic', si: S.si, ti: S.ti }); }
+    if (a === 'mistakes') return startMistakes();
+    if (a === 'quit') { const S = session; session = null; return go(S.kind === 'topic' ? { name: 'topic', si: S.si, ti: S.ti } : { name: 'home' }); }
     if (a === 'pick' && session && !session.checked) { session.picked = +el.dataset.o; return renderQuiz(); }
     if ((a === 'up' || a === 'down') && session && !session.checked) return move(+el.dataset.p, a === 'up' ? -1 : 1);
     if (a === 'check') return check();

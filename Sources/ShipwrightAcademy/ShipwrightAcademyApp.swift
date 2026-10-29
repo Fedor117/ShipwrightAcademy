@@ -50,6 +50,7 @@ struct ContentView: View {
         switch model.sidebar ?? .home {
         case .home: HomeView()
         case .section(let si): SectionView(si: si)
+        case .mistakes: MistakesView()
         case .badges: BadgesView()
         }
     }
@@ -83,6 +84,10 @@ struct Sidebar: View {
                 }
             }
             Section {
+                let deck = store.mistakeDeck.count
+                if deck > 0 || model.sidebar == .mistakes {
+                    Label("Mistakes", systemImage: "arrow.uturn.backward.circle").badge(deck).tag(SidebarItem.mistakes)
+                }
                 Label("Badges", systemImage: "medal").tag(SidebarItem.badges)
             }
         }

@@ -18,6 +18,7 @@ struct QuizView: View {
         let title: String = switch s.kind {
         case .topic(_, let ti): section.topics[ti].title
         case .exam: "\(section.title) · Section exam"
+        case .mistakes: "Mistakes · \(model.originTitle(item))"
         }
         return ScrollView {
             VStack(spacing: 28) {
@@ -108,7 +109,7 @@ struct QuizView: View {
         .navigationBarBackButtonHidden()
         .toolbar {
             ToolbarItem(placement: .navigation) {
-                Button(s.kind == .exam(s.sectionIndex) ? "Leave exam" : "Leave quiz", systemImage: "xmark") { model.leaveQuiz() }
+                Button(s.kind == .exam(s.sectionIndex) ? "Leave exam" : s.kind == .mistakes ? "Leave review" : "Leave quiz", systemImage: "xmark") { model.leaveQuiz() }
                     .help("Progress is not saved until you finish")
             }
         }

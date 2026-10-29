@@ -75,8 +75,15 @@ Add its id in **all** of these places: `ORDER` in `app.js` and in `scripts/build
 | --- | --- |
 | Pass mark | 80% for topic quizzes and section exams |
 | Spaced reviews | 3, 7, 21 and 60 days after passing |
-| XP | Topic passed +50, review +20, perfect +25, +10 per answer above your previous best, exam passed +250, flawless exam +100 |
+| XP | Topic passed +50, review +20, perfect +25, +10 per answer above your previous best, exam passed +250, flawless exam +100, mistake cleared +15 |
+| Mistakes deck | Up to 10 questions per review, oldest miss first; a question clears after 2 right answers in a row |
 | Levels | Intern (0 XP) to Distinguished Engineer (6500 XP) |
+
+### Mistakes deck
+
+Every question answered wrong in a topic quiz, spaced review or section exam goes into the mistakes deck. "Review mistakes" (home screen, header button on the web, sidebar on macOS) drills only those questions, with no pass mark. A question leaves the deck after 2 right answers in a row inside mistakes reviews; a wrong answer anywhere resets its run. Each cleared question earns +15 XP.
+
+Deck entries are keyed by a hash of the question text and options (`mistakeKey` in `app.js` and `ProgressStore.swift`), not by position, so reordering topics or questions is safe. Editing a question's text or options gives it a new key, and the old entry is dropped silently the next time progress loads.
 
 These rules are written twice, once in `app.js` and once in `ProgressStore.swift` (`Rules`). Change both, then run `node scripts/check-rules.js`.
 

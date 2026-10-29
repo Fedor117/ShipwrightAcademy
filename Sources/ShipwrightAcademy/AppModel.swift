@@ -4,6 +4,7 @@ import Observation
 enum SidebarItem: Hashable {
     case home
     case section(Int)
+    case mistakes
     case badges
 }
 
@@ -20,6 +21,8 @@ struct QuizItem: Identifiable {
     let order: [Int]
     /// The topic this question came from, for exam answer review.
     let topicIndex: Int?
+    /// Set in mistakes reviews, where items come from many sections.
+    var sectionIndex: Int?
 }
 
 struct QuizAnswer {
@@ -36,6 +39,7 @@ final class QuizSession {
     enum Kind: Equatable {
         case topic(Int, Int)
         case exam(Int)
+        case mistakes
     }
 
     let kind: Kind
@@ -54,6 +58,7 @@ final class QuizSession {
     var sectionIndex: Int {
         switch kind {
         case .topic(let si, _), .exam(let si): si
+        case .mistakes: current.sectionIndex ?? 0
         }
     }
 
@@ -136,6 +141,24 @@ final class AppModel {
         path = [.quiz]
     }
 
+    func startMistakes() {
+        let items = store.mistakeDeck.prefix(Rules.mistakeSession).compactMap { k -> QuizItem? in
+            guard let e = store.questionIndex[k] else { return nil }
+            var item = makeItem(e.question, topicIndex: e.ti)
+            item.sectionIndex = e.si
+            return item
+        }
+        guard !items.isEmpty else { return }
+        session = QuizSession(kind: .mistakes, isReview: false, items: items)
+        path = [.quiz]
+    }
+
+    /// "Section · Topic" (or "Section · Section exam") for an item in a mistakes review.
+    func originTitle(_ item: QuizItem) -> String {
+        guard let si = item.sectionIndex else { return "" }
+        return sections[si].title + " · " + (item.topicIndex.map { sections[si].topics[$0].title } ?? "Section exam")
+    }
+
     private func makeItem(_ q: Question, topicIndex: Int?) -> QuizItem {
         switch q.kind {
         case .mc: QuizItem(question: q, order: Array(q.options.indices).shuffled(), topicIndex: topicIndex)
@@ -158,11 +181,16 @@ final class AppModel {
         let correct = session.answers.filter(\.correct).count
         let total = session.items.count
         let result: QuizOutcome
+        if session.kind != .mistakes {
+            store.recordMisses(session.sectionIndex, zip(session.items, session.answers).filter { !$1.correct }.map { ($0.0.question, $0.0.topicIndex) })
+        }
         switch session.kind {
         case .topic(let si, let ti):
             result = store.recordTopic(si, ti, correct: correct, total: total, isReview: session.isReview)
         case .exam(let si):
             result = store.recordExam(si, correct: correct, total: total)
+        case .mistakes:
+            result = store.recordMistakes(zip(session.items, session.answers).map { ($0.question, $1.correct) })
         }
         outcome = result
         path = Array(path.dropLast()) + [.result]

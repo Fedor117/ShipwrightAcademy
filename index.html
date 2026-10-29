@@ -256,6 +256,11 @@ main { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: m
 .weak { margin-top: 14px; width: 100%; text-align: left; background: var(--bad-soft); border-radius: 12px; padding: 14px 16px; }
 .weak h3 { font-size: 16px; margin-bottom: 8px; }
 .weak .btn-row { margin-top: 4px; }
+.weak.cleared { background: var(--ok-soft); }
+.weak.cleared ul { margin: 0; padding-left: 20px; font-size: 15px; }
+.mistakes-bar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin: -24px 0 40px; padding: 14px 16px; background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--r); }
+.mistakes-bar > span { display: flex; align-items: center; gap: 10px; color: var(--ink-2); font-size: 15px; }
+.mistakes-bar svg { color: var(--accent); flex: none; }
 
 /* Badges */
 .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
