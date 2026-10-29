@@ -41,6 +41,9 @@ same('mistakes session size',
 same('levels',
   pairs(one(js, /LEVELS\s*=\s*\[([\s\S]*?)\];/, 'LEVELS in app.js')),
   pairs(one(swift, /levels:[^=]*=\s*\[([\s\S]*?)\]\n/, 'Rules.levels')));
+same('activity heatmap steps',
+  nums(one(js, /HEAT_STEPS\s*=\s*\[([^\]]*)\]/, 'HEAT_STEPS in app.js')),
+  nums(one(swift, /heatSteps\s*=\s*\[([^\]]*)\]/, 'Rules.heatSteps')));
 
 // XP awards: the label and the amount (or formula) of every gain, in source order.
 const gain = (s) => s.replace(/\s+/g, '').replace(/\b(ts|t)\./g, '');
@@ -52,6 +55,64 @@ same('XP awards',
 const webBadges = [...js.matchAll(/\{ id: '([\w-]+)', name: '([^']+)', desc: '([^']+)'/g)].map((m) => m.slice(1));
 const macBadges = [...swift.matchAll(/Badge\(id: "([\w-]+)", name: "([^"]+)", detail: "([^"]+)"/g)].map((m) => m.slice(1));
 same('fixed badges', webBadges, macBadges);
+const requiredBadges = ['first', 'flawless', 'comeback', 'boss', 'streak3', 'streak7', 'review5', 'half',
+  'mistakes10', 'mistakes50', 'bugspot5', 'order5', 'inboxzero', 'track-software', 'track-games', 'all'];
+same('fixed badge ids (app.js)', webBadges.map((b) => b[0]), requiredBadges);
+same('fixed badge ids (swift)', macBadges.map((b) => b[0]), requiredBadges);
+// Badge progress targets for the counters with a fixed goal: `upTo(<counter>, N)` in app.js, the badge's `progress` returning N in Swift.
+const webTargets = Object.fromEntries([...js.matchAll(/\{ id: '([\w-]+)'[^\n]*?progress: \(\) => upTo\([^,]+,\s*(\d+)\)/g)].map((m) => [m[1], Number(m[2])]));
+const macTargets = Object.fromEntries([...swift.matchAll(/Badge\(id: "([\w-]+)"[^\n]*\n\s*progress: \{ \([^\n]*, (\d+)\) \}/g)].map((m) => [m[1], Number(m[2])]));
+const sorted = (o) => Object.entries(o).sort((a, b) => a[0].localeCompare(b[0]));
+same('badge progress targets', sorted(webTargets), sorted(macTargets));
+// Full badge order, with the per-section badges as one 'sec-' entry: the new badges must sit on the right side of them.
+const webBadgeBlock = one(js, /const BADGES = \[([\s\S]*?)\]\);\n/, 'BADGES in app.js');
+const macBadgeBlock = one(swift, /lazy var badges: \[Badge\] = \{([\s\S]*?)return list/, 'ProgressStore.badges');
+const fullOrder = [...requiredBadges.slice(0, requiredBadges.indexOf('track-software')), 'sec-', ...requiredBadges.slice(requiredBadges.indexOf('track-software'))];
+same('badge order with section badges (app.js)', [...(webBadgeBlock || '').matchAll(/\bid: '([\w-]+)'/g)].map((m) => m[1]), fullOrder);
+same('badge order with section badges (swift)', [...(macBadgeBlock || '').matchAll(/Badge\(id: "([\w-]+)"/g)].map((m) => m[1]), fullOrder);
+// Badge progress formulas: the counter and the target of every badge, rewritten into one vocabulary.
+function argsAt(s, i) {   // top-level comma-separated arguments of the parenthesised list starting at s[i] === '('
+  const out = []; let depth = 0, cur = '';
+  for (let j = i; j < s.length; j++) {
+    const c = s[j];
+    if (c === '(' && depth++ === 0) continue;
+    if (c === ')' && --depth === 0) { out.push(cur); return out; }
+    if (c === ',' && depth === 1) { out.push(cur); cur = ''; continue; }
+    cur += c;
+  }
+  return out;
+}
+const vocab = [
+  [/s\.topics\.filter\(\(t\)=>tstate\(s\.id,t\.id\)\.passed\)\.length|passedCount\(si\)/g, 'sectionPassed'],
+  [/estate\(s\.id\)\.passed|exam\(si\)\.passed/g, 'examPassed'],
+  [/s\.topics\.length|section\.topics\.count/g, 'sectionTopics'],
+  [/SECTIONS\.length|sections\.count/g, 'sections'],
+  [/\?\?0/g, ''], [/\?\./g, '.'], [/\b(counts\(\)|state|totals|c)\./g, ''], [/\(\)/g, ''],
+  [/Math\.ceil\(topics\/2\)|\(topics\+1\)\/2/g, 'ceil(topics/2)'],
+];
+const formula = (expr) => vocab.reduce((a, [re, to]) => a.replace(re, to), expr.replace(/\s+/g, '').replace(/\$0\./g, ''));
+function progressOf(src, re) {
+  return [...src.matchAll(re)].map((m) => {
+    const id = m[1], body = m[2];
+    let f;
+    if (/^\[0, 1\]|^(s in )?one\(/.test(body)) f = 'flag';
+    else if (/(trackExams\('|passedExams\(track: ")([^'"]+)/.test(body)) f = 'track:' + body.match(/(?:trackExams\('|passedExams\(track: ")([^'"]+)/)[1];
+    else { const i = body.startsWith('upTo(') ? 4 : body.startsWith('(') ? 0 : -1; f = i < 0 ? '?' + body : argsAt(body, i).map(formula).join(' / '); }
+    return [id, f];
+  });
+}
+same('badge progress formulas',
+  progressOf(webBadgeBlock || '', /\bid: '([\w-]+)'[\s\S]*?progress: \(\) => (?:\{ const c = counts\(\); return )?([^\n]*)/g),
+  progressOf(macBadgeBlock || '', /Badge\(id: "([\w-]+)"[\s\S]*?progress: \{ ([^\n]*)/g));
+// Counters behind the new badges: mistakes cleared with the 'Mistake cleared' XP, solved by question kind, XP per day kept as long.
+const has = (src, re, what) => { if (!re.test(src)) errs.push(`could not find ${what}`); };
+has(js, /gains\.push\(\['Mistake cleared', n \* 15\]\); state\.mistakesCleared = \(state\.mistakesCleared \|\| 0\) \+ n;/, 'mistakesCleared += n next to the Mistake cleared XP in app.js');
+has(swift, /gains\.append\(\("Mistake cleared", n \* 15\)\)\n\s*state\.mistakesCleared = \(state\.mistakesCleared \?\? 0\) \+ n/, 'mistakesCleared += n next to the Mistake cleared XP in ProgressStore.swift');
+has(js, /if \(a\.correct && \(k === 'line' \|\| k === 'order'\)\) state\.solved\[k\]\+\+/, 'solved[kind]++ on right answers in app.js finish()');
+has(swift, /case \.line: solved\.line \+= 1\n\s*case \.order: solved\.order \+= 1/, 'solved.line/order += 1 in ProgressStore.recordSolved');
+same('XP per day kept (days)',
+  Number(one(js, /XP_DAYS_KEPT\s*=\s*(\d+)/, 'XP_DAYS_KEPT in app.js')),
+  1 + Number(one(swift, /byAdding: \.day, value: -(\d+), to: Date\(\)\)!\)\n\s*state\.xpByDay/, 'xpByDay cutoff in ProgressStore.finish')));
 same('section badge detail',
   one(js, /desc: ('Pass the ' \+ s\.title \+ '[^']*')/, 'section badge desc in app.js')?.replace(/' \+ s\.title \+ '/, '<title>').slice(1, -1),
   one(swift, /detail: "(Pass the \\\(section\.title\)[^"]*)"/, 'section badge detail in swift')?.replace('\\(section.title)', '<title>'));

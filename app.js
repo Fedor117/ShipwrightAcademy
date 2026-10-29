@@ -32,7 +32,11 @@
   const LEVELS = [
     [0, 'Intern'], [200, 'Apprentice'], [600, 'Junior Engineer'], [1200, 'Engineer'],
     [2000, 'Senior Engineer'], [3000, 'Staff Engineer'], [4500, 'Principal Engineer'], [6500, 'Distinguished Engineer'],
+    [8500, 'Fellow'], [11000, 'Senior Fellow'], [14000, 'Chief Engineer'], [17500, 'Master Shipwright'],
   ];
+  const HEAT_STEPS = [1, 50, 150, 300];   // day XP at which the activity heatmap reaches buckets 1-4
+  const HEAT_WEEKS = 12;
+  const XP_DAYS_KEPT = 120;
 
   // Mistakes deck: questions are keyed by a hash of their content, so sections and quizzes can reorder freely.
   function mistakeKey(q) {
@@ -49,11 +53,14 @@
 
   // ---------- State & persistence ----------
   const LS_KEY = 'shipwright-academy.v1';
-  const blank = () => ({ v: 1, xp: 0, topics: {}, exams: {}, days: [], badges: {}, reviews: 0, freeRoam: false, mistakes: {}, updatedAt: 0 });
+  const blank = () => ({ v: 1, xp: 0, topics: {}, exams: {}, days: [], badges: {}, reviews: 0, freeRoam: false, mistakes: {},
+    mistakesCleared: 0, solved: { line: 0, order: 0 }, xpByDay: {}, updatedAt: 0 });
+  // Older saves lack the newer fields; blank() fills them in.
+  const load = (json) => { const s = Object.assign(blank(), JSON.parse(json)); s.solved = Object.assign({ line: 0, order: 0 }, s.solved); return s; };
   let state = blank();
   try {
     const raw = localStorage.getItem(LS_KEY);
-    if (raw) state = Object.assign(blank(), JSON.parse(raw));
+    if (raw) state = load(raw);
   } catch (e) { /* storage unavailable: start fresh */ }
   pruneMistakes();
 
@@ -89,7 +96,7 @@
       const snap = await remoteRef.get();
       const remote = snap.exists ? snap.data() : null;
       if (remote && remote.updatedAt > state.updatedAt) {
-        state = Object.assign(blank(), JSON.parse(remote.json));
+        state = load(remote.json);
         pruneMistakes();
         try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
         syncLabel = 'Synced to your account';
@@ -172,6 +179,30 @@
     while (set.has(today(d))) { n++; d -= DAY; }
     return n;
   }
+  // Activity heatmap: XP per local day. A day with a finished session (an xpByDay entry, even 0, or a `days` entry from older saves) is at least bucket 1.
+  const heatLevel = (xp) => HEAT_STEPS.filter((x) => xp >= x).length;
+  function recordXP(d, xp) {
+    state.xpByDay[d] = (state.xpByDay[d] || 0) + xp;
+    const now = new Date();
+    const cutoff = today(new Date(now.getFullYear(), now.getMonth(), now.getDate() - (XP_DAYS_KEPT - 1)).getTime());
+    Object.keys(state.xpByDay).forEach((k) => { if (k < cutoff) delete state.xpByDay[k]; });
+  }
+  // HEAT_WEEKS columns of Monday..Sunday, oldest first; the last column is the current week.
+  function activity() {
+    const now = new Date();
+    const dow = (now.getDay() + 6) % 7;
+    const days = new Set(state.days);
+    const cells = [];
+    for (let i = 0; i < HEAT_WEEKS * 7; i++) {
+      const d = today(new Date(now.getFullYear(), now.getMonth(), now.getDate() - dow - (HEAT_WEEKS - 1) * 7 + i).getTime());
+      const has = Object.prototype.hasOwnProperty.call(state.xpByDay, d);
+      const xp = has ? state.xpByDay[d] : 0;
+      cells.push({ d, xp, future: i > (HEAT_WEEKS - 1) * 7 + dow, level: has || days.has(d) ? Math.max(1, heatLevel(xp)) : 0 });
+    }
+    const week = cells.slice((HEAT_WEEKS - 1) * 7).reduce((a, c) => a + c.xp, 0);
+    const best = Object.values(state.xpByDay).reduce((a, x) => Math.max(a, x), 0);
+    return { cells, week, best, active: cells.filter((c) => c.level > 0).length };
+  }
   function counts() {
     let topics = 0, passed = 0, exams = 0;
     SECTIONS.forEach((s) => {
@@ -212,17 +243,34 @@
   const originTitle = (si, ti) => SECTIONS[si].title + ' · ' + (ti === null ? 'Section exam' : SECTIONS[si].topics[ti].title);
 
   // ---------- Badges ----------
+  // progress() gives [current, target] for the bar on locked badges (same targets as Badge.progress in ProgressStore.swift).
+  const upTo = (cur, target) => [Math.min(cur, target), target];
+  const trackExams = (name) => {
+    const ss = SECTIONS.filter((s) => trackOf(s) === name);
+    return [ss.filter((s) => estate(s.id).passed).length, ss.length];
+  };
+  let inboxZero = false;   // set by finish() for the session being scored
   const BADGES = [
-    { id: 'first', name: 'First Commit', desc: 'Pass your first topic quiz.', test: () => counts().passed >= 1 },
-    { id: 'flawless', name: 'Zero Defects', desc: 'Answer every question right on a topic quiz.', test: () => Object.values(state.topics).some((t) => t.perfect) },
-    { id: 'comeback', name: 'Root Caused', desc: 'Pass a quiz or exam you previously failed.', test: () => Object.values(state.topics).concat(Object.values(state.exams)).some((t) => t.passed && t.failedOnce) },
-    { id: 'boss', name: 'Gatekeeper', desc: 'Pass your first section exam.', test: () => counts().exams >= 1 },
-    { id: 'streak3', name: 'On Call', desc: 'Study three days in a row.', test: () => streak() >= 3 },
-    { id: 'streak7', name: 'Release Train', desc: 'Study seven days in a row.', test: () => streak() >= 7 },
-    { id: 'review5', name: 'Spaced Out', desc: 'Complete five spaced reviews.', test: () => state.reviews >= 5 },
-    { id: 'half', name: 'Halfway Merged', desc: 'Pass half of all topics.', test: () => { const c = counts(); return c.topics > 0 && c.passed >= c.topics / 2; } },
-  ].concat(SECTIONS.map((s) => ({ id: 'sec-' + s.id, name: s.title, desc: 'Pass the ' + s.title + ' section exam.', test: () => !!estate(s.id).passed })))
-   .concat([{ id: 'all', name: 'Shipwright', desc: 'Pass every section exam.', test: () => SECTIONS.length > 0 && counts().exams === SECTIONS.length }]);
+    { id: 'first', name: 'First Commit', desc: 'Pass your first topic quiz.', test: () => counts().passed >= 1, progress: () => upTo(counts().passed, 1) },
+    { id: 'flawless', name: 'Zero Defects', desc: 'Answer every question right on a topic quiz.', test: () => Object.values(state.topics).some((t) => t.perfect), progress: () => [0, 1] },
+    { id: 'comeback', name: 'Root Caused', desc: 'Pass a quiz or exam you previously failed.', test: () => Object.values(state.topics).concat(Object.values(state.exams)).some((t) => t.passed && t.failedOnce), progress: () => [0, 1] },
+    { id: 'boss', name: 'Gatekeeper', desc: 'Pass your first section exam.', test: () => counts().exams >= 1, progress: () => upTo(counts().exams, 1) },
+    { id: 'streak3', name: 'On Call', desc: 'Study three days in a row.', test: () => streak() >= 3, progress: () => upTo(streak(), 3) },
+    { id: 'streak7', name: 'Release Train', desc: 'Study seven days in a row.', test: () => streak() >= 7, progress: () => upTo(streak(), 7) },
+    { id: 'review5', name: 'Spaced Out', desc: 'Complete five spaced reviews.', test: () => state.reviews >= 5, progress: () => upTo(state.reviews, 5) },
+    { id: 'half', name: 'Halfway Merged', desc: 'Pass half of all topics.', test: () => { const c = counts(); return c.topics > 0 && c.passed >= c.topics / 2; }, progress: () => { const c = counts(); return upTo(c.passed, Math.ceil(c.topics / 2)); } },
+    { id: 'mistakes10', name: 'Debugger', desc: 'Clear 10 questions from your mistakes deck.', test: () => state.mistakesCleared >= 10, progress: () => upTo(state.mistakesCleared, 10) },
+    { id: 'mistakes50', name: 'Bug Bounty', desc: 'Clear 50 questions from your mistakes deck.', test: () => state.mistakesCleared >= 50, progress: () => upTo(state.mistakesCleared, 50) },
+    { id: 'bugspot5', name: 'Spot the Bug', desc: 'Find the bug in five spot-the-bug questions.', test: () => state.solved.line >= 5, progress: () => upTo(state.solved.line, 5) },
+    { id: 'order5', name: 'Pipeline Builder', desc: 'Put five sequences in the right order.', test: () => state.solved.order >= 5, progress: () => upTo(state.solved.order, 5) },
+    { id: 'inboxzero', name: 'Inbox Zero', desc: 'Finish a spaced review with no other reviews due.', test: () => inboxZero, progress: () => [0, 1] },
+  ].concat(SECTIONS.map((s) => ({ id: 'sec-' + s.id, name: s.title, desc: 'Pass the ' + s.title + ' section exam.', test: () => !!estate(s.id).passed,
+    progress: () => upTo(s.topics.filter((t) => tstate(s.id, t.id).passed).length + (estate(s.id).passed ? 1 : 0), s.topics.length + 1) })))
+   .concat([
+     { id: 'track-software', name: 'Full Stack', desc: 'Pass every Software Engineering exam.', test: () => { const [n, of] = trackExams('Software Engineering'); return of > 0 && n === of; }, progress: () => trackExams('Software Engineering') },
+     { id: 'track-games', name: 'Game Ready', desc: 'Pass every Game Development exam.', test: () => { const [n, of] = trackExams('Game Development'); return of > 0 && n === of; }, progress: () => trackExams('Game Development') },
+     { id: 'all', name: 'Shipwright', desc: 'Pass every section exam.', test: () => SECTIONS.length > 0 && counts().exams === SECTIONS.length, progress: () => upTo(counts().exams, SECTIONS.length) },
+   ]);
 
   function checkBadges() {
     const fresh = [];
@@ -326,7 +374,8 @@
       '<button class="icon-btn" type="button" data-action="badges">' + ICON.medal + '<b>' + earned + '</b><span class="hide-sm">/ ' + BADGES.length + '</span></button>';
   }
 
-  function confetti() {
+  // big: the level-up burst, with more pieces from three points that fall for longer.
+  function confetti(big) {
     if (reduced) return;
     const c = $('#confetti');
     c.hidden = false;
@@ -336,17 +385,17 @@
     ctx.scale(dpr, dpr);
     const css = getComputedStyle(document.documentElement);
     const colors = ['--accent', '--xp', '--ok'].map((v) => css.getPropertyValue(v).trim());
-    const ps = Array.from({ length: 110 }, () => ({
-      x: innerWidth / 2 + (Math.random() - 0.5) * 120, y: innerHeight * 0.38,
-      vx: (Math.random() - 0.5) * 12, vy: -Math.random() * 12 - 4,
+    const ps = Array.from({ length: big ? 280 : 110 }, (_, i) => ({
+      x: innerWidth * (big ? [0.5, 0.2, 0.8][i % 3] : 0.5) + (Math.random() - 0.5) * 120, y: innerHeight * (big ? 0.45 : 0.38),
+      vx: (Math.random() - 0.5) * (big ? 16 : 12), vy: -Math.random() * (big ? 16 : 12) - 4,
       w: 5 + Math.random() * 5, h: 8 + Math.random() * 6, r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4,
       c: colors[Math.floor(Math.random() * colors.length)],
     }));
     const t0 = performance.now();
     (function frame(t) {
       ctx.clearRect(0, 0, innerWidth, innerHeight);
-      ps.forEach((p) => { p.vy += 0.35; p.x += p.vx; p.y += p.vy; p.r += p.vr; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore(); });
-      if (t - t0 < 1800) requestAnimationFrame(frame); else { ctx.clearRect(0, 0, innerWidth, innerHeight); c.hidden = true; }
+      ps.forEach((p) => { p.vy += big ? 0.28 : 0.35; p.x += p.vx; p.y += p.vy; p.r += p.vr; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore(); });
+      if (t - t0 < (big ? 3400 : 1800)) requestAnimationFrame(frame); else { ctx.clearRect(0, 0, innerWidth, innerHeight); c.hidden = true; }
     })(t0);
   }
 
@@ -405,6 +454,7 @@
     const deck = mistakeDeck().length;
     if (deck) html += '<div class="mistakes-bar"><span>' + ICON.undo + '<span><b>' + deck + (deck === 1 ? ' question' : ' questions') + '</b> in your mistakes deck. Answer each right ' + MISTAKE_CLEAR_STREAK + ' times in a row to clear it.</span></span>' +
       '<button class="btn btn-ghost" data-action="mistakes">Review mistakes</button></div>';
+    html += renderHeat();
 
     SECTIONS.forEach((s, si) => {
       const open = sectionUnlocked(si);
@@ -441,6 +491,19 @@
         '<span class="st-side">' + eside + '</span></button></li></ol></section>';
     });
     app.innerHTML = html;
+  }
+
+  function renderHeat() {
+    const a = activity();
+    const label = (d) => new Date(d + 'T00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    const cells = a.cells.map((c) => c.future ? '<i class="heat-cell" data-l="none"></i>'
+      : '<i class="heat-cell" data-l="' + c.level + '" title="' + esc(label(c.d)) + ': ' + c.xp + ' XP"></i>').join('');
+    const summary = 'Activity over the last ' + HEAT_WEEKS + ' weeks: ' + a.active + ' active day' + (a.active === 1 ? '' : 's') + ', ' + a.week + ' XP this week, best day ' + a.best + ' XP.';
+    return '<section class="heat"><div class="heat-head"><h2>Activity</h2><span>Last ' + HEAT_WEEKS + ' weeks</span></div>' +
+      '<div class="heat-body"><div class="heat-days" aria-hidden="true"><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span><span></span></div>' +
+      '<div class="heat-grid" role="img" aria-label="' + esc(summary) + '">' + cells + '</div>' +
+      '<div class="heat-stats"><span>This week: <b>' + a.week + ' XP</b></span><span>Best day: <b>' + a.best + ' XP</b></span>' +
+      '<span class="heat-key" aria-hidden="true">Less' + [0, 1, 2, 3, 4].map((l) => '<i class="heat-cell" data-l="' + l + '"></i>').join('') + 'More</span></div></div></section>';
   }
 
   // ---------- Interactive figures (content/INTERACTIVE.md) ----------
@@ -629,23 +692,29 @@
         else if (++m.streak >= MISTAKE_CLEAR_STREAK) { delete state.mistakes[q.k]; cleared.push(i); }
       });
       const n = cleared.length;
-      if (n) gains.push(['Mistake cleared', n * 15]);
+      if (n) { gains.push(['Mistake cleared', n * 15]); state.mistakesCleared = (state.mistakesCleared || 0) + n; }
       passed = n > 0;
     }
+    S.answers.forEach((a, i) => { const k = S.qs[i].kind; if (a.correct && (k === 'line' || k === 'order')) state.solved[k]++; });
+    // Inbox Zero: a passed spaced review that leaves no topic with a review due.
+    inboxZero = gains.some((g) => g[0] === 'Spaced review') && !SECTIONS.some((x) => x.topics.some((t) => reviewDue(x.id, t.id)));
     const xp = gains.reduce((a, g) => a + g[1], 0);
     const lvBefore = levelInfo(state.xp).n;
     state.xp += xp;
     const d = today();
     if (!state.days.includes(d)) { state.days.push(d); state.days = state.days.slice(-120); }
+    recordXP(d, xp);
     const fresh = checkBadges();
+    inboxZero = false;
     save();
     const lvAfter = levelInfo(state.xp);
-    view = { name: 'result', data: { kind: S.kind, si: S.si, ti: S.ti, correct, total, pct, passed, gains, cleared, qs: S.qs, answers: S.answers } };
+    const levelUp = lvAfter.n > lvBefore ? lvAfter : null;
+    view = { name: 'result', data: { kind: S.kind, si: S.si, ti: S.ti, correct, total, pct, passed, gains, cleared, qs: S.qs, answers: S.answers, levelUp } };
     session = null;
     render();
     window.scrollTo(0, 0);
-    if (passed && S.kind !== 'mistakes') confetti();
-    if (lvAfter.n > lvBefore) toast('<span class="seal">' + ICON.medal + '</span><span>Level up: <b>' + esc(lvAfter.name) + '</b></span>');
+    if (levelUp) confetti(true);
+    else if (passed && S.kind !== 'mistakes') confetti();
     fresh.forEach((b, i) => setTimeout(() => toast('<span class="seal">' + ICON.medal + '</span><span>Badge earned: <b>' + esc(b.name) + '</b></span>'), 400 + i * 500));
   }
 
@@ -656,6 +725,9 @@
     const color = r.kind === 'mistakes' ? 'var(--accent)' : r.passed ? 'var(--ok)' : 'var(--bad)';
     const ring = '<div class="score-ring"><svg viewBox="0 0 140 140"><circle cx="70" cy="70" r="60" fill="none" stroke="var(--rule)" stroke-width="12"/>' +
       '<circle cx="70" cy="70" r="60" fill="none" stroke="' + color + '" stroke-width="12" stroke-linecap="round" stroke-dasharray="' + (C * r.pct / 100).toFixed(1) + ' ' + C.toFixed(1) + '"/></svg><span class="v">' + r.pct + '%</span></div>';
+    const L = r.levelUp;
+    const levelCard = L ? '<div class="level-up" role="status"><span class="seal">' + ICON.medal + '</span><div><span class="eyebrow">Level up</span><b>Level ' + L.n + ' · ' + esc(L.name) + '</b>' +
+      '<span>' + (L.next ? (L.next - state.xp) + ' XP to ' + esc(LEVELS[L.n][1]) : 'Top level reached') + '</span></div></div>' : '';
     const what = r.kind === 'exam' ? s.title + ' exam' : r.kind === 'mistakes' ? 'Mistakes review' : s.topics[r.ti].title;
     let headline, body;
     if (r.kind === 'mistakes') {
@@ -709,7 +781,7 @@
         (q.code ? '<pre class="rcode">' + esc(q.code) + '</pre>' : '') + ans + '<span class="ra">' + md(q.explain) + '</span></div>';
     }).join('');
 
-    app.innerHTML = '<div class="narrow"><div class="result">' + ring + '<h1>' + headline + '</h1><p>' + body + '</p>' + gains + weak + '<div class="btn-row" style="justify-content:center">' + actions.join('') + '</div></div>' +
+    app.innerHTML = '<div class="narrow"><div class="result">' + levelCard + ring + '<h1>' + headline + '</h1><p>' + body + '</p>' + gains + weak + '<div class="btn-row" style="justify-content:center">' + actions.join('') + '</div></div>' +
       '<h3 style="margin:30px 0 0;font-size:20px">Answer review</h3><div class="review-list">' + review + '</div></div>';
   }
 
@@ -761,7 +833,16 @@
     const earned = BADGES.filter((b) => state.badges[b.id]).length;
     app.innerHTML = '<div class="narrow" style="max-width:860px"><nav class="crumbs"><button type="button" data-action="home">Path</button><span>/</span><span>Badges</span></nav>' +
       '<h1 class="page-title">Badges</h1><p class="page-sub">' + earned + ' of ' + BADGES.length + ' earned. ' + esc(syncLabel) + '.</p>' +
-      '<div class="badges">' + BADGES.map((b) => '<div class="badge ' + (state.badges[b.id] ? '' : 'off') + '"><span class="seal">' + (state.badges[b.id] ? ICON.medal : ICON.lock) + '</span><div><b>' + esc(b.name) + '</b><span>' + esc(b.desc) + '</span></div></div>').join('') + '</div>' +
+      '<div class="badges">' + BADGES.map((b) => {
+        const at = state.badges[b.id];
+        let foot;
+        if (at) foot = '<small class="b-foot">Earned ' + esc(new Date(at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })) + '</small>';
+        else {
+          const [cur, target] = b.progress();
+          foot = '<small class="b-foot"><span class="meter b-meter" role="progressbar" aria-label="' + esc(b.name) + ' progress" aria-valuemin="0" aria-valuemax="' + target + '" aria-valuenow="' + cur + '"><i style="width:' + (target ? Math.round(cur / target * 100) : 0) + '%"></i></span>' + cur + '/' + target + '</small>';
+        }
+        return '<div class="badge ' + (at ? '' : 'off') + '"><span class="seal">' + (at ? ICON.medal : ICON.lock) + '</span><div><b>' + esc(b.name) + '</b><span>' + esc(b.desc) + '</span>' + foot + '</div></div>';
+      }).join('') + '</div>' +
       '<div class="settings"><h3 style="font-size:18px">Settings</h3>' +
       '<label style="display:flex;gap:10px;align-items:flex-start;font-size:15px;max-width:60ch"><input type="checkbox" id="free-roam" data-action="freeroam"' + (state.freeRoam ? ' checked' : '') + ' style="margin-top:5px"> <span><b>Free roam.</b> Unlock every topic and exam, for when you already know some of the material. Quizzes still count and badges still apply.</span></label>' +
       (confirmReset

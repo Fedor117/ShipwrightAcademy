@@ -248,6 +248,14 @@ main { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: m
 
 /* Results */
 .result { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: clamp(22px, 5vw, 40px); background: var(--sheet); border: 1px solid var(--rule); border-radius: 16px; box-shadow: var(--shadow); }
+.level-up { display: flex; align-items: center; gap: 14px; text-align: left; width: 100%; max-width: 420px; padding: 14px 18px; border-radius: 14px; background: var(--xp-soft); border: 1px solid var(--xp); animation: lvl-pop .6s cubic-bezier(.2, 1.4, .4, 1); }
+.level-up .seal { width: 48px; height: 48px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--xp); color: var(--sheet); }
+.level-up .seal svg { width: 26px; height: 26px; }
+.level-up > div { display: flex; flex-direction: column; gap: 3px; }
+.level-up .eyebrow { color: var(--xp); }
+.level-up b { font: 800 20px/1.2 var(--f-display); color: var(--ink); }
+.level-up div > span:last-child { font-size: 14px; color: var(--ink-2); }
+@keyframes lvl-pop { from { transform: scale(.85); opacity: 0; } }
 .score-ring { width: 140px; height: 140px; position: relative; }
 .score-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .score-ring .v { position: absolute; inset: 0; display: grid; place-items: center; font: 800 34px/1 var(--f-display); font-variant-numeric: tabular-nums; }
@@ -270,6 +278,27 @@ main { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: m
 .mistakes-bar > span { display: flex; align-items: center; gap: 10px; color: var(--ink-2); font-size: 15px; }
 .mistakes-bar svg { color: var(--accent); flex: none; }
 
+/* Activity heatmap: accent at rising opacity per bucket (HEAT_STEPS in app.js) */
+.heat { margin: -24px 0 40px; padding: 14px 16px; background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--r); }
+.heat-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.heat-head h2 { font-size: 16px; margin: 0; }
+.heat-head span { font-size: 13px; color: var(--ink-3); }
+.heat-body { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 22px; }
+.heat-days { display: grid; grid-template-rows: repeat(7, 14px); gap: 3px; font-size: 10px; line-height: 14px; color: var(--ink-3); margin-right: -16px; }
+.heat-grid { display: grid; grid-template-rows: repeat(7, 14px); grid-auto-flow: column; grid-auto-columns: 14px; gap: 3px; }
+.heat-cell { display: inline-block; width: 14px; height: 14px; border-radius: 3px; background: var(--accent); }
+.heat-cell[data-l="0"] { background: var(--rule); }
+.heat-cell[data-l="1"] { opacity: .3; }
+.heat-cell[data-l="2"] { opacity: .5; }
+.heat-cell[data-l="3"] { opacity: .75; }
+.heat-cell[data-l="none"] { visibility: hidden; }
+.heat-stats { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.heat-stats b { color: var(--ink); font-weight: 600; }
+.heat-key { display: flex; align-items: center; gap: 3px; font-size: 12px; color: var(--ink-3); margin-top: 4px; }
+.heat-key .heat-cell { width: 11px; height: 11px; }
+.heat-key .heat-cell:first-child { margin-left: 4px; }
+.heat-key .heat-cell:last-child { margin-right: 4px; }
+
 /* Badges */
 .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 .badge { background: var(--sheet); border: 1px solid var(--rule); border-radius: 12px; padding: 14px; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: center; }
@@ -278,6 +307,9 @@ main { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: m
 .badge.off .seal { background: var(--code-bg); color: var(--ink-3); }
 .badge b { display: block; font-size: 15px; }
 .badge span { font-size: 13px; color: var(--ink-2); }
+.badge .b-foot { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.badge .b-meter { display: block; flex: 1; max-width: 120px; height: 5px; }
+.badge.off .b-meter > i { background: var(--accent); }
 .page-title { font-size: 32px; font-weight: 800; margin-bottom: 6px; }
 .page-sub { color: var(--ink-2); margin: 0 0 22px; }
 .settings { margin-top: 36px; border-top: 1px solid var(--rule); padding-top: 18px; display: flex; flex-direction: column; gap: 10px; }

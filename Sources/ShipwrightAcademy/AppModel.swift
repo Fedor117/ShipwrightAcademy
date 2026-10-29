@@ -229,6 +229,7 @@ final class AppModel {
         if session.kind != .mistakes {
             store.recordMisses(session.sectionIndex, zip(session.items, session.answers).filter { !$1.correct }.map { ($0.0.question, $0.0.topicIndex) })
         }
+        store.recordSolved(zip(session.items, session.answers).map { ($0.question, $1.correct) })
         switch session.kind {
         case .topic(let si, let ti):
             result = store.recordTopic(si, ti, correct: correct, total: total, isReview: session.isReview)
@@ -239,7 +240,7 @@ final class AppModel {
         }
         outcome = result
         path = Array(path.dropLast()) + [.result]
-        if let level = result.levelUp { toast("arrow.up.circle.fill", "Level up: \(level)") }
+        // A level-up is announced by the LevelUpCard on the result screen, not a toast.
         for badge in result.newBadges { toast(badge.symbol, "Badge earned: \(badge.name)") }
     }
 

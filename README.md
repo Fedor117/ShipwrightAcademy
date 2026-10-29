@@ -38,7 +38,7 @@ Lesson blocks are `p`, `h`, `list`, `code`, `callout` (`tip`, `warn` or `agent`)
 | Script | Purpose |
 | --- | --- |
 | `validate-content.js content/*.js` | Checks the schema, figure and interactive-figure rules, and quiz balance |
-| `check-rules.js` | Checks that the web and macOS apps use the same progression rules, section order, search rules, cheat sheet Markdown template and interactive-figure sandbox (CSP, base CSS, theme variables) |
+| `check-rules.js` | Checks that the web and macOS apps use the same progression rules (levels, XP, badges with their order and progress formulas, the counters behind the new badges, heatmap steps and XP-per-day retention), section order, search rules, cheat sheet Markdown template and interactive-figure sandbox (CSP, base CSS, theme variables) |
 | `build-curriculum.js` | Regenerates `curriculum.json` |
 | `build-cases.js` | Assembles `content/cases.js` from `figures/cases/` |
 | `insert-topic.js`, `insert-figure.js` | Add or replace a single topic, or a figure (`.svg`) or interactive figure (`.html`) |
@@ -77,7 +77,39 @@ Add its id in **all** of these places: `ORDER` in `app.js` and in `scripts/build
 | Spaced reviews | 3, 7, 21 and 60 days after passing |
 | XP | Topic passed +50, review +20, perfect +25, +10 per answer above your previous best, exam passed +250, flawless exam +100, mistake cleared +15 |
 | Mistakes deck | Up to 10 questions per review, oldest miss first; a question clears after 2 right answers in a row |
-| Levels | Intern (0 XP) to Distinguished Engineer (6500 XP) |
+| Levels | 12: Intern (0), Apprentice (200), Junior Engineer (600), Engineer (1200), Senior Engineer (2000), Staff Engineer (3000), Principal Engineer (4500), Distinguished Engineer (6500), Fellow (8500), Senior Fellow (11000), Chief Engineer (14000), Master Shipwright (17500 XP) |
+| Activity heatmap | Day XP buckets: 0, 1-49, 50-149, 150-299, 300+ (`HEAT_STEPS` / `Rules.heatSteps`), at least 1 on any day with a finished session; XP per day kept for 120 days |
+
+### Levels
+
+When a quiz, exam, spaced review or mistakes review crosses one or more level thresholds, the result screen shows a level-up card above the score ("Level N · Name" and "N XP to <next level name>", or "Top level reached"); it replaces the level-up toast, with a bigger celebration than a normal pass: a longer, larger confetti burst on the web and a glass card with a symbol effect on macOS.
+
+### Badges
+
+Locked badges show a progress bar and "current/target"; earned badges show the date they were earned. Progress is clamped to the target.
+
+| Badge | Earned when | Progress |
+| --- | --- | --- |
+| First Commit (`first`) | You pass a topic quiz | passed topics / 1 |
+| Zero Defects (`flawless`) | A topic quiz is all right | 0/1 |
+| Root Caused (`comeback`) | You pass a quiz or exam you failed before | 0/1 |
+| Gatekeeper (`boss`) | You pass a section exam | passed exams / 1 |
+| On Call, Release Train (`streak3`, `streak7`) | You study 3 or 7 days in a row | current streak / 3 or 7 |
+| Spaced Out (`review5`) | You complete 5 spaced reviews | reviews / 5 |
+| Halfway Merged (`half`) | You pass half of all topics | passed topics / ⌈topics ÷ 2⌉ |
+| Debugger, Bug Bounty (`mistakes10`, `mistakes50`) | You clear 10 or 50 questions from the mistakes deck | cleared / 10 or 50 |
+| Spot the Bug (`bugspot5`) | You answer 5 spot-the-bug (`line`) questions right | right `line` answers / 5 |
+| Pipeline Builder (`order5`) | You answer 5 `order` questions right | right `order` answers / 5 |
+| Inbox Zero (`inboxzero`) | A passed spaced review leaves no topic with a review due | 0/1 |
+| One per section (`sec-<id>`) | You pass that section's exam | (passed topics + exam passed) / (topics + 1) |
+| Full Stack, Game Ready (`track-software`, `track-games`) | You pass every exam in the Software Engineering or Game Development track | passed exams in the track / sections in it |
+| Shipwright (`all`) | You pass every section exam | passed exams / sections |
+
+Right `line` and `order` answers count in every kind of session (topic quiz, review, exam, mistakes review). Progress keeps `mistakesCleared` and `solved` (`line`, `order`) counters for these badges.
+
+### Activity heatmap
+
+The home screen shows the last 12 weeks as a grid: one column per week (Monday to Sunday, oldest on the left, the current week on the right, future days left empty). Each finished session adds its XP to the day in `xpByDay` (local `yyyy-MM-dd`), and a session with no XP still records the day with 0. A cell's shade comes from that day's XP: 0, 1-49, 50-149, 150-299 or 300+ map to buckets 0-4, except that any day with a finished session (an `xpByDay` entry, even 0, or a date in `days` from older saves) is at least bucket 1. Days with no session are bucket 0. Next to the grid: XP this week (from Monday) and the best day.
 
 ### Mistakes deck
 

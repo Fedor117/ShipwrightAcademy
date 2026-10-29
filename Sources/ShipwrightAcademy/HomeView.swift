@@ -9,6 +9,7 @@ struct HomeView: View {
             VStack(spacing: 44) {
                 hero
                 today
+                ActivityHeatmap()
                 ForEach(Curriculum.tracks, id: \.name) { track in
                     VStack(alignment: .leading, spacing: 14) {
                         Text(track.name).font(.title2.bold())
@@ -117,6 +118,66 @@ struct HomeView: View {
     private func stat(_ value: String, _ unit: String, _ color: Color) -> some View {
         Text("\(Text(value).font(.system(size: 28, weight: .semibold)).foregroundStyle(color))\(Text(unit).font(.body).foregroundStyle(.secondary))")
             .monospacedDigit()
+    }
+}
+
+/// Last Rules.heatWeeks weeks of study: one column per week (oldest left), rows Monday to Sunday, shaded by that day's XP.
+struct ActivityHeatmap: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let store = model.store
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        let start = cal.date(byAdding: .day, value: -7 * (Rules.heatWeeks - 1), to: store.weekStart)!
+        let weeks: [[Date?]] = (0..<Rules.heatWeeks).map { w in
+            (0..<7).map { d in
+                let day = cal.date(byAdding: .day, value: w * 7 + d, to: start)!
+                return day > today ? nil : day
+            }
+        }
+        let activeDays = weeks.joined().compactMap { $0 }.filter { store.heatBucket($0) > 0 }.count
+        return VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("ACTIVITY").font(.caption.weight(.semibold)).tracking(0.8).foregroundStyle(.secondary)
+                Spacer()
+                Text("This week: \(store.weekXP) XP").monospacedDigit()
+                Text("Best day: \(store.bestDayXP) XP").monospacedDigit().foregroundStyle(.secondary).padding(.leading, 16)
+            }
+            .font(.callout)
+            HStack(alignment: .top, spacing: 4) {
+                VStack(alignment: .trailing, spacing: 4) {
+                    ForEach(Array(["Mon", "", "Wed", "", "Fri", "", "Sun"].enumerated()), id: \.offset) { _, label in
+                        Text(label).font(.caption2).foregroundStyle(.secondary).frame(height: 16)
+                    }
+                }
+                .padding(.trailing, 4)
+                ForEach(weeks.indices, id: \.self) { w in
+                    VStack(spacing: 4) {
+                        ForEach(0..<7, id: \.self) { d in
+                            if let day = weeks[w][d] {
+                                cell(store.heatBucket(day))
+                                    .help("\(ProgressStore.dayKey(day)): \(store.dayXP(day).xp ?? 0) XP")
+                            } else {
+                                Color.clear.frame(width: 16, height: 16)
+                            }
+                        }
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Activity over the last \(Rules.heatWeeks) weeks: \(activeDays) active days. This week \(store.weekXP) XP. Best day \(store.bestDayXP) XP.")
+        }
+        .padding(28)
+        .glassEffect(.regular, in: .rect(cornerRadius: 30))
+    }
+
+    private func cell(_ bucket: Int) -> some View {
+        let opacity: [Double] = [0, 0.3, 0.5, 0.75, 1]
+        return RoundedRectangle(cornerRadius: 4)
+            .fill(bucket == 0 ? Color.secondary.opacity(0.15) : Color.accentColor.opacity(opacity[bucket]))
+            .frame(width: 16, height: 16)
     }
 }
 

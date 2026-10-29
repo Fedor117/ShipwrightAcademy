@@ -16,7 +16,8 @@ struct BadgesView: View {
                 GlassEffectContainer(spacing: 14) {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 14)], spacing: 14) {
                         ForEach(store.badges) { badge in
-                            let has = store.state.badges[badge.id] != nil
+                            let earnedAt = store.state.badges[badge.id]
+                            let has = earnedAt != nil
                             HStack(spacing: 14) {
                                 Image(systemName: has ? badge.symbol : "lock.fill")
                                     .font(.title2)
@@ -26,6 +27,20 @@ struct BadgesView: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(badge.name).font(.headline)
                                     Text(badge.detail).font(.callout).foregroundStyle(.secondary)
+                                    if let earnedAt {
+                                        Text("Earned \(earnedAt.formatted(date: .abbreviated, time: .omitted))")
+                                            .font(.caption).foregroundStyle(Palette.xp)
+                                    } else {
+                                        let p = store.progress(badge)
+                                        HStack(spacing: 8) {
+                                            ProgressView(value: Double(p.current), total: Double(max(p.target, 1)))
+                                                .tint(Palette.xp)
+                                            Text("\(p.current)/\(p.target)").font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                                        }
+                                        .padding(.top, 4)
+                                        .accessibilityElement(children: .ignore)
+                                        .accessibilityLabel("Progress \(p.current) of \(p.target)")
+                                    }
                                 }
                                 Spacer(minLength: 0)
                             }

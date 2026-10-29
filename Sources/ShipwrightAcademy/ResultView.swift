@@ -25,6 +25,7 @@ struct ResultView: View {
 
         return ScrollView {
             VStack(spacing: 28) {
+                if o.levelUp != nil { LevelUpCard() }
                 VStack(spacing: 16) {
                     ZStack {
                         Ring(fraction: Double(o.correct) / Double(o.total), color: isMistakes ? .accentColor : o.passed ? .green : .orange, lineWidth: 22)
@@ -146,6 +147,40 @@ struct ResultView: View {
         case .review(let si, let ti): "Review: \(model.sections[si].topics[ti].title)"
         case .exam(let si): "Next: \(model.sections[si].title) exam"
         }
+    }
+}
+
+/// Shown above the score when a session crossed one or more level thresholds.
+struct LevelUpCard: View {
+    @Environment(AppModel.self) private var model
+    @State private var shown = false
+
+    var body: some View {
+        let store = model.store
+        let level = store.level()
+        HStack(spacing: 22) {
+            Image(systemName: "arrow.up.circle.fill")
+                .font(.system(size: 60, weight: .semibold))
+                .foregroundStyle(.white, Palette.xp)
+                .symbolEffect(.bounce.up.byLayer, options: .repeat(3), value: shown)
+                .symbolEffect(.breathe, isActive: shown)
+            VStack(alignment: .leading, spacing: 4) {
+                Eyebrow(text: "Level up", color: Palette.xp)
+                Text("Level \(level.number) · \(level.name)")
+                    .font(.system(size: 34, weight: .bold)).tracking(-0.6)
+                Text(level.next.map { "\($0 - store.state.xp) XP to \(Rules.levels[level.number].1)" } ?? "Top level reached")
+                    .font(.title3).foregroundStyle(.secondary).monospacedDigit()
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 32)
+        .padding(.vertical, 26)
+        .frame(maxWidth: .infinity)
+        .glassEffect(.regular.tint(Palette.xp.opacity(0.25)), in: .rect(cornerRadius: 30))
+        .scaleEffect(shown ? 1 : 0.85)
+        .opacity(shown ? 1 : 0)
+        .accessibilityElement(children: .combine)
+        .onAppear { withAnimation(.spring(duration: 0.6, bounce: 0.45)) { shown = true } }
     }
 }
 
