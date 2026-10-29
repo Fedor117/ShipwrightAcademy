@@ -60,7 +60,7 @@ enum Search {
                     case "h", "p": add(si, ti, b.type, b.text ?? "", a)
                     case "list": for i in b.items ?? [] { add(si, ti, "list", i, a) }
                     case "callout": add(si, ti, SearchRules.kinds[b.kind ?? ""] != nil ? b.kind! : "tip", b.text ?? "", a)
-                    case "figure": add(si, ti, "figure", b.caption ?? "", a)
+                    case "figure", "interactive": add(si, ti, "figure", b.caption ?? "", a)
                     case "patterns": for p in b.patterns ?? [] { add(si, ti, "pattern", [p.signal, p.use, p.why].joined(separator: " · "), a) }
                     default: break
                     }

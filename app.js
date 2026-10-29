@@ -36,7 +36,7 @@
 
   // Mistakes deck: questions are keyed by a hash of their content, so sections and quizzes can reorder freely.
   function mistakeKey(q) {
-    const s = [q.q].concat(q.options || []).join('\u0000');
+    const s = [q.q].concat(q.options || [], q.steps || [], q.code != null ? [q.code] : []).join('\u0000');
     let h = 0x811c9dc5;
     for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
     return (h >>> 0).toString(36);
@@ -260,7 +260,7 @@
         if (b.type === 'h' || b.type === 'p') add(ti, b.type, b.text, a);
         else if (b.type === 'list') b.items.forEach((i) => add(ti, 'list', i, a));
         else if (b.type === 'callout') add(ti, SEARCH_KINDS[b.kind] ? b.kind : 'tip', b.text, a);
-        else if (b.type === 'figure') add(ti, 'figure', b.caption, a);
+        else if (b.type === 'figure' || b.type === 'interactive') add(ti, 'figure', b.caption, a);
         else if (b.type === 'patterns') b.patterns.forEach((p) => add(ti, 'pattern', [p.signal, p.use, p.why].join(' · '), a));
       });
       t.keyPoints.forEach((k, ki) => add(ti, 'keyPoint', k, 'kp-' + ki));
@@ -536,7 +536,7 @@
   function startMistakes() {
     const qs = mistakeDeck().slice(0, MISTAKE_SESSION).map((k) => Object.assign(makeQ(QINDEX[k].q, QINDEX[k].ti), { si: QINDEX[k].si }));
     if (!qs.length) return go({ name: 'home' });
-    session = { kind: 'mistakes', si: qs[0].si, qs, i: 0, picked: null, checked: false, answers: [] };
+    session = { kind: 'mistakes', si: qs[0].si, qs, i: 0, picked: firstPick(qs[0]), checked: false, answers: [] };
     view = { name: 'quiz' }; render(); window.scrollTo(0, 0);
   }
 

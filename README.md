@@ -83,13 +83,13 @@ Add its id in **all** of these places: `ORDER` in `app.js` and in `scripts/build
 
 Every question answered wrong in a topic quiz, spaced review or section exam goes into the mistakes deck. "Review mistakes" (home screen, header button on the web, sidebar on macOS) drills only those questions, with no pass mark. A question leaves the deck after 2 right answers in a row inside mistakes reviews; a wrong answer anywhere resets its run. Each cleared question earns +15 XP.
 
-Deck entries are keyed by a hash of the question text and options (`mistakeKey` in `app.js` and `ProgressStore.swift`), not by position, so reordering topics or questions is safe. Editing a question's text or options gives it a new key, and the old entry is dropped silently the next time progress loads.
+Deck entries are keyed by a hash of the question's text, options, order steps and code, in that order (`mistakeKey` in `app.js` and `ProgressStore.swift`), not by position, so reordering topics or questions is safe. Every question kind (mc, order, line) can land in the deck and is reviewed with the normal quiz screen. Editing any of those fields gives the question a new key, and the old entry is dropped silently the next time progress loads.
 
 These rules are written twice, once in `app.js` and once in `ProgressStore.swift` (`Rules`). Change both, then run `node scripts/check-rules.js`.
 
 ## Search
 
-Both apps search the whole course: section and topic titles, summaries, headings, paragraphs, list items, callouts, figure captions, key points and patterns. Code blocks and quiz questions are not indexed.
+Both apps search the whole course: section and topic titles, summaries, headings, paragraphs, list items, callouts, figure and interactive figure captions, key points and patterns. Code blocks and quiz questions are not indexed.
 
 - **Open it:** on the web, use the field in the header (⌘K / Ctrl+K or `/`), then ↑ ↓ to move, Enter to open and Esc to close. On macOS, use the sidebar search field (⌘F or ⌘K), and Return opens the top result. In both apps, focusing the field again shows the results for the current query, and while you type, quiz shortcuts (1–5, Return) are ignored.
 - **Matching:** every word you type must match the start of a word in the same piece of text. Case, accents and `**`/`` ` `` markup are ignored, so `cache inval` finds "invalidating caches". Queries shorter than 2 letters show no results.

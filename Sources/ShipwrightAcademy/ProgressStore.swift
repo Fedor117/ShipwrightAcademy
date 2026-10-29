@@ -181,7 +181,7 @@ final class ProgressStore {
     /// FNV-1a over the question's UTF-16 content, base 36; matches mistakeKey in app.js.
     nonisolated static func mistakeKey(_ q: Question) -> String {
         var h: UInt32 = 0x811c9dc5
-        for u in ([q.q] + q.options).joined(separator: "\u{0}").utf16 { h = (h ^ UInt32(u)) &* 0x01000193 }
+        for u in ([q.q] + q.options + q.steps + (q.code.map { [$0] } ?? [])).joined(separator: "\u{0}").utf16 { h = (h ^ UInt32(u)) &* 0x01000193 }
         return String(h, radix: 36)
     }
 
