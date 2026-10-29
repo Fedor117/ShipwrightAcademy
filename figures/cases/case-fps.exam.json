@@ -1,0 +1,35 @@
+[
+  {
+    "q": "A 64 Hz server compensates with RTT plus interpolation delay. A shooter has 60 ms RTT and interpolates 2 ticks (31 ms). A target runs at 6 m/s toward cover. About how far past the corner can the target be when the hit still counts?",
+    "options": [
+      "About 0.55 m, because the rewind is roughly 91 ms",
+      "About 0.1 m, because only one tick is rewound",
+      "About 1.2 m, because both pings are counted twice",
+      "About 0 m, since lag compensation stops at corners"
+    ],
+    "answer": 0,
+    "explain": "Rewind is about 60 + 31 = 91 ms, and 6 m/s * 0.091 s is about 0.55 m. Rewinding a single tick would ignore the latency being compensated, doubling the ping has no basis, and lag compensation has no knowledge of corners."
+  },
+  {
+    "q": "A level has 40 AI agents. Profiling shows 3 sight raycasts per agent every frame cost 1.4 ms at 60 fps. Which change keeps behaviour believable and cuts the cost the most?",
+    "options": [
+      "Cast only one ray, to the player's feet, for every agent",
+      "Use the render mesh for sight rays so each ray is more precise",
+      "Reduce the number of agents to 10 in every encounter",
+      "Stagger perception at 5 to 10 Hz after cheap cone tests"
+    ],
+    "answer": 3,
+    "explain": "Time-slicing and cheap rejection reduce the ray count by about 6 to 12 times while reaction times stay human. One foot ray breaks partial-cover sight, mesh rays cost more, and removing agents changes the design instead of the cost."
+  },
+  {
+    "q": "A designer wants a 120 m open hall where the player sees 300 props and 20 enemies at once. Frame time doubles there. What is the best first response?",
+    "options": [
+      "Lower texture resolution across the whole game to save memory",
+      "Break the sightline with a turn or door, then bake occlusion",
+      "Disable shadows only in this hall, and ship it unchanged",
+      "Raise the camera far plane so culling covers the full hall"
+    ],
+    "answer": 1,
+    "explain": "The cost is set by the worst view, and a long open sightline defeats occlusion. Shortening it or breaking it up lets baked visibility cull most of the hall, and LODs cover what must stay visible. Texture size, shadows alone and far plane changes do not address the visible set."
+  }
+]

@@ -1,0 +1,35 @@
+[
+  {
+    "q": "Inside search, a line returns to a position already on the current path. You score it 0 at the first repeat, though the rules need three occurrences. A teammate calls it a bug. What is the right view?",
+    "options": [
+      "Bug: only the third occurrence may be scored as a draw, otherwise search is unsound",
+      "Bug: a repeat should be scored with the static evaluation of that position instead",
+      "Intended: if both sides chose this cycle once, they can repeat it, so it is a draw",
+      "Intended only if the transposition table is cleared before every search iteration"
+    ],
+    "answer": 2,
+    "explain": "If neither side had anything better than entering the cycle, it will repeat, so search scores the first repeat as a draw and saves the nodes; the game loop still enforces threefold from the full history. The caveat is the transposition table: scores that depended on a path-specific repetition can be wrong when reused through another path, which is why engines are careful about storing them, not a reason to clear the table."
+  },
+  {
+    "q": "Mate is scored as Mate - ply (Mate = 30000). A node at ply 4 proves mate 6 plies later and the raw score 29990 is stored in the TT. The entry is probed at ply 12 in another line. What goes wrong, and what is the fix?",
+    "options": [
+      "It implies mate before ply 12; store it relative to the node and adjust on probe",
+      "Nothing; scores in the table are absolute, so they stay valid whatever the probe ply",
+      "It overflows the 16-bit score field; clamp every stored score to plus or minus 20000",
+      "The entry is stale; refuse to store any score above 29000 and search it again"
+    ],
+    "answer": 0,
+    "explain": "Raw 29990 means mate at ply 10 from the root, which is before the probing node at ply 12, so the reported distance is wrong. Store the mate as 'in 6 plies from this node' (29994 here) and subtract the probing ply on read, giving 29982, a mate at ply 18. Clamping or refusing to store mate scores either loses the information or wastes the table."
+  },
+  {
+    "q": "A 64 MB table holds 16-byte entries and every searched node stores a distinct position at 2 million nodes per second. About when does it start overwriting, and what follows?",
+    "options": [
+      "About 30 s in; below that, an always-replace policy loses nothing important",
+      "About 2 min in; entries are 64-bit, so overwriting them is harmless to results",
+      "About 20 s in; the table is large, so overwriting stays a rare event",
+      "About 2 s in; replacement and aging now decide how much deep work survives"
+    ],
+    "answer": 3,
+    "explain": "64 MB / 16 B = 4,194,304 entries, and at 2 million new positions per second that is full in about 2 seconds, well inside one move. From then on the replacement policy (prefer deep entries, age out old ones) determines how much useful work the table keeps. In practice many nodes are repeats, so fill is slower, but the policy still matters for long searches."
+  }
+]

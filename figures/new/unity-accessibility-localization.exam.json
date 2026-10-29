@@ -1,0 +1,35 @@
+[
+  {
+    "q": "German players report that their settings reset every launch. The save code writes `volume.ToString()` and reads it back with `float.Parse(text)`. What is the correct fix?",
+    "options": [
+      "Force the thread culture to en-US at startup for every player",
+      "Write and parse saved values with CultureInfo.InvariantCulture",
+      "Store floats as strings with the player's locale tag attached",
+      "Replace float.Parse with Convert.ToSingle on the current culture"
+    ],
+    "answer": 1,
+    "explain": "German culture writes `0,8`, which the parse rejects or misreads; data must always use the invariant culture. Forcing en-US breaks culture-correct display for the UI, and the other options keep culture-dependent data."
+  },
+  {
+    "q": "Which subtitle setup best serves deaf and hard-of-hearing players during a busy combat scene?",
+    "options": [
+      "Large centred text with no background so the scene stays visible",
+      "Subtitles only in cutscenes so gameplay dialogue never distracts",
+      "Fast word-by-word text synced exactly to the voice line timing",
+      "Speaker names, a backing box, and captions for off-screen sounds"
+    ],
+    "answer": 3,
+    "explain": "Speaker labels say who is talking when the speaker is off-screen, a background keeps text legible over a changing scene, and captions convey gameplay-relevant sounds. The other options drop legibility, coverage or reading time."
+  },
+  {
+    "q": "You are mirroring the UI for an Arabic release. Which element should keep its left-to-right orientation?",
+    "options": [
+      "A media play button's triangle pointing in the playback direction",
+      "The back arrow in the top navigation bar of the settings screen",
+      "The order of tabs in the horizontal tab bar across the screen",
+      "A horizontal progress bar showing how far a download has got"
+    ],
+    "answer": 0,
+    "explain": "Icons that represent physical or media direction, like play, are not mirrored. Navigation arrows, tab order and progress fill follow the reading direction and do flip in a right-to-left layout."
+  }
+]

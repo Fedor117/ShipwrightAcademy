@@ -1,0 +1,35 @@
+[
+  {
+    "q": "Mounted travel reaches 25 m/s. A 128 m cell takes up to 4 s to load (95th percentile), and terrain and props must be ready when the cell is 256 m away. Which load and unload radii, in cells, meet the deadline without reloading cells at borders?",
+    "options": [
+      "2 cells load, 2 cells unload: it is the cheapest in memory",
+      "3 cells load, 4 cells unload: 128 m of lead and a one-cell gap",
+      "2 cells load, 3 cells unload: 256 m matches the view range",
+      "3 cells load, 3 cells unload: the same radius saves one setting"
+    ],
+    "answer": 1,
+    "explain": "A 4 s load at 25 m/s covers 100 m, so the request must start at least 356 m out. A 3-cell load radius (384 m) gives 128 m of lead, about 5.1 s at 25 m/s, which covers the 4 s load with about 1 s to spare, and a 4-cell unload radius adds the hysteresis gap. Loading at 256 m is 100 m too late and shows pop-in, and equal radii thrash at borders."
+  },
+  {
+    "q": "A save from version 3 is opened by build version 6. Version 4 renamed the fact guild_rep to faction.guild.rep. Version 5 split the fact gold into gold and debt. Version 6 removed an NPC whose ID still appears in the saved deltas. Which loader is correct?",
+    "options": [
+      "Reject saves older than the previous version and ask the player to restart",
+      "Read both old and new fact names in game code and keep that forever",
+      "Edit the 3 to 4 migration so that it also covers the later renames",
+      "Run migrations 3 to 4, 4 to 5, 5 to 6 in order; skip unknown IDs"
+    ],
+    "answer": 3,
+    "explain": "Each migration is a small pure function for one version step, run in sequence, and tested against a real saved file from each version. Unknown IDs are skipped so removed content cannot crash the load. Rejecting old saves loses progress, dual names spread legacy into all code, and editing an old migration breaks saves already upgraded by it."
+  },
+  {
+    "q": "Right after a 1 km origin shift, the trails of thrown arrows streak across the screen for one frame and agents head for destinations 1 km off. The static world and the player look correct. What was missed?",
+    "options": [
+      "Objects holding cached world-space positions never received the shift delta",
+      "The threshold is too small, and shifting less often would hide the artefacts",
+      "The shift should run in FixedUpdate so that it happens before physics",
+      "Trails and agents need 64-bit positions so that the error cannot occur"
+    ],
+    "answer": 0,
+    "explain": "The shift moves roots, but anything storing world coordinates separately (trail points, agent destinations, audio positions, cached targets) still holds the old values. Broadcasting the delta in the same frame fixes them all. A rarer shift only makes the jump bigger, the update phase is not the cause, and doubles on every consumer defeat the purpose of the shift."
+  }
+]

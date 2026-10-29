@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 290" role="img" aria-label="C# compiles to IL. Mono ships the IL and JIT-compiles it at runtime. IL2CPP strips the IL, converts it to C++ and compiles it with the platform's native compiler at build time, so the device runs AOT machine code.">
+<style>
+.unity-mono-il2cpp-t{font-size:14px;fill:var(--fig-ink);font-weight:600}
+.unity-mono-il2cpp-h{font-size:13px;fill:var(--fig-ink)}
+.unity-mono-il2cpp-s{font-size:12px;fill:var(--fig-muted)}
+.unity-mono-il2cpp-box{fill:var(--fig-panel);stroke:var(--fig-line);stroke-width:1.5}
+.unity-mono-il2cpp-m{fill:var(--fig-accent);fill-opacity:.12;stroke:var(--fig-accent);stroke-width:1.75}
+.unity-mono-il2cpp-i{fill:var(--fig-accent2);fill-opacity:.12;stroke:var(--fig-accent2);stroke-width:1.75}
+.unity-mono-il2cpp-ar{stroke:var(--fig-muted);stroke-width:1.75;fill:none}
+.unity-mono-il2cpp-g{fill:none;stroke-width:3;opacity:0}
+.unity-mono-il2cpp-gm{stroke:var(--fig-accent)}
+.unity-mono-il2cpp-gi{stroke:var(--fig-accent2)}
+@keyframes unity-mono-il2cpp-k1{0%,3%{opacity:0}6%,16%{opacity:1}20%,100%{opacity:0}}
+@keyframes unity-mono-il2cpp-k2{0%,20%{opacity:0}24%{opacity:1}36%{opacity:.35}48%{opacity:1}60%{opacity:.35}72%{opacity:1}84%{opacity:.35}92%{opacity:1}97%,100%{opacity:0}}
+@keyframes unity-mono-il2cpp-k3{0%,3%{opacity:0}6%,22%{opacity:1}26%,100%{opacity:0}}
+@keyframes unity-mono-il2cpp-k4{0%,24%{opacity:0}28%,44%{opacity:1}48%,100%{opacity:0}}
+@keyframes unity-mono-il2cpp-k5{0%,46%{opacity:0}50%,70%{opacity:1}74%,100%{opacity:0}}
+@keyframes unity-mono-il2cpp-k6{0%,74%{opacity:0}78%,94%{opacity:1}98%,100%{opacity:0}}
+</style>
+<defs><marker id="unity-mono-il2cpp-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--fig-muted)"/></marker></defs>
+<text class="unity-mono-il2cpp-s" x="250" y="24" text-anchor="middle">BUILD TIME</text>
+<text class="unity-mono-il2cpp-s" x="567" y="24" text-anchor="middle">RUNTIME, ON DEVICE</text>
+<line x1="490" y1="34" x2="490" y2="246" style="stroke:var(--fig-line);stroke-width:1.5;stroke-dasharray:4 5"/>
+<rect class="unity-mono-il2cpp-box" x="16" y="133" width="56" height="44" rx="10"/>
+<text class="unity-mono-il2cpp-t" x="44" y="160" text-anchor="middle">C#</text>
+<line class="unity-mono-il2cpp-ar" x1="74" y1="155" x2="98" y2="155" marker-end="url(#unity-mono-il2cpp-a)"/>
+<rect class="unity-mono-il2cpp-box" x="102" y="133" width="56" height="44" rx="10"/>
+<text class="unity-mono-il2cpp-t" x="130" y="160" text-anchor="middle">IL</text>
+<text class="unity-mono-il2cpp-s" x="87" y="196" text-anchor="middle">compile</text>
+<path class="unity-mono-il2cpp-ar" d="M160 148C180 148 174 90 192 90" marker-end="url(#unity-mono-il2cpp-a)"/>
+<path class="unity-mono-il2cpp-ar" d="M160 162C180 162 174 216 192 216" marker-end="url(#unity-mono-il2cpp-a)"/>
+<text x="196" y="60" style="font-size:14px;font-weight:700;fill:var(--fig-accent)">Mono</text>
+<rect class="unity-mono-il2cpp-m" x="196" y="70" width="110" height="40" rx="10"/>
+<text class="unity-mono-il2cpp-h" x="251" y="95" text-anchor="middle">ships IL</text>
+<rect class="unity-mono-il2cpp-g unity-mono-il2cpp-gm" x="193" y="67" width="116" height="46" rx="12" style="animation:unity-mono-il2cpp-k1 8s infinite"/>
+<line class="unity-mono-il2cpp-ar" x1="308" y1="90" x2="506" y2="90" marker-end="url(#unity-mono-il2cpp-a)"/>
+<rect class="unity-mono-il2cpp-m" x="510" y="66" width="114" height="48" rx="10"/>
+<text class="unity-mono-il2cpp-h" x="567" y="86" text-anchor="middle">JIT compiles</text>
+<text class="unity-mono-il2cpp-s" x="567" y="104" text-anchor="middle">at runtime</text>
+<rect class="unity-mono-il2cpp-g unity-mono-il2cpp-gm" x="507" y="63" width="120" height="54" rx="12" style="animation:unity-mono-il2cpp-k2 8s infinite"/>
+<text class="unity-mono-il2cpp-s" x="196" y="134">seconds per build, fine for desktop iteration</text>
+<text x="196" y="186" style="font-size:14px;font-weight:700;fill:var(--fig-accent2)">IL2CPP</text>
+<rect class="unity-mono-il2cpp-i" x="196" y="196" width="64" height="40" rx="10"/>
+<text class="unity-mono-il2cpp-h" x="228" y="221" text-anchor="middle">strip</text>
+<line class="unity-mono-il2cpp-ar" x1="261" y1="216" x2="273" y2="216" marker-end="url(#unity-mono-il2cpp-a)"/>
+<rect class="unity-mono-il2cpp-i" x="276" y="196" width="60" height="40" rx="10"/>
+<text class="unity-mono-il2cpp-h" x="306" y="221" text-anchor="middle">C++</text>
+<line class="unity-mono-il2cpp-ar" x1="337" y1="216" x2="349" y2="216" marker-end="url(#unity-mono-il2cpp-a)"/>
+<rect class="unity-mono-il2cpp-i" x="352" y="196" width="122" height="40" rx="10"/>
+<text class="unity-mono-il2cpp-h" x="413" y="221" text-anchor="middle">native compiler</text>
+<line class="unity-mono-il2cpp-ar" x1="476" y1="216" x2="506" y2="216" marker-end="url(#unity-mono-il2cpp-a)"/>
+<rect class="unity-mono-il2cpp-i" x="510" y="192" width="114" height="48" rx="10"/>
+<text class="unity-mono-il2cpp-h" x="567" y="212" text-anchor="middle">machine code</text>
+<text class="unity-mono-il2cpp-s" x="567" y="230" text-anchor="middle">AOT, no JIT</text>
+<rect class="unity-mono-il2cpp-g unity-mono-il2cpp-gi" x="193" y="193" width="70" height="46" rx="12" style="animation:unity-mono-il2cpp-k3 8s infinite"/>
+<rect class="unity-mono-il2cpp-g unity-mono-il2cpp-gi" x="273" y="193" width="66" height="46" rx="12" style="animation:unity-mono-il2cpp-k4 8s infinite"/>
+<rect class="unity-mono-il2cpp-g unity-mono-il2cpp-gi" x="349" y="193" width="128" height="46" rx="12" style="animation:unity-mono-il2cpp-k5 8s infinite"/>
+<rect class="unity-mono-il2cpp-g unity-mono-il2cpp-gi" x="507" y="189" width="120" height="54" rx="12" style="animation:unity-mono-il2cpp-k6 8s infinite"/>
+<text class="unity-mono-il2cpp-s" x="196" y="266">minutes per build; required on iOS, WebGL, consoles, ARM64 Android</text>
+</svg>

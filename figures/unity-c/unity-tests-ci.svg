@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 320" role="img" aria-label="A CI pipeline restores the Library cache, runs EditMode and PlayMode tests with -runTests, makes an IL2CPP build and reports results.xml and an exit code. EditMode tests take milliseconds each; a PlayMode test takes seconds.">
+<style>
+.unity-tests-ci-t{font-size:13px;fill:var(--fig-ink);font-weight:600}
+.unity-tests-ci-h{font-size:13px;fill:var(--fig-ink)}
+.unity-tests-ci-s{font-size:12px;fill:var(--fig-muted)}
+.unity-tests-ci-c{font-size:12px;fill:var(--fig-muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.unity-tests-ci-box{fill:var(--fig-panel);stroke:var(--fig-line);stroke-width:1.5}
+.unity-tests-ci-ok{fill:var(--fig-ok);fill-opacity:.12;stroke:var(--fig-ok);stroke-width:1.75}
+.unity-tests-ci-ar{stroke:var(--fig-muted);stroke-width:1.75;fill:none}
+.unity-tests-ci-g{fill:none;stroke:var(--fig-accent);stroke-width:3;opacity:0;animation:unity-tests-ci-run 7s ease-in-out infinite}
+.unity-tests-ci-ph{animation:unity-tests-ci-play 7s linear infinite}
+@keyframes unity-tests-ci-run{0%{opacity:0}3%,15%{opacity:1}19%,100%{opacity:0}}
+@keyframes unity-tests-ci-play{0%{transform:translateX(0)}100%{transform:translateX(450px)}}
+</style>
+<defs><marker id="unity-tests-ci-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--fig-muted)"/></marker></defs>
+<text class="unity-tests-ci-s" x="16" y="30">CI job, all in -batchmode on one runner</text>
+<rect class="unity-tests-ci-box" x="16" y="48" width="104" height="60" rx="10"/><text class="unity-tests-ci-t" x="68" y="73" text-anchor="middle">Restore cache</text><text class="unity-tests-ci-c" x="68" y="94" text-anchor="middle">Library/</text><rect class="unity-tests-ci-g" x="13" y="45" width="110" height="66" rx="12" style="animation-delay:0.0s"/><line class="unity-tests-ci-ar" x1="122" y1="78" x2="138" y2="78" marker-end="url(#unity-tests-ci-a)"/><rect class="unity-tests-ci-box" x="142" y="48" width="104" height="60" rx="10"/><text class="unity-tests-ci-t" x="194" y="73" text-anchor="middle">EditMode</text><text class="unity-tests-ci-c" x="194" y="94" text-anchor="middle">-runTests</text><rect class="unity-tests-ci-g" x="139" y="45" width="110" height="66" rx="12" style="animation-delay:1.2s"/><line class="unity-tests-ci-ar" x1="248" y1="78" x2="264" y2="78" marker-end="url(#unity-tests-ci-a)"/><rect class="unity-tests-ci-box" x="268" y="48" width="104" height="60" rx="10"/><text class="unity-tests-ci-t" x="320" y="73" text-anchor="middle">PlayMode</text><text class="unity-tests-ci-c" x="320" y="94" text-anchor="middle">-runTests</text><rect class="unity-tests-ci-g" x="265" y="45" width="110" height="66" rx="12" style="animation-delay:2.4s"/><line class="unity-tests-ci-ar" x1="374" y1="78" x2="390" y2="78" marker-end="url(#unity-tests-ci-a)"/><rect class="unity-tests-ci-box" x="394" y="48" width="104" height="60" rx="10"/><text class="unity-tests-ci-t" x="446" y="73" text-anchor="middle">IL2CPP build</text><text class="unity-tests-ci-c" x="446" y="94" text-anchor="middle">BuildPlayer</text><rect class="unity-tests-ci-g" x="391" y="45" width="110" height="66" rx="12" style="animation-delay:3.6s"/><line class="unity-tests-ci-ar" x1="500" y1="78" x2="516" y2="78" marker-end="url(#unity-tests-ci-a)"/><rect class="unity-tests-ci-ok" x="520" y="48" width="104" height="60" rx="10"/><text class="unity-tests-ci-t" x="572" y="73" text-anchor="middle">results.xml</text><text class="unity-tests-ci-c" x="572" y="94" text-anchor="middle">exit code</text><rect class="unity-tests-ci-g" x="517" y="45" width="110" height="66" rx="12" style="animation-delay:4.8s"/>
+<rect x="167" y="122" width="180" height="26" rx="8" style="fill:var(--fig-warn);fill-opacity:.14;stroke:var(--fig-warn);stroke-width:1.5"/>
+<text class="unity-tests-ci-h" x="257" y="140" text-anchor="middle" style="font-size:12px">no -quit with -runTests</text>
+<text class="unity-tests-ci-s" x="420" y="140">catches stripping and AOT bugs</text>
+<line x1="16" y1="168" x2="624" y2="168" style="stroke:var(--fig-line);stroke-width:1"/>
+<text class="unity-tests-ci-h" x="16" y="192">Time per test, to scale</text>
+<text class="unity-tests-ci-t" x="16" y="219">EditMode</text>
+<path d="M150.75 204v20M153.75 204v20M156.75 204v20M159.75 204v20M162.75 204v20M165.75 204v20M168.75 204v20M171.75 204v20M174.75 204v20M177.75 204v20M180.75 204v20M183.75 204v20M186.75 204v20M189.75 204v20M192.75 204v20M195.75 204v20M198.75 204v20M201.75 204v20M204.75 204v20M207.75 204v20M210.75 204v20M213.75 204v20M216.75 204v20M219.75 204v20M222.75 204v20M225.75 204v20M228.75 204v20M231.75 204v20M234.75 204v20M237.75 204v20M240.75 204v20M243.75 204v20M246.75 204v20M249.75 204v20M252.75 204v20M255.75 204v20M258.75 204v20M261.75 204v20M264.75 204v20M267.75 204v20" style="stroke:var(--fig-accent);stroke-width:1.5"/>
+<text class="unity-tests-ci-s" x="278" y="219">milliseconds each</text>
+<text class="unity-tests-ci-t" x="16" y="259">PlayMode</text>
+<rect x="150" y="244" width="300" height="20" rx="5" style="fill:var(--fig-accent2);fill-opacity:.25;stroke:var(--fig-accent2);stroke-width:1.5"/>
+<text class="unity-tests-ci-s" x="458" y="259">seconds each</text>
+<line x1="150" y1="282" x2="600" y2="282" style="stroke:var(--fig-line);stroke-width:1.5"/>
+<path d="M150 282v6M300 282v6M450 282v6M600 282v6" style="stroke:var(--fig-line);stroke-width:1.5"/>
+<text class="unity-tests-ci-s" x="150" y="304" text-anchor="middle">0</text>
+<text class="unity-tests-ci-s" x="300" y="304" text-anchor="middle">1 s</text>
+<text class="unity-tests-ci-s" x="450" y="304" text-anchor="middle">2 s</text>
+<text class="unity-tests-ci-s" x="600" y="304" text-anchor="middle">3 s</text>
+<line class="unity-tests-ci-ph" x1="150" y1="198" x2="150" y2="282" style="stroke:var(--fig-ink);stroke-width:1.5;stroke-opacity:.6"/>
+</svg>

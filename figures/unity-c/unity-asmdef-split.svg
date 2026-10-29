@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="Four assemblies compile in the Editor; only Game.Runtime and Assembly-CSharp go into the player build. Predefined assemblies can reference asmdef assemblies, not the reverse.">
+<style>
+.unity-asmdef-split-t{font-size:14px;fill:var(--fig-ink);font-weight:600}
+.unity-asmdef-split-s{font-size:12px;fill:var(--fig-muted)}
+.unity-asmdef-split-h{font-size:13px;fill:var(--fig-ink)}
+.unity-asmdef-split-panel{fill:var(--fig-panel);stroke:var(--fig-line);stroke-width:1.5}
+.unity-asmdef-split-rt{fill:var(--fig-accent);fill-opacity:.12;stroke:var(--fig-accent);stroke-width:1.75}
+.unity-asmdef-split-ed{fill:var(--fig-accent2);fill-opacity:.12;stroke:var(--fig-accent2);stroke-width:1.75}
+.unity-asmdef-split-ar{stroke:var(--fig-muted);stroke-width:1.75;fill:none}
+.unity-asmdef-split-ok{stroke:var(--fig-ok);stroke-width:2;fill:none}
+.unity-asmdef-split-bad{stroke:var(--fig-bad);stroke-width:2;fill:none;stroke-dasharray:5 4}
+.unity-asmdef-split-x{fill:var(--fig-bad);font-size:14px;font-weight:700}
+.unity-asmdef-split-go{fill:var(--fig-accent);fill-opacity:.25;stroke:var(--fig-accent);stroke-width:1.5;opacity:0;animation:unity-asmdef-split-move 6s ease-in-out infinite}
+.unity-asmdef-split-stay{fill:none;stroke:var(--fig-bad);stroke-width:2;stroke-dasharray:6 4;opacity:0;animation:unity-asmdef-split-pulse 6s ease-in-out infinite}
+@keyframes unity-asmdef-split-move{0%,8%{opacity:0;transform:translateX(0)}15%{opacity:1;transform:translateX(0)}60%{opacity:1;transform:translateX(426px)}72%,100%{opacity:0;transform:translateX(426px)}}
+@keyframes unity-asmdef-split-pulse{0%,20%{opacity:0}35%,60%{opacity:1}75%,100%{opacity:0}}
+</style>
+<defs>
+<marker id="unity-asmdef-split-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:var(--fig-muted)"/></marker>
+<marker id="unity-asmdef-split-ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:var(--fig-ok)"/></marker>
+<marker id="unity-asmdef-split-ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:var(--fig-bad)"/></marker>
+</defs>
+<rect class="unity-asmdef-split-panel" x="16" y="30" width="410" height="260" rx="12"/>
+<text class="unity-asmdef-split-h" x="32" y="54">Editor: all four assemblies compile</text>
+<rect class="unity-asmdef-split-panel" x="442" y="30" width="182" height="260" rx="12"/>
+<text class="unity-asmdef-split-h" x="458" y="54">Player build</text>
+<rect class="unity-asmdef-split-rt" x="32" y="76" width="150" height="52" rx="10"/>
+<text class="unity-asmdef-split-t" x="44" y="98">Game.Runtime</text>
+<text class="unity-asmdef-split-s" x="44" y="116">asmdef, any platform</text>
+<rect class="unity-asmdef-split-ed" x="232" y="76" width="178" height="52" rx="10"/>
+<text class="unity-asmdef-split-t" x="244" y="98">Game.Editor</text>
+<text class="unity-asmdef-split-s" x="244" y="116">asmdef, Editor only</text>
+<rect class="unity-asmdef-split-rt" x="32" y="198" width="150" height="52" rx="10"/>
+<text class="unity-asmdef-split-t" x="44" y="220">Assembly-CSharp</text>
+<text class="unity-asmdef-split-s" x="44" y="238">predefined</text>
+<rect class="unity-asmdef-split-ed" x="232" y="198" width="178" height="52" rx="10"/>
+<text class="unity-asmdef-split-t" x="244" y="220" style="font-size:13px">Assembly-CSharp-Editor</text>
+<text class="unity-asmdef-split-s" x="244" y="238">Editor/ folders</text>
+<rect class="unity-asmdef-split-stay" x="226" y="70" width="190" height="186" rx="12"/>
+<text class="unity-asmdef-split-s" x="194" y="94">refs</text>
+<line class="unity-asmdef-split-ar" x1="230" y1="102" x2="186" y2="102" marker-end="url(#unity-asmdef-split-a)"/>
+<text class="unity-asmdef-split-s" x="194" y="216">refs</text>
+<line class="unity-asmdef-split-ar" x1="230" y1="224" x2="186" y2="224" marker-end="url(#unity-asmdef-split-a)"/>
+<line class="unity-asmdef-split-ok" x1="78" y1="196" x2="78" y2="132" marker-end="url(#unity-asmdef-split-ag)"/>
+<line class="unity-asmdef-split-bad" x1="136" y1="130" x2="136" y2="194" marker-end="url(#unity-asmdef-split-ab)"/>
+<circle cx="136" cy="162" r="10" style="fill:var(--fig-panel);stroke:var(--fig-bad);stroke-width:1.5"/>
+<text class="unity-asmdef-split-x" x="136" y="167" text-anchor="middle">×</text>
+<rect class="unity-asmdef-split-rt" x="458" y="76" width="150" height="52" rx="10"/>
+<text class="unity-asmdef-split-t" x="470" y="98">Game.Runtime</text>
+<text class="unity-asmdef-split-s" x="470" y="116">shipped</text>
+<rect class="unity-asmdef-split-rt" x="458" y="198" width="150" height="52" rx="10"/>
+<text class="unity-asmdef-split-t" x="470" y="220">Assembly-CSharp</text>
+<text class="unity-asmdef-split-s" x="470" y="238">shipped</text>
+<text class="unity-asmdef-split-s" x="458" y="276">no UnityEditor here</text>
+<rect class="unity-asmdef-split-go" x="32" y="76" width="150" height="52" rx="10"/>
+<rect class="unity-asmdef-split-go" x="32" y="198" width="150" height="52" rx="10"/>
+<line class="unity-asmdef-split-ok" x1="24" y1="318" x2="60" y2="318" marker-end="url(#unity-asmdef-split-ag)"/>
+<text class="unity-asmdef-split-h" x="70" y="323">predefined can reference an asmdef</text>
+<line class="unity-asmdef-split-bad" x1="24" y1="344" x2="60" y2="344" marker-end="url(#unity-asmdef-split-ab)"/>
+<text class="unity-asmdef-split-h" x="70" y="349">an asmdef cannot see Assembly-CSharp</text>
+<rect x="352" y="310" width="16" height="16" rx="4" class="unity-asmdef-split-ed"/>
+<text class="unity-asmdef-split-h" x="376" y="323">Editor-only: excluded from players</text>
+</svg>

@@ -1,0 +1,682 @@
+[
+  {
+    "topicId": "readable-code",
+    "patterns": [
+      {
+        "signal": "Edge-case checks wrap the main logic in three levels of nested `if`, and the real work sits at the deepest indent",
+        "use": "Guard clauses (return early)",
+        "why": "Handle invalid or trivial cases first and return, so the happy path reads top to bottom at one indent. Keep each guard short; a dozen guards hint the function does too much."
+      },
+      {
+        "signal": "You need comment headers like `# parse`, `# apply pricing`, `# send email` to navigate one long function",
+        "use": "Extract function",
+        "why": "Each section becomes a named function at one level of abstraction, and the parent reads like a summary. Do not shred it into vague `step3` helpers; scattering logic hurts as much as a monolith."
+      },
+      {
+        "signal": "A bare literal like `0.0725` or `86400` sits in a calculation and a reviewer has to ask what it means",
+        "use": "Named constant",
+        "why": "`SALES_TAX_RATE` states the meaning, gives one place to change it and makes the rule reviewable. Skip it for self-evident values like `0`, `1` or an index of `-1`."
+      },
+      {
+        "signal": "A call site reads `export(report, true, false)` and nobody can tell what the booleans do",
+        "use": "Replace flag argument",
+        "why": "Split into two intent-named functions or pass a named option (`include_charts=True`). Flags usually mean the function does two things; separate functions also remove a branch inside."
+      },
+      {
+        "signal": "Variables are named `data`, `tmp`, `flag2` or `userList`, describing storage rather than meaning",
+        "use": "Name by intent",
+        "why": "`days_until_expiry` or `is_eligible_for_refund` carries the domain rule to every reader. A slightly wrong name is worse than a vague one because readers trust it, so rename when meaning changes."
+      },
+      {
+        "signal": "A condition like `if (a && !b || c && d > 3)` needs a minute of decoding before the branch makes sense",
+        "use": "Explaining variable",
+        "why": "Assign parts to names like `is_overdue` and `has_override`, then test those. Costs a line or two, buys a readable rule; extract a predicate function if the same check repeats."
+      },
+      {
+        "signal": "A comment restates the next line (`# increment i`) or explains what a cryptic name should have said",
+        "use": "Why-comment, not what-comment",
+        "why": "Rename until the code says what it does, and keep comments for what code cannot say: why this approach, which bug it avoids, links to the spec. What-comments rot silently when code changes."
+      },
+      {
+        "signal": "Four or more related parameters travel together through several functions (`start`, `end`, `tz`, `inclusive`)",
+        "use": "Introduce parameter object",
+        "why": "A `DateRange` type names the concept, shortens signatures and gives validation one home. Do not bundle unrelated parameters just to shorten a list; that hides dependencies."
+      },
+      {
+        "signal": "A one-line nested comprehension with a ternary inside earns a 'clever' in review but takes minutes to verify",
+        "use": "Boring explicit code",
+        "why": "A plain loop with named steps is easier to read, debug and change, and the speed difference is usually nil. Keep compact idioms only where the team reads them fluently."
+      }
+    ]
+  },
+  {
+    "topicId": "design-principles",
+    "patterns": [
+      {
+        "signal": "The same `switch (paymentType)` appears in checkout, invoicing and refunds, and each new type edits all of them",
+        "use": "Strategy (polymorphism)",
+        "why": "Put per-variant behavior behind one interface with an implementation per type, so a new type is new code, not edits in five places. Overkill for two stable cases; a plain `if` is fine there."
+      },
+      {
+        "signal": "A vendor SDK's types and quirks show up throughout your business code, and switching vendors means a rewrite",
+        "use": "Adapter",
+        "why": "Wrap the SDK behind an interface shaped by your needs and translate in one class. You gain a swap point and a test seam; the cost is one more layer that must track SDK changes."
+      },
+      {
+        "signal": "Callers must create five subsystem objects and call them in the right order just to do one common task",
+        "use": "Facade",
+        "why": "Expose one simple entry point (`exportReport()`) that orchestrates the subsystem. Keep the underlying parts reachable for unusual cases, and stop the facade becoming a god class."
+      },
+      {
+        "signal": "After an order is placed, email, analytics and inventory must react, and the order code imports all three",
+        "use": "Observer (in-process events)",
+        "why": "The order code publishes `OrderPlaced` and listeners subscribe, so adding a reaction does not touch it. Control flow gets harder to trace and listener order should not matter; unsubscribe to avoid leaks."
+      },
+      {
+        "signal": "Users need undo/redo, or actions must be queued, logged, retried or replayed later",
+        "use": "Command",
+        "why": "Represent each action as an object with `execute` (and `undo`), so history, queues and audit logs are just lists of commands. Too much ceremony for plain one-shot calls with no history."
+      },
+      {
+        "signal": "`new SmtpMailer()` or `new S3Store()` choices based on config are copy-pasted across many call sites",
+        "use": "Factory",
+        "why": "Centralize the decision of which concrete type to build, so callers depend only on the interface. One `if` in one place does not need a factory class; a function is often enough."
+      },
+      {
+        "signal": "A class constructs its own `DatabaseClient` internally, so tests cannot run it without a real database",
+        "use": "Dependency injection",
+        "why": "Pass collaborators in through the constructor; the caller (or composition root) decides real vs fake. Plain constructor parameters usually suffice; a DI container adds magic and is optional."
+      },
+      {
+        "signal": "Subclasses multiply per combination: `EmailAlert`, `SmsAlert`, `EmailSmsRetryAlert`",
+        "use": "Composition over inheritance",
+        "why": "An `Alert` holds a list of channels and an optional retry policy, so features combine at runtime without new classes. Inheritance still fits true, stable is-a hierarchies with small surface."
+      },
+      {
+        "signal": "A subclass overrides a method to throw `NotSupported` or breaks the parent's assumptions (the Square/Rectangle case)",
+        "use": "Liskov check: drop the inheritance",
+        "why": "If a subtype cannot honor the base contract, callers will break when given it. Model them as separate types or share behavior through composition instead of forcing an is-a relationship."
+      },
+      {
+        "signal": "An interface or abstract factory has exactly one implementation and no second one on the roadmap",
+        "use": "YAGNI: inline the abstraction",
+        "why": "Speculative indirection costs reading, testing and navigation today for a guessed future. Use the concrete class; extracting an interface later, when a second case is real, is cheap."
+      },
+      {
+        "signal": "Two blocks look identical but serve rules that change for different reasons (US tax vs EU tax)",
+        "use": "Tolerate duplication (rule of three)",
+        "why": "DRY targets duplicated knowledge, not similar text. Merging coincidental twins couples unrelated rules; wait for a third real case that changes for the same reason before extracting."
+      },
+      {
+        "signal": "A shared helper grew flags and parameters for each caller and every change risks breaking someone",
+        "use": "Inline the wrong abstraction",
+        "why": "Copy the helper back into callers, delete the branches each one does not need, then re-extract what is genuinely shared. Duplication is cheaper than the wrong abstraction."
+      }
+    ]
+  },
+  {
+    "topicId": "version-control-git",
+    "patterns": [
+      {
+        "signal": "A regression appeared somewhere in the last 200 commits and you have a command that reproduces it",
+        "use": "`git bisect` (with `bisect run`)",
+        "why": "Binary search finds the culprit in about 8 steps, automated if a script returns pass/fail. Works only if commits build and are atomic; giant mixed commits leave you with a huge diff to search."
+      },
+      {
+        "signal": "A bad commit is already on shared `main` and teammates have pulled it",
+        "use": "`git revert`",
+        "why": "Revert adds a new commit that undoes the change, so nobody's history is rewritten. Resetting and force-pushing shared history forces everyone to untangle duplicates."
+      },
+      {
+        "signal": "After `git reset --hard` or a botched rebase, a committed but unpushed commit vanished from `git log`",
+        "use": "`git reflog` recovery",
+        "why": "The reflog records where HEAD has been, so you can branch or reset to the lost hash. It is local to your clone and expires (90 days by default); uncommitted work is not in it."
+      },
+      {
+        "signal": "Your local, unpublished feature branch is behind `main` and you want a linear, current history",
+        "use": "Rebase local work onto main",
+        "why": "`git rebase main` replays your commits on top so the PR diff is clean. Only for commits nobody else has; rebasing shared commits creates duplicates for everyone who pulled them."
+      },
+      {
+        "signal": "After rebasing your own branch the push is rejected and you reach for `--force`",
+        "use": "`--force-with-lease`",
+        "why": "It refuses to overwrite the remote if someone pushed commits you have not seen, while still updating your rewritten branch. Never force-push shared branches like `main`."
+      },
+      {
+        "signal": "One commit mixes a reformat of a file with a logic change, so the real change is buried in noise",
+        "use": "Atomic commits (`git add -p`)",
+        "why": "Stage hunks selectively so formatting and behavior land in separate commits. Each commit then reviews, reverts and bisects on its own. Each one should still build."
+      },
+      {
+        "signal": "The PR history is a string of `wip`, `fix typo` and `oops` commits",
+        "use": "Squash fixups before merge",
+        "why": "Use `git commit --fixup` plus an autosquash rebase, or a squash-merge, to leave one meaningful commit per logical change. Squash-merge loses per-commit detail on large PRs."
+      },
+      {
+        "signal": "A commit message says `fix stuff` and six months later nobody knows why the line changed",
+        "use": "Imperative subject + why body",
+        "why": "Subject like `Fix rounding in refund totals` (about 50 chars), body explaining the reason, the trade-off and the ticket. The diff already shows what; only the message can record why."
+      },
+      {
+        "signal": "An urgent fix lands on `main` but also needs to go to an older release branch",
+        "use": "`git cherry-pick`",
+        "why": "Copies one commit onto another branch without merging everything else. The copy gets a new hash, so record the origin (`-x`), and expect conflicts if the branches diverged far."
+      },
+      {
+        "signal": "You are mid-feature with uncommitted changes when a hotfix on another branch comes in",
+        "use": "`git worktree`",
+        "why": "A second working directory on another branch lets you fix and test without stashing or losing build state. Stash works for quick switches but is easy to forget and lose track of."
+      }
+    ]
+  },
+  {
+    "topicId": "testing",
+    "patterns": [
+      {
+        "signal": "A test interleaves setup, several calls and asserts, so when it fails you cannot tell which step broke",
+        "use": "Arrange-Act-Assert",
+        "why": "Three visible blocks: build state, perform one action, check the outcome. One behavior per test gives one clear reason to fail. Multiple asserts on the same outcome are fine."
+      },
+      {
+        "signal": "The same test body is copy-pasted with different inputs and expected outputs",
+        "use": "Table-driven (parameterized) tests",
+        "why": "List cases as data and loop one assertion over them; adding a case is one row and failures name the case. Do not force very different scenarios into one table with branching logic."
+      },
+      {
+        "signal": "Code under test calls `now()`, random or the network, so results change between runs",
+        "use": "Inject the nondeterminism",
+        "why": "Pass a clock, seed or client as a dependency and supply a fixed one in tests. Deterministic tests stop flaking; the cost is one more parameter or interface in production code."
+      },
+      {
+        "signal": "Unit tests need a repository or cache, and the real one needs a running database",
+        "use": "Fake (in-memory implementation)",
+        "why": "A small working implementation behaves like the real thing, so tests check behavior, not call sequences. Back it with a contract test against the real adapter so the fake does not drift."
+      },
+      {
+        "signal": "You must verify the code sends an email or charges a card, an effect at a system boundary",
+        "use": "Mock at the boundary",
+        "why": "Assert the outgoing call to the external system, where the interaction is the behavior. Mocking internal collaborators instead couples tests to implementation and they break on every refactor."
+      },
+      {
+        "signal": "A function has a huge input space with invariants like `decode(encode(x)) == x` or `sort` keeps length",
+        "use": "Property-based testing",
+        "why": "A generator tries hundreds of random inputs and shrinks failures to a minimal case, finding edge cases you would not write. Needs a statable invariant; slower than examples and can be harder to debug."
+      },
+      {
+        "signal": "Output is large but stable: a rendered report, serializer output, generated code or an image",
+        "use": "Golden (snapshot) test",
+        "why": "Compare against an approved file and review diffs on change. Cheap to write, but teams start rubber-stamping updates; keep snapshots small and normalize timestamps and IDs."
+      },
+      {
+        "signal": "You must change legacy code that has no tests and nobody fully knows what it does",
+        "use": "Characterization tests",
+        "why": "Record what the code currently outputs for representative inputs and lock it in before refactoring. They pin existing behavior including bugs, so fix bugs as separate, deliberate changes."
+      },
+      {
+        "signal": "The suite is mostly slow browser e2e tests, builds take 90 minutes and fail randomly",
+        "use": "Rebalance to the test pyramid",
+        "why": "Move logic checks down to unit and integration tests; keep a few e2e tests for critical journeys. Unit tests alone miss wiring bugs, so do not delete every integration test."
+      },
+      {
+        "signal": "A test sleeps 100 ms and then asserts a background job finished, and fails about one run in twenty",
+        "use": "Wait on a condition, not a timer",
+        "why": "Poll for the expected state with a timeout, or await a completion signal or fake scheduler. Longer sleeps only make the suite slower and still flaky."
+      },
+      {
+        "signal": "A bug report arrives with a reproducible case",
+        "use": "Failing regression test first",
+        "why": "Write a test that reproduces the bug and watch it fail (red) before fixing. It proves the test can catch the bug and keeps it from returning; skip only when reproduction is genuinely impractical."
+      },
+      {
+        "signal": "Tests break every time you rename a private method, even though behavior did not change",
+        "use": "Test through the public interface",
+        "why": "Exercise behavior via the module's public API so refactors stay green. If internals feel too hard to reach, that is often a sign a separate unit wants extracting."
+      }
+    ]
+  },
+  {
+    "topicId": "interfaces-types-contracts",
+    "patterns": [
+      {
+        "signal": "A state object has optional `isLoading`, `error` and `data`, and bugs show `error` and `data` set together",
+        "use": "Make illegal states unrepresentable",
+        "why": "Model `Loading | Failed(error) | Loaded(data)` so impossible combinations cannot be built and the compiler forces each case. Costs some upfront modeling; pays off on any state shared across code."
+      },
+      {
+        "signal": "Functions take `(userId: string, orderId: string)` and a swapped argument compiled and shipped",
+        "use": "Value types / branded IDs",
+        "why": "Distinct `UserId`, `OrderId` or `Currency` types make mixups a compile error and give validation a home. Adds wrapper types; reserve them for values that are easy to confuse or carry rules."
+      },
+      {
+        "signal": "The same `if not is_valid_email(x)` checks appear in a dozen functions deep inside the code",
+        "use": "Parse, don't validate",
+        "why": "Parse raw input once at the edge into a type like `EmailAddress` that can only hold valid values, then pass that type inward. Inner code trusts the type and the repeated checks disappear."
+      },
+      {
+        "signal": "A handler types `req.body` as `CreateOrder` but malformed requests still crash deep in the service",
+        "use": "Runtime schema at the trust boundary",
+        "why": "Types vanish at runtime; validate HTTP, file, queue and LLM input with a schema library and reject early with a clear error. Derive the static type from the schema so the two cannot drift."
+      },
+      {
+        "signal": "Looking up a user by email that does not exist throws an exception that every caller wraps in try/catch",
+        "use": "Result / Option return",
+        "why": "Expected outcomes belong in the signature (`User | None`, `Result<User, NotFound>`) so callers must handle them. Keep exceptions for bugs and truly exceptional failures."
+      },
+      {
+        "signal": "Code contains `catch (e) {}` or logs and continues with a half-initialized object",
+        "use": "Fail fast with context",
+        "why": "Let unexpected errors propagate, wrapped with what was being attempted, or crash the operation. Swallowed errors turn a clear failure into silent data corruption found weeks later."
+      },
+      {
+        "signal": "A `switch` over an enum compiled fine when a new variant was added, and the new case silently fell to `default`",
+        "use": "Exhaustiveness check",
+        "why": "Omit `default` and use the compiler's exhaustive matching (`never` in TypeScript, `match` in Rust) so adding a variant fails the build at every unhandled site."
+      },
+      {
+        "signal": "A public API is a generic `set_status(order, \"cancelled\")` and callers bypass the rules for cancelling",
+        "use": "Intent-named operations",
+        "why": "Expose `cancel_order()` that enforces preconditions and invariants in one place. The interface shrinks to valid moves; generic setters let every caller reinvent and break the rules."
+      },
+      {
+        "signal": "A client crashed after the server added a new optional response field",
+        "use": "Tolerant reader",
+        "why": "Consumers ignore unknown fields and read only what they need, which makes additive server changes safe. Strict deserializers that reject unknown fields turn every addition into a breaking change."
+      },
+      {
+        "signal": "A function silently misbehaves when given a negative quantity or an empty list that callers should never pass",
+        "use": "Assert preconditions (design by contract)",
+        "why": "Check the precondition at entry and fail immediately with a clear message, so the bug surfaces at the caller. For untrusted input use validation and error values instead of assertions."
+      }
+    ]
+  },
+  {
+    "topicId": "architecture",
+    "patterns": [
+      {
+        "signal": "Business rules import the ORM, the HTTP framework or a cloud SDK, so they cannot be tested without them",
+        "use": "Hexagonal (ports and adapters)",
+        "why": "The domain defines interfaces (ports) and infrastructure implements them (adapters), so dependencies point toward the core. Overkill for CRUD apps with little logic; layers can be thin there."
+      },
+      {
+        "signal": "A small team with one deploy cadence is about to split a new product into many microservices",
+        "use": "Modular monolith first",
+        "why": "One deployable with enforced module boundaries gives most modularity benefits without network failures, distributed tracing and multi-service deploys. Extract a service later when a module truly needs it."
+      },
+      {
+        "signal": "Two services share database tables and must always be deployed together",
+        "use": "Each service owns its data",
+        "why": "Shared tables couple services through the schema, giving a distributed monolith. Give each service its own store and an API or events; if they always change together, merge them back."
+      },
+      {
+        "signal": "A legacy system must be replaced, but a big-bang rewrite would freeze features for a year",
+        "use": "Strangler fig",
+        "why": "Route one capability at a time to new code behind a facade or proxy until the old system has nothing left. Slower than a rewrite on paper, but every step ships and can be reverted."
+      },
+      {
+        "signal": "An order service calls email, loyalty and analytics synchronously, and fails when any of them is down",
+        "use": "Publish domain events via a broker",
+        "why": "Publish `OrderPlaced` to a queue and let consumers react asynchronously, removing runtime coupling. You accept eventual consistency and harder debugging, so keep critical-path calls synchronous."
+      },
+      {
+        "signal": "A consumer occasionally processes the same message twice and double-charges or double-sends",
+        "use": "Idempotent consumer",
+        "why": "Brokers deliver at least once, so dedupe by message ID or make the operation naturally idempotent (upsert, set state). Store processed IDs in the same transaction as the effect."
+      },
+      {
+        "signal": "Code writes to the database and then publishes an event, and a crash between the two loses or fakes events",
+        "use": "Transactional outbox",
+        "why": "Write the event to an outbox table in the same transaction as the data, and a relay publishes it afterwards. Gives at-least-once delivery, so consumers must still be idempotent."
+      },
+      {
+        "signal": "Someone proposes a new database or language for a feature that fits fine in the existing PostgreSQL",
+        "use": "Choose boring technology",
+        "why": "Known tools have known failure modes and operators; each novel one spends the team's limited innovation budget. Adopt new tech when the existing stack clearly cannot do the job."
+      },
+      {
+        "signal": "A costly-to-reverse decision (new datastore, service split) is made in a chat thread and later forgotten",
+        "use": "Architecture Decision Record",
+        "why": "A short ADR records context, decision and consequences in the repo, so the next engineer knows why and does not reverse it blindly. Keep it to a page; it is a log, not a spec."
+      },
+      {
+        "signal": "Folders say `domain` and `infra`, but imports cross every layer in every direction",
+        "use": "Enforced module boundaries",
+        "why": "Add dependency rules to CI (import linters, architecture tests, build modules) so violations fail the build. Folder conventions alone erode under deadline pressure."
+      }
+    ]
+  },
+  {
+    "topicId": "continuous-integration",
+    "patterns": [
+      {
+        "signal": "A 30-minute e2e suite runs before lint and unit tests, and a typo is reported half an hour later",
+        "use": "Cheapest stages first (fail fast)",
+        "why": "Order lint, type check and unit tests before slow suites so most failures report in minutes. Run the slow suite in parallel or later, but still gate merges on it if it guards critical paths."
+      },
+      {
+        "signal": "The main CI gate takes 40 minutes and people batch changes and rerun red builds hoping for green",
+        "use": "Cache and shard to stay under 10 min",
+        "why": "Cache dependencies and build outputs and split tests across parallel runners. Caches keyed wrongly can hide breakages, so key them on the lockfile and toolchain version."
+      },
+      {
+        "signal": "Feature branches live for weeks and merge day brings conflicts and broken builds",
+        "use": "Trunk-based development",
+        "why": "Integrate to `main` at least daily via short-lived branches, hiding unfinished work behind flags. Needs a fast, trusted pipeline and disciplined small changes to stay green."
+      },
+      {
+        "signal": "A large refactor (swap the ORM) cannot finish in a day but must not live on a long branch",
+        "use": "Branch by abstraction",
+        "why": "Introduce an interface over the old implementation, move callers to it, build the new one behind it and switch over, merging each step to main. More steps, but trunk stays releasable."
+      },
+      {
+        "signal": "CI and laptops resolve different dependency versions, so builds break with no code change",
+        "use": "Lockfile + pinned toolchain",
+        "why": "Use lockfile-enforcing installs (`npm ci`), pinned base images and tool versions so the same commit builds the same way. Update pins deliberately via automated update PRs."
+      },
+      {
+        "signal": "The pipeline rebuilds the app separately for staging and for production",
+        "use": "Build once, promote the artifact",
+        "why": "Build one versioned artifact and promote that exact image through environments, injecting config at runtime. Rebuilding per stage means you never deployed what you tested."
+      },
+      {
+        "signal": "A test fails one run in twenty on unchanged code and the team habitually clicks rerun",
+        "use": "Quarantine flaky tests with an owner",
+        "why": "Move it out of the blocking gate, file a ticket with an owner and deadline, and fix the root cause. Automatic retries hide real races and teach people to ignore red."
+      },
+      {
+        "signal": "Two PRs each pass CI on their own but break `main` once both are merged",
+        "use": "Merge queue",
+        "why": "Test each PR against the latest `main` plus queued changes before merging, so main stays green. Adds latency per merge; batching in the queue keeps throughput up."
+      },
+      {
+        "signal": "A failure in CI cannot be reproduced locally because CI runs a long inline YAML script",
+        "use": "One entrypoint script for CI and local",
+        "why": "Put checks in `make check` or a script that both CI and developers run. CI config stays thin, and failures reproduce on a laptop instead of by pushing and waiting."
+      },
+      {
+        "signal": "`main` is red and others keep merging on top while the author investigates",
+        "use": "Revert first, then fix",
+        "why": "Revert the breaking change immediately to unblock everyone and fix it on a branch. A broken mainline costs the whole team; a revert is cheap and the change can land again later."
+      }
+    ]
+  },
+  {
+    "topicId": "code-review",
+    "patterns": [
+      {
+        "signal": "A 2,000-line PR mixes a codebase-wide rename with a change to refund calculation",
+        "use": "Split mechanical from behavioral changes",
+        "why": "Land the rename first (mostly skimmable) and the logic change separately, where review attention goes. Reviewers find far fewer defects per line in large mixed diffs."
+      },
+      {
+        "signal": "Review threads argue about brace placement, import order and quote style",
+        "use": "Automate style in CI",
+        "why": "Run a formatter and linter as a CI gate so humans never comment on style. Pick the config once; the remaining comments can focus on intent, correctness and design."
+      },
+      {
+        "signal": "Approval comes quickly because CI is green or the author is senior",
+        "use": "Risk-ordered review checklist",
+        "why": "Review intent, then correctness and edge cases, security and data access, design, tests and operations. CI cannot check intent or a missing authorization check; humans must."
+      },
+      {
+        "signal": "A comment reads `this is wrong` with no reason, and the author cannot tell if it blocks merging",
+        "use": "Reason + severity labels",
+        "why": "Explain why and prefix optional points with `nit:` or `optional:` so blocking concerns stand out. Asking a question when unsure invites context instead of defensiveness."
+      },
+      {
+        "signal": "The reviewer asks what a block does and the author explains it in a long thread reply",
+        "use": "Fix confusion in the code",
+        "why": "If a reviewer was confused, the next reader will be too; answer with a clearer name, smaller function or why-comment in the code. Thread answers vanish after merge."
+      },
+      {
+        "signal": "A PR arrives with an empty description and the reviewer must reverse-engineer its purpose",
+        "use": "PR description: what, why, how tested",
+        "why": "State the problem, the approach, risks and how it was verified, and link the ticket. Five minutes of author time saves each reviewer far more, and becomes searchable history."
+      },
+      {
+        "signal": "A feature is naturally 1,500 lines and cannot ship as one reviewable change",
+        "use": "Stacked PRs",
+        "why": "Split into a chain of small dependent PRs (schema, service, API, UI), each reviewed on its own. Requires rebasing the stack as earlier PRs change; tools help but add process."
+      },
+      {
+        "signal": "Changes to auth, payments or migrations get approved by whoever is free",
+        "use": "CODEOWNERS for sensitive paths",
+        "why": "Require review from owners of high-risk directories automatically. Protects critical code, but too many owner rules create bottlenecks; keep them to areas that need expertise."
+      },
+      {
+        "signal": "A review thread has gone back and forth 15 times on one design question",
+        "use": "Move to a synchronous conversation",
+        "why": "A short call or pairing session resolves disagreements faster than async ping-pong. Record the outcome in the PR so the decision stays visible."
+      },
+      {
+        "signal": "An AI agent produced a large diff and the author has not read all of it",
+        "use": "Author self-review first",
+        "why": "The author reads the full diff, runs it and annotates tricky parts before requesting review. Reviewers should not be the first humans to read the code."
+      }
+    ]
+  },
+  {
+    "topicId": "deployment-strategies",
+    "patterns": [
+      {
+        "signal": "A payments service must switch all traffic at a chosen moment and revert in seconds; double capacity is affordable",
+        "use": "Blue/green",
+        "why": "Deploy to the idle environment, verify, then flip the router; reverting is flipping back. Costs double capacity and does not help with incompatible database changes."
+      },
+      {
+        "signal": "A change is risky in ways tests cannot show, and you want real-traffic evidence with a capped blast radius",
+        "use": "Canary release",
+        "why": "Send 1-5% of traffic to the new version and compare error rate and latency to the baseline before widening. Needs good metrics and enough traffic for a meaningful comparison."
+      },
+      {
+        "signal": "A stateless fleet behind a load balancer gets a backward-compatible change",
+        "use": "Rolling deployment",
+        "why": "Replace a few instances at a time behind health checks; cheap and needs no spare environment. Old and new versions serve traffic at once, so both must work with the same data and APIs."
+      },
+      {
+        "signal": "Code must merge and deploy now, but the feature should go live later or to a subset of users",
+        "use": "Feature flag (decouple deploy from release)",
+        "why": "Deploy with the path off, then release by config, by percentage or segment, with an instant kill switch. Every flag is a branch in the code and doubles test paths."
+      },
+      {
+        "signal": "The codebase has 40 flags and 30 have been at 100% for six months",
+        "use": "Flag expiry and cleanup",
+        "why": "Give each release flag an owner and removal date, then delete the flag and the dead branch once fully rolled out. Stale flags are tech debt and can be flipped by accident."
+      },
+      {
+        "signal": "A heavily used column must be renamed with zero downtime and a safe rollback at each step",
+        "use": "Expand/contract migration",
+        "why": "Add the new column, dual-write, backfill, move reads, then stop writing and drop the old one in later deploys. Each step works with old and new code; the cost is several releases."
+      },
+      {
+        "signal": "A migration needs to update every row of a 200-million-row table",
+        "use": "Batched backfill",
+        "why": "Update in small batches with pauses, outside the schema-change deploy, so locks stay short and replicas keep up. Make it resumable and idempotent; it may run for hours."
+      },
+      {
+        "signal": "A rewritten service path must be checked against production traffic without users seeing its results",
+        "use": "Shadow traffic (dark launch)",
+        "why": "Mirror real requests to the new path, discard its responses and diff them against the old. Doubles load on dependencies, and side effects like writes or emails must be suppressed."
+      },
+      {
+        "signal": "Errors spike right after a deploy and no data or schema changed",
+        "use": "Rollback first, debug later",
+        "why": "Redeploy the previous artifact to stop user impact, then investigate. Roll forward instead only when rollback is unsafe, such as after an irreversible migration; decide which before deploying."
+      }
+    ]
+  },
+  {
+    "topicId": "infrastructure-environments",
+    "patterns": [
+      {
+        "signal": "The app passes in staging but crashes in production because the Node.js version differs",
+        "use": "Container image built once",
+        "why": "Package runtime and dependencies into one image and run that same image in every environment. Removes version drift; base images still need regular rebuilds for security patches."
+      },
+      {
+        "signal": "An engineer SSHes into a production server to patch a file or install a package",
+        "use": "Immutable infrastructure",
+        "why": "Never patch running instances; change the code or image and replace them. Every server then matches a known build, at the cost of a pipeline fast enough for urgent fixes."
+      },
+      {
+        "signal": "Servers, networks and permissions were clicked together in a cloud console and nobody can recreate them",
+        "use": "Infrastructure as code",
+        "why": "Define resources in Terraform, OpenTofu or similar, reviewed in PRs and applied by CI. Environments become reproducible and auditable; state files need locking and protection."
+      },
+      {
+        "signal": "A teammate fixed an outage by editing a firewall rule in the console, and the IaC code says otherwise",
+        "use": "Codify the change and detect drift",
+        "why": "Port the fix into code promptly, apply it and run plan-based drift checks on a schedule. Otherwise the next apply silently reverts the fix or destroys something."
+      },
+      {
+        "signal": "The database host or log level is hardcoded, and each environment needs its own build",
+        "use": "Config from the environment (twelve-factor)",
+        "why": "Read environment-specific values at runtime so one artifact runs anywhere. Validate config at startup and fail fast on missing values rather than failing mid-request."
+      },
+      {
+        "signal": "An API key in `.env` was committed and pushed to a shared repo",
+        "use": "Revoke and rotate, then use a secret manager",
+        "why": "Treat it as leaked: rotate first, then remove it from history, and load secrets at runtime from a vault or cloud secret store. Deleting it in a new commit does not help; history keeps it."
+      },
+      {
+        "signal": "Staging uses SQLite and one instance while production runs PostgreSQL behind a load balancer",
+        "use": "Dev/prod parity",
+        "why": "Use the same image, database engine and major version, and similar topology in staging, scaled down. Each difference hides a class of bugs; full parity on size and data is rarely affordable."
+      },
+      {
+        "signal": "Reviewers cannot try a PR without merging it to a shared staging that others are also using",
+        "use": "Ephemeral preview environments",
+        "why": "Spin up an environment per PR from the same IaC and tear it down on merge. Great for review and QA; costs cloud spend and needs seeded data and cleanup automation."
+      },
+      {
+        "signal": "User uploads stored inside the container disappear whenever it is replaced or rescheduled",
+        "use": "Externalize state",
+        "why": "Keep containers stateless; put files in object storage and data in managed databases. Instances become disposable and scalable; you pay for an extra network hop and service."
+      },
+      {
+        "signal": "CI holds long-lived cloud access keys in its settings for deploys",
+        "use": "Short-lived credentials via OIDC",
+        "why": "Let the CI provider exchange its identity token for temporary, scoped cloud credentials per job. No static key to leak or rotate; setup needs trust policies scoped to repo and branch."
+      }
+    ]
+  },
+  {
+    "topicId": "observability",
+    "patterns": [
+      {
+        "signal": "Mean latency is 150 ms, yet some users complain the endpoint is very slow",
+        "use": "Percentiles from histograms",
+        "why": "Track p50, p95 and p99; averages hide the slow tail. Record latency histograms, since percentiles cannot be averaged across instances after the fact."
+      },
+      {
+        "signal": "Debugging means grepping prose log lines like `User 42 failed to pay` across many servers",
+        "use": "Structured logging",
+        "why": "Emit key-value records (`event=payment_failed user_id=42`) with level and request ID so logs can be filtered and counted. Never log secrets or personal data; volume costs money."
+      },
+      {
+        "signal": "A failing request passes through gateway, order and payment services and you cannot follow it",
+        "use": "Distributed tracing",
+        "why": "Propagate trace context (W3C `traceparent`, OpenTelemetry) so spans from every service join into one trace showing where time went. Sample traces to control cost; keep errors and slow ones."
+      },
+      {
+        "signal": "A request-driven service has no standard dashboard and every team graphs different things",
+        "use": "RED metrics",
+        "why": "Rate, Errors, Duration per endpoint describe what callers experience and suit alerts. They show that something is wrong, not which resource is the cause."
+      },
+      {
+        "signal": "You suspect a database, disk, queue or thread pool is the bottleneck",
+        "use": "USE method",
+        "why": "For each resource check Utilization, Saturation (queueing) and Errors. Systematic and quick for finding the constrained resource; it complements RED, which views the service from outside."
+      },
+      {
+        "signal": "An alert on CPU above 80% pages someone at night and usually needs no action",
+        "use": "Alert on symptoms (SLO-based)",
+        "why": "Page on what users feel, like error rate or latency SLO burning, and keep cause metrics on dashboards for diagnosis. Alerts nobody acts on train people to ignore pages; delete them."
+      },
+      {
+        "signal": "Product and engineering argue whether to ship features or spend the sprint on reliability",
+        "use": "SLO with error budget",
+        "why": "Agree an SLI and target (99.9% over 30 days is about 43 minutes); while budget remains, ship; when it is spent, prioritize reliability. Needs agreed consequences or it is just a chart."
+      },
+      {
+        "signal": "A threshold alert fires on brief spikes and still misses slow, sustained degradation",
+        "use": "Multi-window burn-rate alerts",
+        "why": "Alert when the error budget burns fast over both a short and a long window. Catches real incidents quickly and ignores blips; more complex to set up than a static threshold."
+      },
+      {
+        "signal": "Metrics cost exploded after someone added `user_id` as a label",
+        "use": "Keep metric labels low-cardinality",
+        "why": "Every label combination is a separate time series; use bounded labels like endpoint and status. Put per-user and per-request IDs in logs and traces instead."
+      },
+      {
+        "signal": "Log volume and cost are dominated by debug-level lines from healthy requests",
+        "use": "Log levels and sampling",
+        "why": "Log successes at info or sample them, keep all warnings and errors, and enable debug dynamically when investigating. Sampling can drop the one request you later need, so keep errors unsampled."
+      },
+      {
+        "signal": "A security review finds tokens and email addresses in production logs",
+        "use": "Redact at the logger",
+        "why": "Scrub known sensitive fields in the logging pipeline or log only allow-listed fields, and test it. Fixing every call site by hand misses new ones; logs often have broader access than the database."
+      }
+    ]
+  },
+  {
+    "topicId": "releases-versioning",
+    "patterns": [
+      {
+        "signal": "A library's `parse()` returned an empty list for bad input and now throws, with no signature change",
+        "use": "MAJOR version bump",
+        "why": "Changed behavior that callers rely on is breaking under SemVer, even without a signature change. Calling it a minor release breaks every consumer that auto-updates within a range."
+      },
+      {
+        "signal": "A change adds a new optional function or field and fixes nothing that callers rely on",
+        "use": "MINOR version bump",
+        "why": "Backward-compatible additions are minor and fixes are patch, so consumers can safely accept them within a `^` range. SemVer only means something once you define the public API."
+      },
+      {
+        "signal": "The changelog is a pasted `git log` full of `wip` and internal ticket numbers",
+        "use": "User-facing changelog sections",
+        "why": "Group entries under Added, Changed, Deprecated, Removed, Fixed and Security, with breaking changes and migration steps first. Written for users, not developers; generate drafts, then edit."
+      },
+      {
+        "signal": "Each release date slips because one unfinished feature holds everything else hostage",
+        "use": "Release train",
+        "why": "Ship on a fixed schedule with whatever is ready; unfinished work stays behind flags and catches the next train. Predictable for everyone, but a feature may wait one full cycle."
+      },
+      {
+        "signal": "A crash ships in a mobile app and the fix will take days to clear store review",
+        "use": "Remote kill switch",
+        "why": "Wrap risky features in remotely controlled flags so you can disable them in minutes without a new binary. Needs a safe default when config cannot be fetched, and it only covers flagged code."
+      },
+      {
+        "signal": "A new mobile build goes to every user at once and a crash would hit millions before you notice",
+        "use": "Staged rollout with crash-rate gate",
+        "why": "Release to a small percentage, watch crash-free rate and key metrics, then widen or halt. You cannot recall installed builds, so halting early is the only damage control."
+      },
+      {
+        "signal": "Old app versions in the wild keep calling the API months after a new release",
+        "use": "Support old clients + minimum version",
+        "why": "Keep the backend compatible with several client versions and enforce a minimum supported version for forced updates. Forcing updates annoys users; reserve it for security or broken versions."
+      },
+      {
+        "signal": "An endpoint some customers still call must be removed",
+        "use": "Staged deprecation",
+        "why": "Announce, provide a replacement and migration guide, emit warnings (such as a `Sunset` header), track usage and remove at a published date. Measure who still calls it rather than guessing."
+      },
+      {
+        "signal": "A breaking API change is unavoidable but existing integrations must keep working",
+        "use": "Versioned API (`/v2`)",
+        "why": "Run old and new versions side by side and migrate clients over time. Every live version is code you maintain and test, so keep few versions and give each a sunset date."
+      },
+      {
+        "signal": "Production 2.3 needs an urgent fix while `main` already contains unreleased 2.4 features",
+        "use": "Release branch hotfix",
+        "why": "Fix on `main`, then cherry-pick to the `release/2.3` branch and ship 2.3.1 from it. Avoids shipping half-done work; each maintained branch adds merge and testing cost."
+      },
+      {
+        "signal": "Version numbers and tags are bumped by hand and sometimes skipped or duplicated",
+        "use": "Automated versioning from commits",
+        "why": "Derive the next version from commit conventions or PR labels and tag in CI, generating changelog drafts too. Only as accurate as the commit discipline behind it."
+      }
+    ]
+  }
+]

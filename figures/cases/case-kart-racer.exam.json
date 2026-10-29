@@ -1,0 +1,35 @@
+[
+  {
+    "q": "A 120 kg kart sits on four raycast wheels. You want each spring to sit at 0.08 m of compression at rest (g = 9.81). Which spring constant k is correct, to the nearest 10 N/m?",
+    "options": [
+      "920 N/m",
+      "14,720 N/m",
+      "3,680 N/m",
+      "29,430 N/m"
+    ],
+    "answer": 2,
+    "explain": "Each wheel carries a quarter of the weight: 120 * 9.81 / 4 = 294.3 N. Then k = 294.3 / 0.08 = 3,679 N/m, about 3,680. Forgetting the division by four gives 14,720; dividing by 0.32 gives 920; 29,430 uses the full weight over half the compression."
+  },
+  {
+    "q": "Prediction runs at 60 Hz. A server correction for tick 600 arrives while the client is at tick 605, and the client's stored state disagrees by 0.4 m. What should the client do?",
+    "options": [
+      "Snap to the server state for tick 600 and keep running from there",
+      "Ignore it, because the local kart is always correct for the player",
+      "Restore tick 600, replay inputs 601 to 605, smooth the error",
+      "Extrapolate the server state by 5 ticks of the last velocity"
+    ],
+    "answer": 2,
+    "explain": "The server state is five ticks old. Restoring it and replaying the unacknowledged inputs brings it to the present, and decaying the visual error hides the 0.4 m correction. Snapping to tick 600 rewinds the kart by 83 ms, ignoring it lets the client drift away, and extrapolating the velocity throws away the player's inputs."
+  },
+  {
+    "q": "Players found that driving off a ledge near the end of a shortcut, then respawning at the nearest spline point, skips a checkpoint gate. How do you close the exploit without breaking normal falls?",
+    "options": [
+      "Respawn at the last gate passed; count laps in gate order",
+      "Move the kill plane lower so the fall takes longer",
+      "Make the respawn point the nearest spline point plus 20 m back",
+      "Remove the shortcut from the track so nothing can be skipped"
+    ],
+    "answer": 0,
+    "explain": "Progress can only be gained by crossing gates in order, and respawning at the last gate restores the state that was earned. A lower kill plane or a 20 m offset only changes how far the exploit lands, and removing the shortcut hides the design flaw rather than fixing it."
+  }
+]

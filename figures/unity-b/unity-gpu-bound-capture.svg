@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 290" role="img" aria-label="Phone capture at 60 fps target, to scale: main thread PlayerLoop 6.1 ms then Gfx.WaitForPresentOnGfxThread 15.8 ms, render thread 5.0 ms submitting then waiting, GPU busy for the whole 22 ms frame. GPU bound.">
+<style>
+.unity-gpu-bound-capture-l{font-size:13px;fill:var(--fig-ink)}
+.unity-gpu-bound-capture-b{font-size:13px;fill:var(--fig-ink)}
+.unity-gpu-bound-capture-s{font-size:12px;fill:var(--fig-muted)}
+.unity-gpu-bound-capture-v{font-size:14px;font-weight:600;fill:var(--fig-ink)}
+.unity-gpu-bound-capture-work{fill:var(--fig-accent);fill-opacity:.3;stroke:var(--fig-accent);stroke-width:1.5}
+.unity-gpu-bound-capture-wait{fill:var(--fig-line);fill-opacity:.35;stroke:var(--fig-muted);stroke-width:1.5;stroke-dasharray:4 3}
+.unity-gpu-bound-capture-gpu{fill:var(--fig-bad);fill-opacity:.25;stroke:var(--fig-bad);stroke-width:1.5}
+.unity-gpu-bound-capture-ph{stroke:var(--fig-accent2);stroke-width:2;animation:unity-gpu-bound-capture-ph 5s linear infinite}
+@keyframes unity-gpu-bound-capture-ph{0%{transform:translateX(0)}80%,100%{transform:translateX(440px)}}
+</style>
+<text class="unity-gpu-bound-capture-l" x="20" y="74">Main thread</text>
+<text class="unity-gpu-bound-capture-l" x="20" y="124">Render thread</text>
+<text class="unity-gpu-bound-capture-l" x="20" y="174">GPU</text>
+<rect class="unity-gpu-bound-capture-work" x="130.0" y="54" width="122.0" height="30" rx="6"/><text class="unity-gpu-bound-capture-b" x="140" y="74">PlayerLoop 6.1</text>
+<rect class="unity-gpu-bound-capture-wait" x="252.0" y="54" width="316.0" height="30" rx="6"/><text class="unity-gpu-bound-capture-b" x="262" y="74">Gfx.WaitForPresentOnGfxThread 15.8</text>
+<rect class="unity-gpu-bound-capture-work" x="130.0" y="104" width="100" height="30" rx="6"/><text class="unity-gpu-bound-capture-b" x="140" y="124">submit 5.0</text>
+<rect class="unity-gpu-bound-capture-wait" x="230.0" y="104" width="340.0" height="30" rx="6"/><text class="unity-gpu-bound-capture-s" x="240" y="123">waiting</text>
+<rect class="unity-gpu-bound-capture-gpu" x="130.0" y="154" width="440" height="30" rx="6"/><text class="unity-gpu-bound-capture-b" x="140" y="174">GPU frame busy the whole time</text>
+<path d="M464.0 40 V50 M464.0 88 V100 M464.0 138 V150 M464.0 188 V208" stroke="var(--fig-warn)" stroke-width="2.5" fill="none"/>
+<text class="unity-gpu-bound-capture-s" x="464.0" y="34" text-anchor="middle">16.7 ms budget</text>
+<text class="unity-gpu-bound-capture-s" x="570.0" y="34" text-anchor="middle">22 ms</text>
+<path d="M570.0 40 V50 M570.0 88 V100 M570.0 138 V150 M570.0 188 V208" stroke="var(--fig-bad)" stroke-width="2.5" fill="none"/>
+<line x1="130" y1="212" x2="610" y2="212" stroke="var(--fig-line)" stroke-width="1.5"/>
+<line x1="130.0" y1="208" x2="130.0" y2="216" stroke="var(--fig-line)" stroke-width="1.5"/><text class="unity-gpu-bound-capture-s" x="130.0" y="232" text-anchor="middle">0</text><line x1="210.0" y1="208" x2="210.0" y2="216" stroke="var(--fig-line)" stroke-width="1.5"/><text class="unity-gpu-bound-capture-s" x="210.0" y="232" text-anchor="middle">4</text><line x1="290.0" y1="208" x2="290.0" y2="216" stroke="var(--fig-line)" stroke-width="1.5"/><text class="unity-gpu-bound-capture-s" x="290.0" y="232" text-anchor="middle">8</text><line x1="370.0" y1="208" x2="370.0" y2="216" stroke="var(--fig-line)" stroke-width="1.5"/><text class="unity-gpu-bound-capture-s" x="370.0" y="232" text-anchor="middle">12</text><line x1="450.0" y1="208" x2="450.0" y2="216" stroke="var(--fig-line)" stroke-width="1.5"/><text class="unity-gpu-bound-capture-s" x="450.0" y="232" text-anchor="middle">16</text><line x1="530.0" y1="208" x2="530.0" y2="216" stroke="var(--fig-line)" stroke-width="1.5"/><text class="unity-gpu-bound-capture-s" x="530.0" y="232" text-anchor="middle">20</text><line x1="610.0" y1="208" x2="610.0" y2="216" stroke="var(--fig-line)" stroke-width="1.5"/><text class="unity-gpu-bound-capture-s" x="610.0" y="232" text-anchor="middle">24 ms</text>
+<line class="unity-gpu-bound-capture-ph" x1="130" y1="44" x2="130" y2="196"/>
+<text class="unity-gpu-bound-capture-v" x="20" y="268">Verdict: GPU bound. Optimizing C# scripts will not change the frame rate.</text>
+</svg>

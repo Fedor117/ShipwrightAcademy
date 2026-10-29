@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Figure gallery</title>
+<style>
+  :root { --fig-ink: #1d1d1f; --fig-muted: #6e6e73; --fig-line: #d2d2d7; --fig-bg: #ffffff; --fig-panel: #f2f2f5;
+          --fig-accent: #0071e3; --fig-accent2: #8e44c9; --fig-ok: #1f9d55; --fig-bad: #d93a2b; --fig-warn: #d98a00; }
+  :root[data-theme="dark"] { --fig-ink: #f2f2f5; --fig-muted: #a1a1a6; --fig-line: #3a3a3c; --fig-bg: #1c1c1e; --fig-panel: #2c2c2e;
+          --fig-accent: #4ea1ff; --fig-accent2: #c18cf0; --fig-ok: #4cd07d; --fig-bad: #ff6b5e; --fig-warn: #ffb340; }
+  body { margin: 0; padding: 24px; background: var(--fig-bg); color: var(--fig-ink); font: 14px -apple-system, system-ui, sans-serif; }
+  main { display: grid; grid-template-columns: repeat(auto-fill, minmax(560px, 1fr)); gap: 24px; }
+  figure { margin: 0; border: 1px solid var(--fig-line); border-radius: 12px; padding: 12px; }
+  figure svg { display: block; width: 100%; height: auto; }
+  figcaption { color: var(--fig-muted); margin-top: 8px; }
+  .meta { font: 12px ui-monospace, monospace; color: var(--fig-muted); }
+</style>
+</head>
+<body>
+<p><button onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">Toggle theme</button></p>
+<main id="g"></main>
+<script>
+  const ids = ['think', 'foundations', 'systems', 'build', 'ship', 'maintain', 'agents', 'graphics', 'engines', 'unity', 'cases'];
+  const load = (id) => new Promise((ok) => { const s = document.createElement('script'); s.src = '../content/' + id + '.js'; s.onload = s.onerror = ok; document.head.appendChild(s); });
+  Promise.all(ids.map(load)).then(() => {
+    const g = document.getElementById('g');
+    for (const sec of window.CURRICULUM_SECTIONS || []) for (const t of sec.topics) for (const b of t.lesson) if (b.type === 'figure') {
+      const f = document.createElement('figure');
+      f.innerHTML = '<div class="meta">' + sec.id + ' / ' + t.id + ' / ' + b.id + '</div>' + b.svg + '<figcaption></figcaption>';
+      f.querySelector('figcaption').textContent = b.caption;
+      g.appendChild(f);
+    }
+  });
+</script>
+</body>
+</html>

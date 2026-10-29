@@ -1,0 +1,542 @@
+[
+  {
+    "topicId": "engines-game-loop",
+    "patterns": [
+      {
+        "signal": "Physics or jump height changes with frame rate; a replay recorded at 144 fps desyncs when played at 60 fps",
+        "use": "Fixed timestep with an accumulator",
+        "why": "Simulation advances in constant `dt` steps drained from accumulated frame time, so results stop depending on fps. Costs several steps on slow frames and needs render interpolation to look smooth."
+      },
+      {
+        "signal": "Motion judders on a 144 Hz display although the 60 Hz simulation itself is smooth",
+        "use": "Render interpolation between sim states",
+        "why": "Draw `lerp(previous, current, accumulator / dt)` so rendering samples a continuous path. Adds up to one step of visual latency; extrapolation avoids that but mispredicts on sudden turns."
+      },
+      {
+        "signal": "After a stall or app resume the game freezes for seconds while it runs hundreds of catch-up steps",
+        "use": "Clamp frame time (spiral-of-death guard)",
+        "why": "Cap the time fed to the accumulator (for example 0.25 s) and drop the rest. The game briefly runs slower than real time instead of locking up; lockstep games must handle the dropped time explicitly."
+      },
+      {
+        "signal": "Average fps looks fine but players report stutter; the frame-time graph shows 33.3 ms spikes among 16.6 ms frames",
+        "use": "Measure frame pacing and 1% lows",
+        "why": "With vsync a frame that misses its slot costs a whole refresh, so evenness matters more than the mean. Budget in ms, find the spike's cause, or lock to a lower rate that you can always hit."
+      },
+      {
+        "signal": "A frame is slow and someone wants to optimise shaders, but nobody knows which processor is the bottleneck",
+        "use": "Identify CPU-bound vs GPU-bound first",
+        "why": "Frame time is set by the slower of CPU and GPU, which run in parallel. Halving GPU cost on a CPU-bound frame gains nothing; check main-thread time against GPU time in the profiler first."
+      },
+      {
+        "signal": "Thousands of objects each need a little behaviour every frame and the profiler shows a huge count of tiny Update calls",
+        "use": "Update Method via one manager loop",
+        "why": "Giving each object an `Update(dt)` is the Update Method pattern; driving them from one manager over an array removes per-call engine overhead and fixes the order. Lose the convenience of per-object callbacks."
+      },
+      {
+        "signal": "Objects updated earlier in a frame see neighbours' new state while later ones see old state, so results depend on order",
+        "use": "Double Buffer",
+        "why": "Read from the current state and write to a next buffer, then swap once all updates finish. Every object sees a consistent snapshot. Doubles memory for that state and adds one step of latency."
+      },
+      {
+        "signal": "Gameplay code calls audio or VFX directly and a burst of events causes spikes or reentrancy bugs mid-update",
+        "use": "Event Queue",
+        "why": "Push events into a queue and process them at a fixed point in the frame, decoupling sender and receiver in time and allowing merging or throttling. Receivers may act on stale state; guard against feedback loops."
+      },
+      {
+        "signal": "A pause menu sets the time scale to 0 and its own animations and timers freeze as well",
+        "use": "Separate scaled and unscaled clocks",
+        "why": "Gameplay reads scaled time (pause, slow motion, hit-stop); UI, audio fades and network timeouts read real time. Mixing them breaks pause and makes timeouts fire wrongly during slow motion."
+      }
+    ]
+  },
+  {
+    "topicId": "engines-entity-architecture",
+    "patterns": [
+      {
+        "signal": "A new feature needs behaviour from two branches of the class tree, or the base class is a thousand-line god object",
+        "use": "Component (composition over inheritance)",
+        "why": "Entities become containers of small single-purpose components that designers combine freely. Costs indirection and cross-component lookups; inter-component dependencies must be explicit."
+      },
+      {
+        "signal": "Tens of thousands of similar entities are updated each frame and the profiler shows the loop is memory-bound",
+        "use": "Entity-Component-System",
+        "why": "Separating identity, data and systems lets each system stream over packed component arrays and parallelise. Overkill for a few hundred unique authored objects, and debugging is less direct."
+      },
+      {
+        "signal": "A hot loop touches only position and velocity but walks 128-byte objects or pointers scattered across the heap",
+        "use": "Data Locality (structure of arrays)",
+        "why": "Store each field contiguously so every 64-byte cache line is full of data the loop needs and the prefetcher can run ahead. Can give an order of magnitude; makes per-object access and insertion more awkward."
+      },
+      {
+        "signal": "A struct mixes fields read every frame with large fields read rarely, like names, debug info or spawn data",
+        "use": "Hot/cold data splitting",
+        "why": "Move rarely used fields into a separate array or side table so hot iteration loads fewer cache lines. Adds an index or lookup when the cold data is needed."
+      },
+      {
+        "signal": "A system adds or removes components on thousands of entities while it is iterating them",
+        "use": "Deferred structural changes (command buffer)",
+        "why": "Record add, remove and destroy operations and play them back at a sync point, so archetype moves do not invalidate iteration or happen one by one. Changes are not visible until playback."
+      },
+      {
+        "signal": "A game mixes 300 unique hand-authored props with a 150,000-bullet boss pattern",
+        "use": "Hybrid: GameObjects plus ECS for hot spots",
+        "why": "Keep authored, one-off objects in the familiar component model and move only the massive, uniform populations to ECS. Needs a clear boundary and sync between the two worlds."
+      },
+      {
+        "signal": "Every new enemy kind is a new subclass that only changes numbers like health, speed and loot",
+        "use": "Type Object",
+        "why": "Make the kind a data asset (for example a ScriptableObject or table row) that instances reference, so designers add kinds without code. Behaviour that differs in logic still needs code or a scripting layer."
+      },
+      {
+        "signal": "Designers want to spawn many configured copies of an authored object, with per-level variants",
+        "use": "Prototype (prefabs and variants)",
+        "why": "Clone a fully configured template instead of building objects in code; variants inherit from a base and override fields. Deep variant chains become hard to reason about, so keep them shallow."
+      },
+      {
+        "signal": "Dozens of ability subclasses each call engine systems in their own way and coupling to physics, audio and VFX keeps spreading",
+        "use": "Subclass Sandbox",
+        "why": "A base class exposes a small protected set of operations (play sound, spawn effect, move) and subclasses implement one `Activate` using only those. Coupling is concentrated in the base, which can grow large."
+      },
+      {
+        "signal": "Several systems must react when an entity dies, and the health code should not reference UI, audio or quests",
+        "use": "Observer / event bus",
+        "why": "The source raises an event and listeners subscribe, so new reactions need no change to the source. Order and flow get harder to trace, and listeners that outlive their targets leak unless they unsubscribe."
+      },
+      {
+        "signal": "Gameplay code calls `AudioManager.Instance` everywhere and tests cannot swap the real service out",
+        "use": "Service Locator over singleton",
+        "why": "Code asks a registry for an interface, so you can provide a null, logging or test implementation. Still a global dependency in disguise; constructor injection is clearer where you control creation."
+      },
+      {
+        "signal": "Designers keep asking programmers for small rule changes to abilities or quests, each needing a rebuild",
+        "use": "Bytecode / data-driven behaviour",
+        "why": "Express behaviour as data (graphs, tables, a small instruction set or a scripting language) interpreted at runtime, so content changes ship without code changes. Interpreters are slower and need tooling and validation."
+      }
+    ]
+  },
+  {
+    "topicId": "engines-scenes-culling",
+    "patterns": [
+      {
+        "signal": "Many same-size objects spread evenly over a level all move every frame and each needs its nearby neighbours",
+        "use": "Uniform grid / spatial hash",
+        "why": "Bucket objects by cell and check only the surrounding cells; insert and remove are O(1), so rebuilding each frame is cheap. Wastes memory on empty space and degrades when objects vary greatly in size."
+      },
+      {
+        "signal": "Object density is very uneven: dense towns, sparse wilderness, and queries should skip empty regions",
+        "use": "Octree / quadtree",
+        "why": "Space subdivides only where objects cluster, so queries descend just into occupied nodes. Objects straddling boundaries complicate placement, and moving many objects means frequent node updates."
+      },
+      {
+        "signal": "Colliders or renderers range from pebbles to buildings, many move, and queries are mostly box or ray overlaps",
+        "use": "Bounding volume hierarchy (BVH)",
+        "why": "Boxes follow the objects, handle mixed sizes well and refit cheaply when objects move. Refits degrade tree quality over time, so rebuild periodically; dominant in physics broad phases and ray tracing."
+      },
+      {
+        "signal": "A hand-written spatial structure for 100 objects made frame time worse than the plain loop",
+        "use": "Linear scan for small N",
+        "why": "Below a few hundred items a contiguous array scan beats tree traversal thanks to cache locality and no maintenance cost. Measure before adding a structure; partition when counts or query rates grow."
+      },
+      {
+        "signal": "Moving a parent recomputes every descendant's world matrix immediately, even if nothing reads them this frame",
+        "use": "Dirty Flag",
+        "why": "Mark derived data stale when inputs change and recompute lazily or in one batch pass, parents before children. Saves repeated work; the risk is forgetting to set or check the flag and reading stale data."
+      },
+      {
+        "signal": "The CPU issues draw calls for thousands of objects that end up off-screen",
+        "use": "Hierarchical frustum culling",
+        "why": "Test cheap bounding volumes against the six frustum planes and reject whole nodes of a spatial tree at once. Bounds must be conservative or visible objects pop out."
+      },
+      {
+        "signal": "Inside a dense city most in-frustum objects sit behind buildings, yet they are still drawn",
+        "use": "Occlusion culling",
+        "why": "Precomputed visibility or a depth-based test removes hidden objects. It has its own CPU or GPU cost and bake time, so it pays off mainly in dense, enclosed scenes, not open fields."
+      },
+      {
+        "signal": "Distant objects cost as many triangles and draw calls as nearby ones but cover only a few pixels",
+        "use": "Level of detail (LOD)",
+        "why": "Swap to simpler meshes, materials or impostors by screen size so cost scales with what is seen. Costs authoring and memory, and visible popping without cross-fades or hysteresis."
+      },
+      {
+        "signal": "A tall or animated mesh disappears near screen edges although part of it should still be visible",
+        "use": "Conservative bounds for deforming geometry",
+        "why": "Culling trusts the bounding volume, so bounds must cover animation, vertex displacement and skinning. Enlarge or update bounds; overly large bounds just cull less."
+      },
+      {
+        "signal": "A deep transform hierarchy with hundreds of independently moving children shows high transform update cost",
+        "use": "Flatten the transform hierarchy",
+        "why": "Parent only when objects truly move together; independent movers at the root avoid cascading dirty propagation and allow parallel updates. Loses automatic relative placement."
+      }
+    ]
+  },
+  {
+    "topicId": "engines-physics-collision",
+    "patterns": [
+      {
+        "signal": "A rocket or ball passes through thin walls on slow devices or at high speed",
+        "use": "Continuous collision detection (CCD)",
+        "why": "Swept tests or speculative contacts catch collisions between discrete steps. Costs more per body, so enable it only on fast objects; thickening colliders or smaller steps are partial fixes."
+      },
+      {
+        "signal": "Bullets are simulated as tiny rigidbodies and sometimes miss targets they visibly crossed",
+        "use": "Swept raycast for projectiles",
+        "why": "Each step, cast a ray or shape from the previous to the new position and resolve the first hit. Exact and cheap for fast projectiles; you lose free physical bouncing unless you add it yourself."
+      },
+      {
+        "signal": "Raycasts hit the shooter's own collider, and debris, bullets and ragdolls test against each other needlessly",
+        "use": "Collision layers and layer masks",
+        "why": "Assign layers and disable pairs in the collision matrix, and pass masks to queries. Fewer pairs in the broad phase and fewer false hits; the matrix becomes shared config that must be documented."
+      },
+      {
+        "signal": "Code needs to know when the player enters a zone or pickup, without anything being pushed",
+        "use": "Trigger volumes",
+        "why": "Trigger colliders report overlaps but produce no contact response. Most engines need a body on at least one side to raise events, and fast movers can skip a thin trigger between steps."
+      },
+      {
+        "signal": "Physics cost stays high in a scene where hundreds of crates have stopped moving",
+        "use": "Let resting bodies sleep",
+        "why": "Bodies below a velocity threshold for a while are skipped until something wakes them. Applying tiny forces each frame keeps them awake; teleporting a body without waking neighbours leaves things floating."
+      },
+      {
+        "signal": "A dynamic object uses a detailed concave mesh collider and collisions are slow or unreliable",
+        "use": "Compound of convex primitives",
+        "why": "Approximate the shape with boxes, spheres, capsules or convex hulls; these are fast and robust for dynamic bodies. Keep arbitrary concave meshes for static level geometry."
+      },
+      {
+        "signal": "Forces or velocity changes are applied in the per-frame update, so acceleration differs between 30 and 144 fps",
+        "use": "Apply forces in the fixed physics step",
+        "why": "Run force and velocity code where the physics step runs, and read input per frame into state the step consumes. Keeps physics rate-independent; one-shot impulses need care not to apply twice or be missed."
+      },
+      {
+        "signal": "A custom spring or orbit integrated with `v += a*dt; x += v*dt` in the wrong order gains energy and explodes",
+        "use": "Semi-implicit Euler integration",
+        "why": "Update velocity first, then position with the new velocity; nearly free and far more stable at game step sizes. For stiff springs use smaller substeps; Verlet or RK4 fit cloth or high-precision cases."
+      },
+      {
+        "signal": "The player capsule is a dynamic rigidbody and jitters on slopes, bounces off steps and gets shoved by props",
+        "use": "Kinematic character controller",
+        "why": "Move the character yourself with sweeps and resolve slopes and steps explicitly, keeping full control of feel. You must implement pushing and being pushed, so physics interaction is less automatic."
+      },
+      {
+        "signal": "A ledge-grab or ground check with one thin ray misses edges that the capsule clearly overlaps",
+        "use": "Shape cast query",
+        "why": "Sweep or overlap the actual capsule or sphere so the query matches the body's volume. More expensive than a ray; filter with layer masks and keep the cast distance short."
+      },
+      {
+        "signal": "The profiler shows garbage allocations from physics queries called every frame",
+        "use": "Non-allocating query buffers",
+        "why": "Use the query variants that write hits into a preallocated array and reuse it. Removes GC spikes; size the buffer for the worst case or detect when it fills."
+      }
+    ]
+  },
+  {
+    "topicId": "engines-animation",
+    "patterns": [
+      {
+        "signal": "A character has discrete modes like grounded, jumping, attacking, and switching between them pops",
+        "use": "Animation state machine with cross-fades",
+        "why": "States hold clips or blend trees and transitions blend over a duration. During a cross-fade both states are evaluated; fully connected graphs become unmaintainable, so group states and use sub-machines."
+      },
+      {
+        "signal": "Locomotion must cover a continuous range of speeds and directions without separate states for each",
+        "use": "Blend tree on continuous parameters",
+        "why": "Blend phase-aligned clips by parameters like speed and direction (1D or 2D). Smooth coverage with few clips; clips must share phase and timing or feet slide and float."
+      },
+      {
+        "signal": "The character must reload or wave while legs keep running independently",
+        "use": "Masked animation layers",
+        "why": "A layer with a bone mask overrides or blends only upper-body bones on top of the base locomotion. Each layer costs evaluation, and mismatched poses at the mask seam can look broken."
+      },
+      {
+        "signal": "Breathing, leaning or hit reactions need to apply on top of any base animation without authoring every combination",
+        "use": "Additive animation",
+        "why": "Store a clip as a difference from a reference pose and add it to whatever is playing. Cuts the clip count; additives authored against the wrong reference pose produce distorted results."
+      },
+      {
+        "signal": "Feet float or clip on slopes and stairs, or hands miss a weapon grip or ledge",
+        "use": "IK pass after pose evaluation",
+        "why": "Run foot, hand or look-at IK on the blended pose to hit real targets. Corrects contact cheaply; needs reliable targets from raycasts and weighting to avoid knee pops and jitter."
+      },
+      {
+        "signal": "An attack lunge or vault must move the character exactly as authored with feet locked to the floor",
+        "use": "Root motion",
+        "why": "Extract the root bone's motion from the clip and apply it to the character. Exact contact and timing, at the cost of gameplay control; blend with code-driven movement where responsiveness matters."
+      },
+      {
+        "signal": "Feet slide during in-place locomotion because gameplay moves the capsule faster than the clip was authored",
+        "use": "Stride-matched playback rate",
+        "why": "Scale the clip's playback rate by `actualSpeed / authoredSpeed`, or blend between walk and run, so stride matches ground speed. Extreme rates look unnatural; add clips for distant speed ranges."
+      },
+      {
+        "signal": "Animation CPU cost is dominated by distant characters that cover a few pixels",
+        "use": "Animation LOD and reduced update rate",
+        "why": "Update far characters at lower rates, skip IK and layers, or use fewer bones by distance; off-screen ones can stop evaluating. Large savings with little visible loss; watch for root motion and events that still need updating."
+      },
+      {
+        "signal": "Blending two rotations makes a limb spin the long way round",
+        "use": "Quaternion hemisphere check before blending",
+        "why": "`q` and `-q` are the same rotation; if `dot(a, b) < 0` negate one before nlerp or slerp so blending takes the shortest arc. Missing it is a classic artefact of hand-written blending code."
+      },
+      {
+        "signal": "Blending walk and run makes the legs scissor because the clips have different lengths",
+        "use": "Phase sync with foot markers",
+        "why": "Normalize clip time and align on foot-contact markers so blended clips are at the same phase of the cycle. Requires marked-up clips; clips without matching cycles cannot be synced cleanly."
+      },
+      {
+        "signal": "Damage or footstep sounds are timed with gameplay timers that drift from the animation",
+        "use": "Animation events / notifies",
+        "why": "Fire gameplay hooks from markers in the clip so timing follows the animation. Events can be skipped or doubled during cross-fades and reduced update rates, so make handlers idempotent and robust."
+      },
+      {
+        "signal": "Feet jitter visibly after animation compression was raised to save memory",
+        "use": "Compression error measured at end effectors",
+        "why": "Key reduction and quantization errors accumulate down the bone chain, so measure error at feet and hands, not per joint. Tighten tolerance on long chains; costs some memory back."
+      }
+    ]
+  },
+  {
+    "topicId": "engines-game-math-feel",
+    "patterns": [
+      {
+        "signal": "`pos = Lerp(pos, target, 0.15f)` runs each frame and the camera lags at 30 fps but feels rigid at 144 fps",
+        "use": "Exponential smoothing with 1 - exp(-rate * dt)",
+        "why": "Using `k = 1 - exp(-rate * dt)` (or a half-life) removes the same fraction per second at any frame rate and never overshoots on hitches. Still lags a moving target; use a spring when you need to track velocity."
+      },
+      {
+        "signal": "A UI element or door must move from A to B over a fixed duration with a chosen feel",
+        "use": "Elapsed-time tween with easing",
+        "why": "Compute `t = elapsed / duration`, apply an easing curve and `Lerp(a, b, ease(t))`. Exact and frame-rate independent by construction; restarting mid-tween needs care to avoid jumps."
+      },
+      {
+        "signal": "A camera or follower must chase a moving target smoothly, without overshoot or sudden velocity changes",
+        "use": "Critically damped spring (SmoothDamp)",
+        "why": "Tracks target and velocity together, settling fastest without oscillation. Keep the velocity variable between frames; resetting it every frame or sharing it between objects breaks the motion."
+      },
+      {
+        "signal": "An object moving along a spline by increasing `t` at a fixed rate speeds up on long segments and slows in tight clusters",
+        "use": "Arc-length parameterization",
+        "why": "Precompute a table from distance to `t` and move by distance, giving constant speed. Costs a lookup table per spline that must be rebuilt when points change."
+      },
+      {
+        "signal": "A Catmull-Rom path through unevenly spaced points loops or overshoots at sharp corners",
+        "use": "Centripetal Catmull-Rom",
+        "why": "Using alpha 0.5 knot spacing avoids cusps and self-intersections while still passing through every point. Slightly more math than uniform; use Bezier when artists need direct tangent control."
+      },
+      {
+        "signal": "A seeded level differs between runs because particles or other systems draw from the same global random stream",
+        "use": "Per-system seeded RNG",
+        "why": "Give each consumer its own generator instance seeded from the master seed, so unrelated code cannot shift its sequence. Seeds must be derived deterministically and generators kept out of shared global state."
+      },
+      {
+        "signal": "Content must be random but identical whenever the same tile or chunk is revisited, in any order",
+        "use": "Position hash for stateless randomness",
+        "why": "Hash `(seed, x, y)` into a value instead of advancing a stream, so results do not depend on visit order. Hash quality matters: weak hashes show patterns."
+      },
+      {
+        "signal": "Screen shake uses a new random offset every frame, looks like jitter and gets stronger at higher fps",
+        "use": "Trauma-based noise shake",
+        "why": "Sample smooth noise over time scaled by `trauma^2`, and decay trauma per second. Frame-rate independent and readable; offer a reduced-shake accessibility option."
+      },
+      {
+        "signal": "A hit-stop counts frames, so it lasts 133 ms on a 30 fps handheld but 28 ms on a 144 Hz monitor",
+        "use": "Durations in seconds, never frames",
+        "why": "Express hit-stop, flashes and windows as real time so feel is the same on every device. Use unscaled time for the hit-stop timer itself, or a frozen time scale will never end it."
+      },
+      {
+        "signal": "The camera jerks with every small player motion and the player cannot see what is ahead",
+        "use": "Camera dead zone and look-ahead",
+        "why": "Ignore movement inside a dead zone and offset the camera toward the velocity or aim direction with smoothing. Tune per genre; too much look-ahead feels detached."
+      },
+      {
+        "signal": "Jumps and landings feel stiff and weightless even though the physics is correct",
+        "use": "Squash and stretch",
+        "why": "Briefly scale the sprite or mesh along motion on takeoff and impact, preserving volume, and ease back over a fraction of a second. Purely visual; keep colliders unchanged."
+      }
+    ]
+  },
+  {
+    "topicId": "engines-assets-memory",
+    "patterns": [
+      {
+        "signal": "Projectiles or effects are created and destroyed hundreds of times per second and GC or allocation spikes appear",
+        "use": "Object Pool",
+        "why": "Preallocate instances and reuse them, resetting state on spawn. Allocation becomes predictable; costs resident memory, and stale state from an incompletely reset object causes subtle bugs."
+      },
+      {
+        "signal": "Thousands of trees or rocks each hold their own copy of the same mesh, material and settings",
+        "use": "Flyweight (shared data, GPU instancing)",
+        "why": "Share the intrinsic data and keep only per-instance state (transform, colour), which also lets the GPU draw instances in one call. Changing shared data changes every instance, so per-instance edits must stay separate."
+      },
+      {
+        "signal": "Systems hold raw pointers or object references to entities that may be destroyed and their slots reused",
+        "use": "Generational handles instead of pointers",
+        "why": "Store an index plus generation number; a lookup detects a stale handle instead of touching freed or reused memory. Adds one indirection per access and a central table to manage."
+      },
+      {
+        "signal": "A level transition drops frames while the profiler shows file reads and deserialization on the main thread",
+        "use": "Async load with time-sliced integration",
+        "why": "Read and decode on worker threads, then integrate on the main thread a few objects per frame within a ms budget. Removes hitches; content appears over several frames, so plan loading screens or placeholders."
+      },
+      {
+        "signal": "An open world does not fit in memory, but the player only needs what is near them",
+        "use": "Distance-based streaming against a budget",
+        "why": "Load cells, LODs and texture mips by distance and priority within a fixed memory budget, evicting what is far. Needs prediction for fast travel and fallbacks for data that arrives late."
+      },
+      {
+        "signal": "A menu bundle is unexpectedly huge because one reference pulls in a cinematic and its textures",
+        "use": "Soft references for rarely used assets",
+        "why": "Store only the asset ID and load explicitly when needed, cutting the dependency chain. You must handle load latency and release, and missing references fail at runtime instead of build time."
+      },
+      {
+        "signal": "Textures dominate memory and are stored as RGBA32 on a memory-tight mobile target",
+        "use": "Platform block compression (ASTC/BCn)",
+        "why": "GPU-compressed formats cut texture memory by roughly 4-8x and stay compressed in memory. Quality loss is visible on gradients and normal maps, so choose block sizes per texture type."
+      },
+      {
+        "signal": "Memory grows across level loads because loaded assets are never released",
+        "use": "Explicit load/release with reference counting",
+        "why": "Pair every load with a release and unload when the count reaches zero. Leaks become traceable; an extra release unloads assets still in use, so tie handles to owner lifetime."
+      },
+      {
+        "signal": "Each frame makes many short-lived temporary allocations for lists, strings and scratch data",
+        "use": "Per-frame linear (arena) allocator",
+        "why": "Bump-allocate from a block and reset it at frame end, so allocation is a pointer add with no fragmentation. Nothing may keep pointers into it past the frame."
+      },
+      {
+        "signal": "The game crashes on allocation after hours of play although free memory looks sufficient",
+        "use": "Lifetime-based allocators and buffer reuse",
+        "why": "Fragmentation leaves no contiguous block large enough. Group allocations by lifetime (level, frame, permanent) and reuse large buffers instead of reallocating."
+      }
+    ]
+  },
+  {
+    "topicId": "engines-game-ai-navigation",
+    "patterns": [
+      {
+        "signal": "An enemy at exactly attack range flips between Chase and Attack every frame",
+        "use": "FSM with hysteresis",
+        "why": "Use different enter and exit thresholds (for example exit at 1.2x the range) and minimum state durations. Cures flicker cheaply; FSM transitions still grow toward N squared as states are added."
+      },
+      {
+        "signal": "An FSM has many states that all need the same 'flee when hurt' or 'stunned' transition",
+        "use": "Hierarchical state machine",
+        "why": "Group states under super-states (Combat contains Attack and Cover) so shared transitions live once at the parent. Reduces duplication; the structure is still rigid when priorities change often."
+      },
+      {
+        "signal": "After an interruption such as a cutscene or stun the agent should resume exactly what it was doing",
+        "use": "Pushdown automaton (state stack)",
+        "why": "Push the interrupting state and pop back to the previous one, so the FSM remembers history. Watch for stacks that grow unboundedly when interruptions nest."
+      },
+      {
+        "signal": "Designers need explicit priorities like flee over attack over patrol and want to reuse branches across enemy types",
+        "use": "Behaviour tree",
+        "why": "Selectors give left-to-right priority and subtrees are reusable modules. Re-evaluating from the root costs cycles unless conditions use event-driven aborts; long Running actions need clean interruption."
+      },
+      {
+        "signal": "An agent has many options whose desirability depends on graded factors like health, ammo, distance and threat",
+        "use": "Utility AI",
+        "why": "Score each option with response curves and pick the best, giving nuanced behaviour without transition spaghetti. Hard to tune and explain, so build debug views showing every score."
+      },
+      {
+        "signal": "Agents must chain actions toward a goal (get key, open door, reach target) in combinations designers cannot script",
+        "use": "Goal-oriented action planning (GOAP)",
+        "why": "Actions declare preconditions and effects and a planner searches for a sequence reaching the goal. Emergent and flexible; planning is costly and behaviour is harder to direct, so replan sparingly."
+      },
+      {
+        "signal": "Agents need the shortest route through a level graph quickly and with optimal results",
+        "use": "A* with an admissible heuristic",
+        "why": "A heuristic that never overestimates keeps A* optimal, and a tighter one expands fewer nodes. Weighting the heuristic trades optimality for speed; time-slice long searches across frames."
+      },
+      {
+        "signal": "Grid pathfinding over 500,000 cells is slow and paths zigzag between cell centres",
+        "use": "Navmesh with funnel smoothing",
+        "why": "Convex polygons cover walkable space with far fewer nodes, and the funnel algorithm straightens the corridor into a taut path. Baked per agent radius; dynamic obstacles need carving or rebakes."
+      },
+      {
+        "signal": "Hundreds of units must reach the same destination, such as the player base in an RTS",
+        "use": "Flow field",
+        "why": "Compute one integration field from the goal and let every unit follow its local gradient, so cost no longer scales with unit count. Expensive for many distinct goals and needs local avoidance for crowding."
+      },
+      {
+        "signal": "Agents follow their paths correctly but bump into each other and pile up in doorways",
+        "use": "Steering with RVO/ORCA local avoidance",
+        "why": "Steering turns waypoints into limited acceleration, and velocity-obstacle avoidance resolves local collisions without global replanning. Dense crowds can still deadlock; add priorities or yielding."
+      },
+      {
+        "signal": "AI decision logic and line-of-sight checks take most of the frame for 80 agents while steering is cheap",
+        "use": "Staggered low-rate decision ticks",
+        "why": "Run decisions and perception at 5-10 Hz spread across frames, while steering runs every frame. Huge savings with slight reaction delay; raise the rate for agents near the player."
+      },
+      {
+        "signal": "Several behaviours read and write the same facts about targets, last-known positions and alerts",
+        "use": "Blackboard",
+        "why": "A shared key-value store per agent or squad decouples who senses a fact from who uses it. Easy to overuse; untyped keys and stale entries need naming rules and timestamps."
+      }
+    ]
+  },
+  {
+    "topicId": "engines-input-audio-net",
+    "patterns": [
+      {
+        "signal": "Input handling is wired straight to actions and now you need rebinding, replays, undo or sending input over the network",
+        "use": "Command pattern",
+        "why": "Turn each input into a command object or struct with its tick; you can queue, record, replay, undo or transmit it. Adds a layer of indirection and requires commands to be deterministic to replay."
+      },
+      {
+        "signal": "Code checks `key == Space` and breaks on gamepads, remapping and touch",
+        "use": "Action mapping with bindings",
+        "why": "Gameplay reads named actions like Jump and Move fed by bindings with processing such as radial dead zones. Rebinding, context switching and local multiplayer come for free; more setup up front."
+      },
+      {
+        "signal": "Players say a jump pressed just before landing was ignored, or presses in a fixed step get lost",
+        "use": "Input buffering",
+        "why": "Record presses as timestamped edge events and honour them for a short window (80-150 ms) when the action becomes legal. Too long a window causes unintended actions."
+      },
+      {
+        "signal": "Players fall off ledges while pressing jump and swear they were still on the ground",
+        "use": "Coyote time",
+        "why": "Allow a jump for about 100 ms after leaving the ground, then clear it so it cannot double-jump. Matches perceived intent; too generous a window feels floaty."
+      },
+      {
+        "signal": "Important sounds like gunshots disappear when a hundred effects play at once",
+        "use": "Voice priority and bus ducking",
+        "why": "Limit voices per category, steal the least important, and duck music or ambience buses when key sounds play. Keeps the mix readable; mis-set priorities silence the wrong sounds."
+      },
+      {
+        "signal": "A volume slider is nearly silent over half its travel and then jumps loud near the top",
+        "use": "Perceptual (decibel) volume mapping",
+        "why": "Hearing is logarithmic, so map slider position to decibels (for example -80 to 0 dB) instead of linear gain. Clamp the bottom to true silence."
+      },
+      {
+        "signal": "A multiplayer game trusts positions and hits reported by clients, and cheaters teleport or one-shot others",
+        "use": "Server authority",
+        "why": "Clients send inputs, the server simulates and owns truth, and only results go out. Prevents most cheats; needs prediction to hide latency and costs server CPU and bandwidth."
+      },
+      {
+        "signal": "In a server-authoritative game, your own movement feels sluggish because it waits for server confirmation",
+        "use": "Client-side prediction and reconciliation",
+        "why": "Apply your input locally at once, keep unacknowledged inputs, and on each server state rewind and replay them. Feels instant; mispredictions cause corrections that must be smoothed."
+      },
+      {
+        "signal": "Remote players move in jerky steps because snapshots arrive irregularly over the network",
+        "use": "Snapshot interpolation",
+        "why": "Render remote entities about 100 ms in the past between two buffered snapshots, so jitter and loss are hidden. Adds visible latency for others, which lag compensation must account for."
+      },
+      {
+        "signal": "An RTS has thousands of units and syncing their state would exceed the bandwidth budget",
+        "use": "Deterministic lockstep",
+        "why": "Send only inputs and have every peer run the same deterministic simulation. Tiny bandwidth; any float or ordering difference desyncs, and the slowest connection sets input delay."
+      },
+      {
+        "signal": "A fighting game needs instant local response despite remote input arriving several frames late",
+        "use": "Rollback netcode",
+        "why": "Predict remote input, simulate, and on mismatch restore a saved state and re-simulate to the present. Needs a fast, deterministic, snapshot-able sim; long rollbacks cause visible teleports."
+      },
+      {
+        "signal": "Shots that clearly hit on the shooter's screen do not register on the server, especially for high-ping players",
+        "use": "Lag compensation (server rewind)",
+        "why": "The server keeps hitbox history and rewinds targets to what the shooter saw (latency plus interpolation delay). Fair for shooters; victims get hit behind cover, so cap the rewind window."
+      }
+    ]
+  }
+]

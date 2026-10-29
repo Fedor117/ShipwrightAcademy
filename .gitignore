@@ -1,0 +1,7 @@
+# SwiftPM and app build output
+.build/
+.swiftpm/
+build/
+*.xcodeproj/xcuserdata/
+
+.DS_Store

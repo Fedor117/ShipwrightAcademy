@@ -1,0 +1,35 @@
+[
+  {
+    "q": "Your fighting game steps in 1.8 ms, and rendering plus engine work take 8 ms of a 16.7 ms frame. Rollback of n frames costs n + 1 steps. What is the largest rollback that fits, and what should you do about a design cap of 8?",
+    "options": [
+      "3 frames; speed up the step or raise input delay before allowing 8",
+      "8 frames; resimulation skips rendering so only the sim matters",
+      "4 frames; the current-frame step does not count toward the budget",
+      "5 frames; the render cost shrinks while a rollback is running"
+    ],
+    "answer": 0,
+    "explain": "The sim budget is 16.7 - 8 = 8.7 ms, which is 4 steps at 1.8 ms, so n + 1 = 4 and n = 3. A rollback of 8 would need 9 x 1.8 + 8 = 24.2 ms. The current frame's step is a real cost, and render does not get cheaper during a rollback. Fix the step cost or move the latency into input delay."
+  },
+  {
+    "q": "A MOBA filters hidden enemy entities per team, but a cheat tool still reveals jungle camps being cleared. Ability and sound events are broadcast with their positions to all clients, and clients decide whether to show them. What is the real fix?",
+    "options": [
+      "Encrypt the event packets with a key the client holds",
+      "Filter events per team by the server's visibility grid",
+      "Add a small random offset to every broadcast event position",
+      "Have the client drop events outside the player's own view"
+    ],
+    "answer": 1,
+    "explain": "Events carry the same hidden information as entities, so they need the same server-side filter. Encryption, noise and client-side dropping leave the data on the machine of a cheater who controls the client."
+  },
+  {
+    "q": "A ranked peer-to-peer rollback match ends at frame 3,000 when the per-frame checksums stop matching, and each player blames the other. What design decision lets you resolve this fairly?",
+    "options": [
+      "Trust the checksum of whichever player has the better rating",
+      "Let the lower-ping player's state win, since it is more current",
+      "Make it a no-contest; route checksums or inputs via a service",
+      "Let both players keep playing and recompute the result afterwards"
+    ],
+    "answer": 2,
+    "explain": "Without a neutral party neither state can be proved right, so the match should be a no-contest with no rating change, and the design should send checksums or inputs through a service that can replay them. Picking by rating or ping rewards the wrong thing, and continuing a diverged match gives results that no one can verify."
+  }
+]

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 320" role="img" aria-label="Animator Controller with Locomotion, Jump and Fall states. Locomotion is a 1D blend tree: as Speed moves from 0 to 6 the weights shift from Idle to Walk to Run.">
+<defs><marker id="unity-locomotion-blend-tree-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--fig-muted)"/></marker></defs>
+<style>
+.unity-locomotion-blend-tree-t{font-size:14px;fill:var(--fig-ink)}
+.unity-locomotion-blend-tree-h{font-size:14px;font-weight:600;fill:var(--fig-ink)}
+.unity-locomotion-blend-tree-m{font-size:13px;fill:var(--fig-muted)}
+.unity-locomotion-blend-tree-s{font-size:12px;fill:var(--fig-muted)}
+.unity-locomotion-blend-tree-st{fill:var(--fig-panel);stroke:var(--fig-line);stroke-width:1.5}
+.unity-locomotion-blend-tree-act{fill:var(--fig-accent);fill-opacity:.14;stroke:var(--fig-accent);stroke-width:2}
+.unity-locomotion-blend-tree-tx{fill:none;stroke:var(--fig-muted);stroke-width:1.5}
+.unity-locomotion-blend-tree-trk{fill:var(--fig-line);fill-opacity:.5}
+.unity-locomotion-blend-tree-w{fill:var(--fig-accent);transform-box:fill-box;transform-origin:0 50%}
+.unity-locomotion-blend-tree-wi{animation:unity-locomotion-blend-tree-wi 6s linear infinite}
+.unity-locomotion-blend-tree-ww{transform:scaleX(0);animation:unity-locomotion-blend-tree-ww 6s linear infinite}
+.unity-locomotion-blend-tree-wr{transform:scaleX(0);animation:unity-locomotion-blend-tree-wr 6s linear infinite}
+.unity-locomotion-blend-tree-mk{animation:unity-locomotion-blend-tree-mk 6s linear infinite}
+@keyframes unity-locomotion-blend-tree-wi{0%{transform:scaleX(1)}25%,75%{transform:scaleX(0)}100%{transform:scaleX(1)}}
+@keyframes unity-locomotion-blend-tree-ww{0%,50%,100%{transform:scaleX(0)}25%,75%{transform:scaleX(1)}}
+@keyframes unity-locomotion-blend-tree-wr{0%,25%,75%,100%{transform:scaleX(0)}50%{transform:scaleX(1)}}
+@keyframes unity-locomotion-blend-tree-mk{0%,100%{transform:translateX(0)}25%,75%{transform:translateX(80px)}50%{transform:translateX(240px)}}
+</style>
+<text class="unity-locomotion-blend-tree-h" x="24" y="34">Animator Controller</text>
+<rect class="unity-locomotion-blend-tree-act" x="24" y="70" width="140" height="50" rx="10"/>
+<text class="unity-locomotion-blend-tree-t" x="94" y="92" text-anchor="middle">Locomotion</text>
+<text class="unity-locomotion-blend-tree-s" x="94" y="110" text-anchor="middle">blend tree</text>
+<rect class="unity-locomotion-blend-tree-st" x="220" y="70" width="84" height="50" rx="10"/>
+<text class="unity-locomotion-blend-tree-t" x="262" y="100" text-anchor="middle">Jump</text>
+<rect class="unity-locomotion-blend-tree-st" x="122" y="186" width="84" height="50" rx="10"/>
+<text class="unity-locomotion-blend-tree-t" x="164" y="216" text-anchor="middle">Fall</text>
+<path class="unity-locomotion-blend-tree-tx" d="M166 95 L216 95" marker-end="url(#unity-locomotion-blend-tree-ar)"/>
+<text class="unity-locomotion-blend-tree-s" x="192" y="86" text-anchor="middle">Jump</text>
+<path class="unity-locomotion-blend-tree-tx" d="M248 122 L196 184" marker-end="url(#unity-locomotion-blend-tree-ar)"/>
+<text class="unity-locomotion-blend-tree-s" x="232" y="164">falling</text>
+<path class="unity-locomotion-blend-tree-tx" d="M146 184 L110 124" marker-end="url(#unity-locomotion-blend-tree-ar)"/>
+<text class="unity-locomotion-blend-tree-s" x="120" y="164" text-anchor="end">Grounded</text>
+<text class="unity-locomotion-blend-tree-m" x="24" y="270">Parameters</text>
+<text class="unity-locomotion-blend-tree-s" x="24" y="292">Speed float · Jump trigger · Grounded bool</text>
+<path d="M140 70 C 200 30, 300 34, 334 54" fill="none" stroke="var(--fig-accent)" stroke-width="1.5" stroke-dasharray="4 4"/>
+<rect x="334" y="40" width="288" height="262" rx="12" fill="var(--fig-panel)" stroke="var(--fig-line)" stroke-width="1.5"/>
+<text class="unity-locomotion-blend-tree-h" x="354" y="66">Locomotion: 1D on Speed</text>
+<line x1="370" y1="122" x2="600" y2="122" stroke="var(--fig-line)" stroke-width="2"/>
+<circle cx="370" cy="122" r="4" fill="var(--fig-muted)"/><circle cx="450" cy="122" r="4" fill="var(--fig-muted)"/><circle cx="600" cy="122" r="4" fill="var(--fig-muted)"/>
+<text class="unity-locomotion-blend-tree-s" x="370" y="104" text-anchor="middle">Idle</text><text class="unity-locomotion-blend-tree-s" x="450" y="104" text-anchor="middle">Walk</text><text class="unity-locomotion-blend-tree-s" x="600" y="104" text-anchor="middle">Run</text>
+<text class="unity-locomotion-blend-tree-s" x="370" y="144" text-anchor="middle">0</text><text class="unity-locomotion-blend-tree-s" x="450" y="144" text-anchor="middle">2</text><text class="unity-locomotion-blend-tree-s" x="600" y="144" text-anchor="middle">6</text>
+<text class="unity-locomotion-blend-tree-s" x="525" y="144" text-anchor="middle">Speed</text>
+<g class="unity-locomotion-blend-tree-mk"><path d="M370 122 l-7 -14 h14 z" fill="var(--fig-accent2)"/></g>
+<text class="unity-locomotion-blend-tree-m" x="354" y="182">weight</text>
+<text class="unity-locomotion-blend-tree-t" x="354" y="212">Idle</text><rect class="unity-locomotion-blend-tree-trk" x="400" y="200" width="200" height="16" rx="8"/><rect class="unity-locomotion-blend-tree-w unity-locomotion-blend-tree-wi" x="400" y="200" width="200" height="16" rx="8"/>
+<text class="unity-locomotion-blend-tree-t" x="354" y="244">Walk</text><rect class="unity-locomotion-blend-tree-trk" x="400" y="232" width="200" height="16" rx="8"/><rect class="unity-locomotion-blend-tree-w unity-locomotion-blend-tree-ww" x="400" y="232" width="200" height="16" rx="8"/>
+<text class="unity-locomotion-blend-tree-t" x="354" y="276">Run</text><rect class="unity-locomotion-blend-tree-trk" x="400" y="264" width="200" height="16" rx="8"/><rect class="unity-locomotion-blend-tree-w unity-locomotion-blend-tree-wr" x="400" y="264" width="200" height="16" rx="8"/>
+</svg>

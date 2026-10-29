@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 320" role="img" aria-label="An inspector edit that goes through SerializedProperty gets undo, prefab override tracking and dirtying; writing the C# field directly skips all three.">
+<style>
+.unity-serialized-inspector-t{font-size:14px;fill:var(--fig-ink);font-weight:600}
+.unity-serialized-inspector-s{font-size:12px;fill:var(--fig-muted)}
+.unity-serialized-inspector-c{font-size:12px;fill:var(--fig-ink);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.unity-serialized-inspector-lo{font-size:13px;fill:var(--fig-ok);font-weight:600}
+.unity-serialized-inspector-lb{font-size:13px;fill:var(--fig-bad);font-weight:600}
+.unity-serialized-inspector-box{fill:var(--fig-panel);stroke:var(--fig-line);stroke-width:1.5}
+.unity-serialized-inspector-sp{fill:var(--fig-accent);fill-opacity:.12;stroke:var(--fig-accent);stroke-width:1.75}
+.unity-serialized-inspector-ar{stroke:var(--fig-muted);stroke-width:1.75;fill:none}
+.unity-serialized-inspector-dash{stroke:var(--fig-bad);stroke-width:1.75;fill:none;stroke-dasharray:6 5}
+.unity-serialized-inspector-cok{fill:var(--fig-ok);fill-opacity:.12;stroke:var(--fig-ok);stroke-width:1.5}
+.unity-serialized-inspector-cbad{fill:var(--fig-bad);fill-opacity:.1;stroke:var(--fig-bad);stroke-width:1.5}
+.unity-serialized-inspector-ct{font-size:12px;fill:var(--fig-ink)}
+.unity-serialized-inspector-pa{animation:unity-serialized-inspector-a 7s ease-in-out infinite}
+.unity-serialized-inspector-pb{opacity:0;animation:unity-serialized-inspector-b 7s ease-in-out infinite}
+.unity-serialized-inspector-ga{opacity:0;animation:unity-serialized-inspector-g 7s ease-in-out infinite}
+.unity-serialized-inspector-gb{opacity:0;animation:unity-serialized-inspector-g 7s ease-in-out infinite;animation-delay:4.3s}
+.unity-serialized-inspector-pk{fill:var(--fig-accent);stroke:var(--fig-bg);stroke-width:2}
+.unity-serialized-inspector-pkb{fill:var(--fig-bad);stroke:var(--fig-bg);stroke-width:2}
+.unity-serialized-inspector-pt{font-size:12px;fill:var(--fig-bg);font-weight:700}
+@keyframes unity-serialized-inspector-a{0%{opacity:0;transform:translateX(0)}5%{opacity:1;transform:translateX(0)}18%,26%{opacity:1;transform:translateX(154px)}40%{opacity:1;transform:translateX(308px)}46%,100%{opacity:0;transform:translateX(308px)}}
+@keyframes unity-serialized-inspector-b{0%,50%{opacity:0;transform:translateX(0)}55%{opacity:1;transform:translateX(0)}88%{opacity:1;transform:translateX(228px)}94%,100%{opacity:0;transform:translateX(228px)}}
+@keyframes unity-serialized-inspector-g{0%,18%{opacity:0}24%,40%{opacity:1}48%,100%{opacity:0}}
+</style>
+<defs><marker id="unity-serialized-inspector-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--fig-muted)"/></marker>
+<marker id="unity-serialized-inspector-ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--fig-bad)"/></marker></defs>
+<text class="unity-serialized-inspector-lo" x="16" y="30">Through SerializedObject</text>
+<rect class="unity-serialized-inspector-box" x="16" y="44" width="150" height="56" rx="10"/>
+<text class="unity-serialized-inspector-t" x="28" y="67">Inspector</text>
+<text class="unity-serialized-inspector-s" x="28" y="87">field "count" = 5</text>
+<line class="unity-serialized-inspector-ar" x1="168" y1="72" x2="224" y2="72" marker-end="url(#unity-serialized-inspector-a)"/>
+<rect class="unity-serialized-inspector-sp" x="226" y="44" width="188" height="56" rx="10"/>
+<text class="unity-serialized-inspector-t" x="238" y="67">SerializedProperty</text>
+<text class="unity-serialized-inspector-s" x="238" y="87">serialized data on disk</text>
+<line class="unity-serialized-inspector-ar" x1="416" y1="72" x2="472" y2="72" marker-end="url(#unity-serialized-inspector-a)"/>
+<rect class="unity-serialized-inspector-box" x="474" y="44" width="150" height="56" rx="10"/>
+<text class="unity-serialized-inspector-t" x="486" y="67">Spawner</text>
+<text class="unity-serialized-inspector-c" x="486" y="87">count: 5</text>
+<rect class="unity-serialized-inspector-ga" x="146" y="110" width="370" height="38" rx="12" style="fill:var(--fig-ok);fill-opacity:.12"/>
+<rect class="unity-serialized-inspector-cok" x="152" y="116" width="96" height="26" rx="8"/>
+<text class="unity-serialized-inspector-ct" x="200" y="133" text-anchor="middle">Undo ✓</text>
+<rect class="unity-serialized-inspector-cok" x="258" y="116" width="150" height="26" rx="8"/>
+<text class="unity-serialized-inspector-ct" x="333" y="133" text-anchor="middle"><tspan font-weight="700">Prefab override</tspan> ✓</text>
+<rect class="unity-serialized-inspector-cok" x="418" y="116" width="92" height="26" rx="8"/>
+<text class="unity-serialized-inspector-ct" x="464" y="133" text-anchor="middle">Dirty ✓</text>
+<g class="unity-serialized-inspector-pa"><circle class="unity-serialized-inspector-pk" cx="166" cy="72" r="11"/><text class="unity-serialized-inspector-pt" x="166" y="76" text-anchor="middle">5</text></g>
+<line x1="16" y1="172" x2="624" y2="172" style="stroke:var(--fig-line);stroke-width:1"/>
+<text class="unity-serialized-inspector-lb" x="16" y="200">Writing the field directly</text>
+<rect class="unity-serialized-inspector-box" x="16" y="214" width="230" height="56" rx="10"/>
+<text class="unity-serialized-inspector-t" x="28" y="237">Your editor code</text>
+<text class="unity-serialized-inspector-c" x="28" y="257">((Spawner)target).count = 5</text>
+<path class="unity-serialized-inspector-dash" d="M248 242H470" marker-end="url(#unity-serialized-inspector-ab)"/>
+<text class="unity-serialized-inspector-s" x="360" y="234" text-anchor="middle">skips SerializedProperty</text>
+<rect class="unity-serialized-inspector-box" x="474" y="214" width="150" height="56" rx="10"/>
+<text class="unity-serialized-inspector-t" x="486" y="237">Spawner</text>
+<text class="unity-serialized-inspector-c" x="486" y="257">count: 5</text>
+<rect class="unity-serialized-inspector-gb" x="146" y="278" width="370" height="38" rx="12" style="fill:var(--fig-bad);fill-opacity:.1"/>
+<rect class="unity-serialized-inspector-cbad" x="152" y="284" width="96" height="26" rx="8"/>
+<text class="unity-serialized-inspector-ct" x="200" y="301" text-anchor="middle">No undo</text>
+<rect class="unity-serialized-inspector-cbad" x="258" y="284" width="150" height="26" rx="8"/>
+<text class="unity-serialized-inspector-ct" x="333" y="301" text-anchor="middle">No override</text>
+<rect class="unity-serialized-inspector-cbad" x="418" y="284" width="92" height="26" rx="8"/>
+<text class="unity-serialized-inspector-ct" x="464" y="301" text-anchor="middle">May not save</text>
+<g class="unity-serialized-inspector-pb"><circle class="unity-serialized-inspector-pkb" cx="246" cy="242" r="11"/><text class="unity-serialized-inspector-pt" x="246" y="246" text-anchor="middle">5</text></g>
+</svg>

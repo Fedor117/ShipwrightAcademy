@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 330" role="img" aria-label="Addressables reference count over time. Paired loads and releases bring the count to zero and the bundle unloads; a missing Release leaves the count at 1 and the bundle never unloads.">
+<style>
+.unity-addressables-refcount-t{font-size:14px;font-weight:600;fill:var(--fig-ink)}
+.unity-addressables-refcount-e{font-size:13px;fill:var(--fig-ink)}
+.unity-addressables-refcount-s{font-size:12px;fill:var(--fig-muted)}
+.unity-addressables-refcount-n{font-size:13px;font-weight:600;fill:var(--fig-accent)}
+.unity-addressables-refcount-okt{font-size:12px;fill:var(--fig-ok)}
+.unity-addressables-refcount-badt{font-size:12px;fill:var(--fig-bad);font-weight:600}
+.unity-addressables-refcount-ax{stroke:var(--fig-line);stroke-width:1.5}
+.unity-addressables-refcount-cnt{fill:none;stroke:var(--fig-accent);stroke-width:2.5;stroke-linejoin:round}
+.unity-addressables-refcount-ev{stroke:var(--fig-line);stroke-width:1;stroke-dasharray:3 3}
+.unity-addressables-refcount-ph{stroke:var(--fig-accent2);stroke-width:2;animation:unity-addressables-refcount-ph 7s linear infinite}
+@keyframes unity-addressables-refcount-ph{0%{transform:translateX(0)}85%,100%{transform:translateX(480px)}}
+</style>
+<text class="unity-addressables-refcount-t" x="20" y="96">Paired</text><text class="unity-addressables-refcount-s" x="20" y="114">refcount</text>
+<line class="unity-addressables-refcount-ev" x1="160" y1="50" x2="160" y2="138"/><text class="unity-addressables-refcount-e" x="160" y="40" text-anchor="middle">Load</text><line class="unity-addressables-refcount-ev" x1="260" y1="50" x2="260" y2="138"/><text class="unity-addressables-refcount-e" x="260" y="40" text-anchor="middle">Load</text><line class="unity-addressables-refcount-ev" x1="360" y1="50" x2="360" y2="138"/><text class="unity-addressables-refcount-e" x="360" y="40" text-anchor="middle">Release</text><line class="unity-addressables-refcount-ev" x1="460" y1="50" x2="460" y2="138"/><text class="unity-addressables-refcount-e" x="460" y="40" text-anchor="middle">Release</text>
+<line class="unity-addressables-refcount-ax" x1="120" y1="120" x2="600" y2="120"/><path class="unity-addressables-refcount-cnt" d="M120 120 H160 V100 H260 V80 H360 V100 H460 V120 H600"/><text class="unity-addressables-refcount-n" x="210" y="92" text-anchor="middle">1</text><text class="unity-addressables-refcount-n" x="310" y="72" text-anchor="middle">2</text><text class="unity-addressables-refcount-n" x="410" y="92" text-anchor="middle">1</text><text class="unity-addressables-refcount-n" x="530" y="112" text-anchor="middle">0</text>
+<rect x="160" y="128" width="300" height="10" rx="5" fill="var(--fig-ok)" fill-opacity=".45"/><text class="unity-addressables-refcount-okt" x="160" y="156">bundle in memory</text><text class="unity-addressables-refcount-okt" x="470" y="138">unloads at 0</text>
+<text class="unity-addressables-refcount-t" x="20" y="246">Unpaired</text><text class="unity-addressables-refcount-s" x="20" y="264">refcount</text>
+<line class="unity-addressables-refcount-ev" x1="160" y1="200" x2="160" y2="288"/><text class="unity-addressables-refcount-e" x="160" y="190" text-anchor="middle">Load</text><line class="unity-addressables-refcount-ev" x1="260" y1="200" x2="260" y2="288"/><text class="unity-addressables-refcount-e" x="260" y="190" text-anchor="middle">Load</text><line class="unity-addressables-refcount-ev" x1="360" y1="200" x2="360" y2="288"/><text class="unity-addressables-refcount-e" x="360" y="190" text-anchor="middle">Release</text><line class="unity-addressables-refcount-ev" x1="460" y1="200" x2="460" y2="288"/><text class="unity-addressables-refcount-badt" x="460" y="190" text-anchor="middle">no Release</text>
+<line class="unity-addressables-refcount-ax" x1="120" y1="270" x2="600" y2="270"/><path class="unity-addressables-refcount-cnt" d="M120 270 H160 V250 H260 V230 H360 V250 H600"/><text class="unity-addressables-refcount-n" x="210" y="242" text-anchor="middle">1</text><text class="unity-addressables-refcount-n" x="310" y="222" text-anchor="middle">2</text><text class="unity-addressables-refcount-n" x="480" y="242" text-anchor="middle">1</text>
+<rect x="160" y="278" width="440" height="10" rx="5" fill="var(--fig-bad)" fill-opacity=".45"/><text class="unity-addressables-refcount-badt" x="600" y="306" text-anchor="end">bundle never unloads: leak</text>
+<line class="unity-addressables-refcount-ph" x1="120" y1="20" x2="120" y2="312"/>
+</svg>

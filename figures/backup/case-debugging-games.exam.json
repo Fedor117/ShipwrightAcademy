@@ -1,0 +1,35 @@
+[
+  {
+    "q": "Two clients desync. Bisection gives frame 5,812 as the first mismatch. At that frame physics, RNG state and economy hashes match and the AI hash differs. The AI picks targets from a hash set of unit pointers and runs a cheaper update for units far from the local camera. Which fix addresses the root cause on every platform?",
+    "options": [
+      "Send the AI hash every frame and let the host overwrite each client's AI state",
+      "Iterate AI by entity id and base update rates on simulation state, not on the camera",
+      "Give each client a different RNG stream for the AI so differences average out",
+      "Lower the tick rate to 30 Hz so the AI has more time per tick to converge"
+    ],
+    "answer": 1,
+    "explain": "Pointer-keyed iteration order and camera-based update rates are both inputs that differ per machine, and both enter the simulation. Stable ordering and sim-only rules remove them. Overwriting state from the host hides the difference and costs bandwidth every frame. Different RNG streams create more divergence, not less. A lower tick rate changes timing, not the source of the divergence."
+  },
+  {
+    "q": "A game leaks about 140 MB per hour of play. The device budget is 3.0 GB, and the baseline after loading is 1.1 GB. The 3-minute smoke test passes. CI has a 40 minute window, and the build is deterministic and can run headless with bots. Which plan finds the leak before release?",
+    "options": [
+      "Run 40 real minutes and wait for the out-of-memory crash",
+      "Raise the device budget to 8 GB so the leak stops mattering",
+      "Repeat the 3-minute test 15 times so the leaks add up",
+      "Run bots at 30x for 30 min and fail on memory slope"
+    ],
+    "answer": 3,
+    "explain": "The budget leaves 1.9 GB, which is about 13.6 hours of leaking. Thirty minutes at 30x is 15 hours of play, and a slope check (MB per hour) fails long before memory runs out. Forty real minutes grows only about 93 MB and never crashes. A bigger budget postpones the failure to players with long sessions. Each repeated test restarts the process, so the leak never accumulates."
+  },
+  {
+    "q": "A flank regression sits among 200 commits between a known good and a known bad build. A probe costs 6 min (4 min to fetch or build, 2 min to run the replay at 20x). The replay was recorded on the newest build and desyncs on older builds, because AI tuning changed in between. What is the plan?",
+    "options": [
+      "8 probes, about 48 min, with a test that asserts a gameplay invariant, not a state hash",
+      "8 probes, about 48 min, comparing the final state hash with the newest build's hash",
+      "100 probes, about 10 h, testing every second commit in order from the good build",
+      "7 probes, about 42 min, since 2^7 is close enough to 200 commits"
+    ],
+    "answer": 0,
+    "explain": "2^8 = 256 covers 200 commits, so 8 probes of 6 min is 48 min. The test must pass or fail on behaviour (for example, two units reach flank positions in 90 s), because an exact state hash will differ on older builds for reasons unrelated to the bug and mark every probe bad. Testing every second commit is a linear scan. Seven probes cover only 128 commits, so the answer could be missed."
+  }
+]

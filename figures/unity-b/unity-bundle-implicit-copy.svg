@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 320" role="img" aria-label="Texture T not assigned to any bundle is copied into both bundles that reference it. Assigned to its own shared bundle, it exists once and both bundles depend on it.">
+<style>
+.unity-bundle-implicit-copy-t{font-size:14px;fill:var(--fig-ink)}
+.unity-bundle-implicit-copy-h{font-size:14px;font-weight:600;fill:var(--fig-ink)}
+.unity-bundle-implicit-copy-s{font-size:12px;fill:var(--fig-muted)}
+.unity-bundle-implicit-copy-ok{font-size:13px;fill:var(--fig-ok);font-weight:600}
+.unity-bundle-implicit-copy-bad{font-size:13px;fill:var(--fig-bad);font-weight:600}
+.unity-bundle-implicit-copy-pn{fill:var(--fig-panel);stroke:var(--fig-line);stroke-width:1.5}
+.unity-bundle-implicit-copy-bd{fill:var(--fig-bg);stroke:var(--fig-muted);stroke-width:1.5}
+.unity-bundle-implicit-copy-a{fill:var(--fig-accent);fill-opacity:.16;stroke:var(--fig-accent);stroke-width:1.5}
+.unity-bundle-implicit-copy-tx{fill:var(--fig-accent2);fill-opacity:.2;stroke:var(--fig-accent2);stroke-width:1.5}
+.unity-bundle-implicit-copy-cp{fill:var(--fig-bad);fill-opacity:.14;stroke:var(--fig-bad);stroke-width:1.5;stroke-dasharray:4 3}
+.unity-bundle-implicit-copy-ref{stroke:var(--fig-muted);stroke-width:1.5;stroke-dasharray:3 4;fill:none}
+.unity-bundle-implicit-copy-dep{stroke:var(--fig-accent);stroke-width:2;fill:none;stroke-dasharray:6 5;animation:unity-bundle-implicit-copy-flow 1.2s linear infinite}
+.unity-bundle-implicit-copy-c1{animation:unity-bundle-implicit-copy-c1 5s ease-in-out infinite}
+.unity-bundle-implicit-copy-c2{animation:unity-bundle-implicit-copy-c2 5s ease-in-out infinite}
+@keyframes unity-bundle-implicit-copy-flow{to{stroke-dashoffset:-11}}
+@keyframes unity-bundle-implicit-copy-c1{0%,55%{transform:translate(0,0);opacity:1}62%{transform:translate(0,0);opacity:0}63%{transform:translate(45px,-98px);opacity:0}70%{transform:translate(45px,-98px);opacity:1}92%,100%{transform:translate(0,0);opacity:1}}
+@keyframes unity-bundle-implicit-copy-c2{0%,55%{transform:translate(0,0);opacity:1}62%{transform:translate(0,0);opacity:0}63%{transform:translate(-90px,-98px);opacity:0}70%{transform:translate(-90px,-98px);opacity:1}92%,100%{transform:translate(0,0);opacity:1}}
+</style>
+<defs><marker id="unity-bundle-implicit-copy-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--fig-accent)"/></marker></defs>
+<rect class="unity-bundle-implicit-copy-pn" x="20" y="20" width="290" height="284" rx="12"/>
+<text class="unity-bundle-implicit-copy-h" x="36" y="46">T not assigned to a bundle</text>
+<rect class="unity-bundle-implicit-copy-tx" x="145" y="66" width="40" height="40" rx="8"/><text class="unity-bundle-implicit-copy-t" x="165" y="91" text-anchor="middle">T</text><text class="unity-bundle-implicit-copy-s" x="194" y="91">texture T</text>
+<path class="unity-bundle-implicit-copy-ref" d="M165 106 L120 164 M165 106 L255 164"/>
+<rect class="unity-bundle-implicit-copy-bd" x="40" y="132" width="120" height="96" rx="10"/><text class="unity-bundle-implicit-copy-s" x="50" y="150">bundle 1</text>
+<rect class="unity-bundle-implicit-copy-bd" x="170" y="132" width="120" height="96" rx="10"/><text class="unity-bundle-implicit-copy-s" x="180" y="150">bundle 2</text>
+<rect class="unity-bundle-implicit-copy-a" x="52" y="164" width="40" height="40" rx="8"/><text class="unity-bundle-implicit-copy-t" x="72" y="189" text-anchor="middle">A</text><rect class="unity-bundle-implicit-copy-a" x="190" y="164" width="40" height="40" rx="8"/><text class="unity-bundle-implicit-copy-t" x="210" y="189" text-anchor="middle">B</text>
+<g class="unity-bundle-implicit-copy-c1"><rect class="unity-bundle-implicit-copy-cp" x="100" y="164" width="40" height="40" rx="8"/><text class="unity-bundle-implicit-copy-t" x="120" y="189" text-anchor="middle">T</text></g>
+<g class="unity-bundle-implicit-copy-c2"><rect class="unity-bundle-implicit-copy-cp" x="235" y="164" width="40" height="40" rx="8"/><text class="unity-bundle-implicit-copy-t" x="255" y="189" text-anchor="middle">T</text></g>
+<text class="unity-bundle-implicit-copy-bad" x="36" y="262">2 copies of T</text>
+<text class="unity-bundle-implicit-copy-s" x="36" y="282">2× download, 2 textures in memory</text>
+<rect class="unity-bundle-implicit-copy-pn" x="330" y="20" width="290" height="284" rx="12"/>
+<text class="unity-bundle-implicit-copy-h" x="346" y="46">T in its own shared bundle</text>
+<rect class="unity-bundle-implicit-copy-bd" x="350" y="66" width="120" height="80" rx="10"/><text class="unity-bundle-implicit-copy-s" x="360" y="84">bundle 1</text><rect class="unity-bundle-implicit-copy-a" x="390" y="94" width="40" height="40" rx="8"/><text class="unity-bundle-implicit-copy-t" x="410" y="119" text-anchor="middle">A</text>
+<rect class="unity-bundle-implicit-copy-bd" x="480" y="66" width="120" height="80" rx="10"/><text class="unity-bundle-implicit-copy-s" x="490" y="84">bundle 2</text><rect class="unity-bundle-implicit-copy-a" x="520" y="94" width="40" height="40" rx="8"/><text class="unity-bundle-implicit-copy-t" x="540" y="119" text-anchor="middle">B</text>
+<path class="unity-bundle-implicit-copy-dep" d="M410 148 L458 178" marker-end="url(#unity-bundle-implicit-copy-ar)"/>
+<path class="unity-bundle-implicit-copy-dep" d="M540 148 L492 178" marker-end="url(#unity-bundle-implicit-copy-ar)"/>
+<rect class="unity-bundle-implicit-copy-bd" x="415" y="180" width="120" height="58" rx="10"/><text class="unity-bundle-implicit-copy-s" x="425" y="214">shared</text><rect class="unity-bundle-implicit-copy-tx" x="480" y="189" width="40" height="40" rx="8"/><text class="unity-bundle-implicit-copy-t" x="500" y="214" text-anchor="middle">T</text>
+<text class="unity-bundle-implicit-copy-ok" x="346" y="262">1 copy of T</text>
+<text class="unity-bundle-implicit-copy-s" x="346" y="282">loaded once, both bundles depend on it</text>
+</svg>

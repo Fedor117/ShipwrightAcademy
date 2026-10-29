@@ -1,0 +1,86 @@
+[
+  {
+    "topicId": "unity-physics-input-animation",
+    "after": 5,
+    "id": "unity-collision-matrix-bullets",
+    "caption": "EnemyBullet × Enemy is off in the matrix, so the bullet passes through the other enemy without a broadphase test and only reports contact against the Player.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-b/unity-collision-matrix-bullets.svg"
+  },
+  {
+    "topicId": "unity-physics-input-animation",
+    "after": 9,
+    "id": "unity-rb-interpolate-lanes",
+    "caption": "Physics runs every 0.02 s while frames arrive every ~7 ms at 144 fps: without interpolation the body holds a pose across several frames, with Interpolate it glides one step behind.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-b/unity-rb-interpolate-lanes.svg"
+  },
+  {
+    "topicId": "unity-physics-input-animation",
+    "after": 19,
+    "id": "unity-locomotion-blend-tree",
+    "caption": "The Locomotion state is a 1D blend tree on Speed: as Speed moves from 0 to 6 the weight slides from Idle through Walk to Run.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-b/unity-locomotion-blend-tree.svg"
+  },
+  {
+    "topicId": "unity-ui",
+    "after": 5,
+    "id": "unity-canvas-split-rebatch",
+    "caption": "Each timer tick dirties its Canvas; with one Canvas all 12 elements re-batch, with a nested Dynamic Canvas only its 3 do.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-b/unity-canvas-split-rebatch.svg"
+  },
+  {
+    "topicId": "unity-ui",
+    "after": 9,
+    "id": "unity-raycast-target-tests",
+    "caption": "Every pointer event tests each Graphic with Raycast Target on; turning it off on decoration cuts 11 tests to the 3 buttons.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-b/unity-raycast-target-tests.svg"
+  },
+  {
+    "topicId": "unity-ui",
+    "after": 11,
+    "id": "unity-layout-group-cascade",
+    "caption": "One text change in a nested layout walks up to the root layout group, which then recomputes every element below it.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-b/unity-layout-group-cascade.svg"
+  },
+  {
+    "topicId": "unity-assets-content",
+    "after": 5,
+    "id": "unity-import-format-memory",
+    "caption": "The same 2048x2048 texture drawn to scale per format: RGBA32 costs 16 MB, ASTC 8x8 1 MB, and a mip chain adds about a third on top.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-b/unity-import-format-memory.svg"
+  },
+  {
+    "topicId": "unity-assets-content",
+    "after": 12,
+    "id": "unity-bundle-implicit-copy",
+    "caption": "Texture T with no bundle of its own is copied into every bundle that references it; giving it a shared bundle leaves one copy that both depend on.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-b/unity-bundle-implicit-copy.svg"
+  },
+  {
+    "topicId": "unity-assets-content",
+    "after": 16,
+    "id": "unity-addressables-refcount",
+    "caption": "Each load raises the count and each Release lowers it; the bundle unloads only at zero, so one missing Release keeps it resident.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-b/unity-addressables-refcount.svg"
+  },
+  {
+    "topicId": "unity-profiling-performance",
+    "after": 12,
+    "id": "unity-gpu-bound-capture",
+    "caption": "The lesson's phone capture to scale: the main thread finishes PlayerLoop in 6.1 ms and then waits on the GPU, which is busy for the whole 22 ms frame.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-b/unity-gpu-bound-capture.svg"
+  },
+  {
+    "topicId": "unity-profiling-performance",
+    "after": 16,
+    "id": "unity-thermal-soak-curve",
+    "caption": "Over a soak test a phone with no headroom throttles from 16.7 to 25 ms per frame, while the same rise from an 11 ms budget stays under the 60 fps line.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-b/unity-thermal-soak-curve.svg"
+  },
+  {
+    "topicId": "unity-profiling-performance",
+    "after": 19,
+    "id": "unity-job-complete-late",
+    "caption": "Batches of 64 run on worker threads in parallel with main-thread work when Complete() comes late; calling it right after Schedule() turns that time into waiting.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-b/unity-job-complete-late.svg"
+  }
+]

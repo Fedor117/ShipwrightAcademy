@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 340" role="img" aria-label="Layer Collision Matrix with EnemyBullet versus Enemy turned off: an enemy bullet passes through another enemy and hits the player.">
+<style>
+.unity-collision-matrix-bullets-t{font-size:13px;fill:var(--fig-ink)}
+.unity-collision-matrix-bullets-h{font-size:14px;font-weight:600;fill:var(--fig-ink)}
+.unity-collision-matrix-bullets-m{font-size:13px;fill:var(--fig-muted)}
+.unity-collision-matrix-bullets-on{fill:var(--fig-accent);fill-opacity:.16;stroke:var(--fig-accent);stroke-width:1.5}
+.unity-collision-matrix-bullets-off{fill:var(--fig-panel);stroke:var(--fig-line);stroke-width:1.5}
+.unity-collision-matrix-bullets-ck{fill:none;stroke:var(--fig-accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.unity-collision-matrix-bullets-ring{fill:none;stroke-width:2.5;opacity:0}
+.unity-collision-matrix-bullets-r1{stroke:var(--fig-muted);animation:unity-collision-matrix-bullets-a1 5s linear infinite}
+.unity-collision-matrix-bullets-r2{stroke:var(--fig-ok);animation:unity-collision-matrix-bullets-a2 5s linear infinite}
+.unity-collision-matrix-bullets-bul{fill:var(--fig-warn);animation:unity-collision-matrix-bullets-move 5s linear infinite}
+.unity-collision-matrix-bullets-ghost{fill:none;stroke:var(--fig-muted);stroke-width:2;stroke-dasharray:4 4;opacity:0;animation:unity-collision-matrix-bullets-a1 5s linear infinite}
+.unity-collision-matrix-bullets-burst{fill:var(--fig-ok);fill-opacity:.35;opacity:0;transform-box:fill-box;transform-origin:center;animation:unity-collision-matrix-bullets-burst 5s ease-out infinite}
+@keyframes unity-collision-matrix-bullets-move{0%{transform:translateX(0);opacity:1}70%{transform:translateX(135px);opacity:1}72%{transform:translateX(135px);opacity:0}100%{transform:translateX(135px);opacity:0}}
+@keyframes unity-collision-matrix-bullets-a1{0%,20%{opacity:0}23%,38%{opacity:1}42%,100%{opacity:0}}
+@keyframes unity-collision-matrix-bullets-a2{0%,68%{opacity:0}71%,84%{opacity:1}88%,100%{opacity:0}}
+@keyframes unity-collision-matrix-bullets-burst{0%,69%{opacity:0;transform:scale(.3)}71%{opacity:1;transform:scale(.6)}86%{opacity:0;transform:scale(1.6)}100%{opacity:0;transform:scale(1.6)}}
+</style>
+<text class="unity-collision-matrix-bullets-h" x="24" y="30">Layer Collision Matrix</text>
+<text class="unity-collision-matrix-bullets-t" x="152" y="131" text-anchor="end">Default</text>
+<text class="unity-collision-matrix-bullets-t" transform="translate(172 104) rotate(-55)">Default</text>
+<rect class="unity-collision-matrix-bullets-on" x="162" y="112" width="26" height="26" rx="7"/><path class="unity-collision-matrix-bullets-ck" d="M169 125 l4 4 l8 -9"/>
+<text class="unity-collision-matrix-bullets-t" x="152" y="161" text-anchor="end">Player</text>
+<text class="unity-collision-matrix-bullets-t" transform="translate(202 104) rotate(-55)">Player</text>
+<rect class="unity-collision-matrix-bullets-on" x="162" y="142" width="26" height="26" rx="7"/><path class="unity-collision-matrix-bullets-ck" d="M169 155 l4 4 l8 -9"/>
+<rect class="unity-collision-matrix-bullets-on" x="192" y="142" width="26" height="26" rx="7"/><path class="unity-collision-matrix-bullets-ck" d="M199 155 l4 4 l8 -9"/>
+<text class="unity-collision-matrix-bullets-t" x="152" y="191" text-anchor="end">Enemy</text>
+<text class="unity-collision-matrix-bullets-t" transform="translate(232 104) rotate(-55)">Enemy</text>
+<rect class="unity-collision-matrix-bullets-on" x="162" y="172" width="26" height="26" rx="7"/><path class="unity-collision-matrix-bullets-ck" d="M169 185 l4 4 l8 -9"/>
+<rect class="unity-collision-matrix-bullets-on" x="192" y="172" width="26" height="26" rx="7"/><path class="unity-collision-matrix-bullets-ck" d="M199 185 l4 4 l8 -9"/>
+<rect class="unity-collision-matrix-bullets-on" x="222" y="172" width="26" height="26" rx="7"/><path class="unity-collision-matrix-bullets-ck" d="M229 185 l4 4 l8 -9"/>
+<text class="unity-collision-matrix-bullets-t" x="152" y="221" text-anchor="end">EnemyBullet</text>
+<text class="unity-collision-matrix-bullets-t" transform="translate(262 104) rotate(-55)">EnemyBullet</text>
+<rect class="unity-collision-matrix-bullets-on" x="162" y="202" width="26" height="26" rx="7"/><path class="unity-collision-matrix-bullets-ck" d="M169 215 l4 4 l8 -9"/>
+<rect class="unity-collision-matrix-bullets-on" x="192" y="202" width="26" height="26" rx="7"/><path class="unity-collision-matrix-bullets-ck" d="M199 215 l4 4 l8 -9"/>
+<rect class="unity-collision-matrix-bullets-off" x="222" y="202" width="26" height="26" rx="7"/>
+<rect class="unity-collision-matrix-bullets-off" x="252" y="202" width="26" height="26" rx="7"/>
+<text class="unity-collision-matrix-bullets-t" x="152" y="251" text-anchor="end">Pickup</text>
+<text class="unity-collision-matrix-bullets-t" transform="translate(292 104) rotate(-55)">Pickup</text>
+<rect class="unity-collision-matrix-bullets-off" x="162" y="232" width="26" height="26" rx="7"/>
+<rect class="unity-collision-matrix-bullets-on" x="192" y="232" width="26" height="26" rx="7"/><path class="unity-collision-matrix-bullets-ck" d="M199 245 l4 4 l8 -9"/>
+<rect class="unity-collision-matrix-bullets-off" x="222" y="232" width="26" height="26" rx="7"/>
+<rect class="unity-collision-matrix-bullets-off" x="252" y="232" width="26" height="26" rx="7"/>
+<rect class="unity-collision-matrix-bullets-off" x="282" y="232" width="26" height="26" rx="7"/>
+<text class="unity-collision-matrix-bullets-t" x="152" y="281" text-anchor="end">Terrain</text>
+<text class="unity-collision-matrix-bullets-t" transform="translate(322 104) rotate(-55)">Terrain</text>
+<rect class="unity-collision-matrix-bullets-on" x="162" y="262" width="26" height="26" rx="7"/><path class="unity-collision-matrix-bullets-ck" d="M169 275 l4 4 l8 -9"/>
+<rect class="unity-collision-matrix-bullets-on" x="192" y="262" width="26" height="26" rx="7"/><path class="unity-collision-matrix-bullets-ck" d="M199 275 l4 4 l8 -9"/>
+<rect class="unity-collision-matrix-bullets-on" x="222" y="262" width="26" height="26" rx="7"/><path class="unity-collision-matrix-bullets-ck" d="M229 275 l4 4 l8 -9"/>
+<rect class="unity-collision-matrix-bullets-on" x="252" y="262" width="26" height="26" rx="7"/><path class="unity-collision-matrix-bullets-ck" d="M259 275 l4 4 l8 -9"/>
+<rect class="unity-collision-matrix-bullets-off" x="282" y="262" width="26" height="26" rx="7"/>
+<rect class="unity-collision-matrix-bullets-off" x="312" y="262" width="26" height="26" rx="7"/>
+<rect class="unity-collision-matrix-bullets-ring unity-collision-matrix-bullets-r1" x="219" y="199" width="32" height="32" rx="8"/>
+<rect class="unity-collision-matrix-bullets-ring unity-collision-matrix-bullets-r2" x="189" y="199" width="32" height="32" rx="8"/>
+<rect class="unity-collision-matrix-bullets-on" x="24" y="306" width="18" height="18" rx="5"/><path class="unity-collision-matrix-bullets-ck" d="M28 315 l3 3 l6 -7"/>
+<text class="unity-collision-matrix-bullets-m" x="50" y="320">pair tested</text>
+<rect class="unity-collision-matrix-bullets-off" x="140" y="306" width="18" height="18" rx="5"/>
+<text class="unity-collision-matrix-bullets-m" x="166" y="320">never in broadphase</text>
+<rect x="360" y="40" width="262" height="278" rx="12" fill="var(--fig-panel)" stroke="var(--fig-line)" stroke-width="1.5"/>
+<rect class="unity-collision-matrix-bullets-off" x="378" y="58" width="18" height="18" rx="5"/>
+<text class="unity-collision-matrix-bullets-t" x="404" y="72">EnemyBullet × Enemy: off</text>
+<rect class="unity-collision-matrix-bullets-on" x="378" y="86" width="18" height="18" rx="5"/><path class="unity-collision-matrix-bullets-ck" d="M382 95 l3 3 l6 -7"/>
+<text class="unity-collision-matrix-bullets-t" x="404" y="100">EnemyBullet × Player: on</text>
+<line x1="376" y1="250" x2="606" y2="250" stroke="var(--fig-line)" stroke-width="2"/>
+<rect x="380" y="180" width="36" height="70" rx="8" fill="var(--fig-bad)" fill-opacity=".16" stroke="var(--fig-bad)" stroke-width="1.5"/>
+<rect x="462" y="180" width="36" height="70" rx="8" fill="var(--fig-bad)" fill-opacity=".16" stroke="var(--fig-bad)" stroke-width="1.5"/>
+<rect class="unity-collision-matrix-bullets-ghost" x="456" y="174" width="48" height="82" rx="10"/>
+<rect x="560" y="180" width="36" height="70" rx="8" fill="var(--fig-accent)" fill-opacity=".16" stroke="var(--fig-accent)" stroke-width="1.5"/>
+<circle class="unity-collision-matrix-bullets-burst" cx="560" cy="205" r="16"/>
+<circle class="unity-collision-matrix-bullets-bul" cx="420" cy="205" r="5"/>
+<text class="unity-collision-matrix-bullets-m" x="398" y="274" text-anchor="middle">Enemy</text>
+<text class="unity-collision-matrix-bullets-m" x="480" y="274" text-anchor="middle">Enemy</text>
+<text class="unity-collision-matrix-bullets-m" x="578" y="274" text-anchor="middle">Player</text>
+<text class="unity-collision-matrix-bullets-m" x="480" y="160" text-anchor="middle">passes through</text>
+<text class="unity-collision-matrix-bullets-m" x="578" y="160" text-anchor="middle">contact</text>
+<text class="unity-collision-matrix-bullets-m" x="491" y="300" text-anchor="middle">Physics Scene</text>
+</svg>

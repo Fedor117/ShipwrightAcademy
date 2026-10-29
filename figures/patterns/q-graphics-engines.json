@@ -1,0 +1,254 @@
+[
+  {
+    "topicId": "graphics-math",
+    "question": {
+      "q": "A character controller stops dead whenever it touches a wall at an angle, and playtesters say moving along walls feels sticky. You want it to glide along the wall instead. What should you reach for?",
+      "options": [
+        "Zero the velocity whenever a contact is detected on a wall",
+        "Reflect the velocity about the wall normal on each hit",
+        "Subtract the velocity's component along the wall normal",
+        "Rotate the velocity 90 degrees toward the wall tangent"
+      ],
+      "answer": 2,
+      "explain": "Removing the part of velocity along the normal (`v - dot(v, n) * n`) leaves the tangential motion, so the character slides. Reflecting would bounce it off, and zeroing is the sticky behaviour you already have."
+    }
+  },
+  {
+    "topicId": "graphics-spaces-cameras",
+    "question": {
+      "q": "A strategy game must let the player click the terrain or a unit under the mouse. Objects are 3D with perspective, and the cursor is a 2D pixel position. Which approach fits best?",
+      "options": [
+        "Unproject the cursor into a world ray and intersect it",
+        "Multiply the cursor position by each object's model matrix",
+        "Compare the cursor to each object's projected centre point only",
+        "Render the scene to a depth buffer and read the raw depth"
+      ],
+      "answer": 0,
+      "explain": "Turning the pixel into a ray from the camera and intersecting it with colliders gives exact 3D hits. Reading raw depth alone gives no object identity and is nonlinear, and a model matrix maps local to world, not screen to world."
+    }
+  },
+  {
+    "topicId": "graphics-meshes-geometry",
+    "question": {
+      "q": "A flag, banner and grass field sway by having a script rewrite every vertex position on the CPU each frame and re-upload the mesh. The profiler shows CPU time and upload bandwidth growing with vertex count. What should you reach for?",
+      "options": [
+        "Reorder the index buffer for better vertex cache efficiency",
+        "Quantise the vertex attributes down to 16-bit values",
+        "Build a LOD chain with simpler meshes for the far grass",
+        "Animate vertices in the vertex shader from a time uniform"
+      ],
+      "answer": 3,
+      "explain": "A sine or noise offset in the vertex shader runs on the GPU with no per-frame upload. Cache reordering and quantisation shrink GPU work or memory but leave the CPU rewrite and upload in place."
+    }
+  },
+  {
+    "topicId": "graphics-gpu-pipeline",
+    "question": {
+      "q": "After an artist adds `clip(alpha - 0.5)` to the opaque foliage shader, GPU time jumps and a capture shows the same pixels now shaded many times, though draw order is unchanged. Which fix fits best?",
+      "options": [
+        "Sort all of the opaque draws strictly front to back by depth",
+        "Add a depth prepass so early-Z rejects hidden pixels",
+        "Enable occlusion culling for the foliage and its meshes",
+        "Apply frustum culling to the foliage meshes each frame"
+      ],
+      "answer": 1,
+      "explain": "`discard` forces the GPU to shade a fragment before it can finalise depth, so early-Z is lost. A depth prepass writes depth once, then the main pass shades only the nearest pixel; sorting alone does not help while early-Z is off."
+    }
+  },
+  {
+    "topicId": "graphics-shaders",
+    "question": {
+      "q": "A post-process fragment shader evaluates an expensive filmic colour curve with several `pow` and `exp` calls on a single input value for every pixel, and the pass is ALU-bound. What should you reach for?",
+      "options": [
+        "Move the curve evaluation into the vertex shader for each vertex",
+        "Precompute the curve into a small lookup texture and sample it",
+        "Branch on a uniform so the curve is skipped sometimes",
+        "Mark the input value as a flat, non-interpolated attribute"
+      ],
+      "answer": 1,
+      "explain": "A 1D lookup replaces many ALU ops with one texture fetch for any function of one or two inputs. The vertex shader trick only works for values that vary linearly, and a non-linear curve interpolated across a triangle would be wrong."
+    }
+  },
+  {
+    "topicId": "graphics-textures-sampling",
+    "question": {
+      "q": "Each PBR material ships three separate greyscale textures for roughness, metallic and ambient occlusion. Profiling shows extra texture fetches per pixel and wasted memory from three single-channel files. Which approach fits best?",
+      "options": [
+        "Convert each mask into a slice of a texture array",
+        "Stream in only the lower mip levels of the three masks",
+        "Turn on anisotropic filtering for the three mask textures",
+        "Pack the three masks into channels of one texture"
+      ],
+      "answer": 3,
+      "explain": "Channel packing stores three single-channel masks in R, G and B of one linear texture, giving one fetch and one allocation. A texture array still needs separate fetches, and streaming or filtering do not cut the sample count."
+    }
+  },
+  {
+    "topicId": "graphics-lighting-materials",
+    "question": {
+      "q": "A 4096 sun shadow map is already in use, yet shadows are crude around the player while shadows on hills 600 m away look fine. Raising the resolution further blows the memory budget. What should you reach for?",
+      "options": [
+        "Cascaded shadow maps that split the view range into slices",
+        "Raise the depth bias and the normal bias on the sun light a lot",
+        "Cap the number of real-time shadow casters in the scene",
+        "Bake the sun shadows into static lightmaps for the level"
+      ],
+      "answer": 0,
+      "explain": "Cascades give each distance band its own shadow map, so near slices get high texel density cheaply. Bias fixes acne or floating shadows, not blocky resolution, and baking would lose shadows on moving characters."
+    }
+  },
+  {
+    "topicId": "graphics-render-paths-postfx",
+    "question": {
+      "q": "A chain-link fence and bushes are drawn with alpha blending. Their texture alpha is only ever 0 or 1, yet they sort badly against other transparents and fill-rate is high. Which approach fits best?",
+      "options": [
+        "Order-independent transparency for the whole scene view",
+        "Sort all transparent objects strictly back to front every frame",
+        "Alpha-tested cutout, with alpha-to-coverage if MSAA is on",
+        "Merge all of the post effects into one single uber pass"
+      ],
+      "answer": 2,
+      "explain": "Binary alpha needs no blending: cutout writes depth, sorts like opaque geometry and avoids the overdraw. Sorting or OIT would keep paying blend costs for a problem that disappears with a test."
+    }
+  },
+  {
+    "topicId": "graphics-apis-gpu-performance",
+    "question": {
+      "q": "A mobile GPU capture shows every render pass starting with a full load of the previous colour target and ending by storing a depth buffer nobody reads again. Bandwidth is the bottleneck. What should you reach for?",
+      "options": [
+        "Run a resolution-scale test to confirm the pixel cost first of all",
+        "Switch the repeated meshes over to GPU instancing here",
+        "Cap the frame rate to limit sustained heat on the device",
+        "Use clear or don't-care load and store actions on those targets"
+      ],
+      "answer": 3,
+      "explain": "On tile-based GPUs, an unneeded load or store moves whole targets through main memory. Clear or don't-care actions skip that traffic. Instancing cuts draw calls, not bandwidth, and a frame cap treats heat, not these transfers."
+    }
+  },
+  {
+    "topicId": "engines-game-loop",
+    "question": {
+      "q": "A bullet-hell scene has 20,000 bullets, each a script with its own `Update`. The profiler shows the frame dominated by tiny per-object calls, not by the work inside them. Which approach fits best?",
+      "options": [
+        "A fixed timestep driven by a time accumulator",
+        "One manager that loops over an array of bullet data",
+        "A double buffer holding the bullet states per frame",
+        "An event queue handling the bullet spawn requests"
+      ],
+      "answer": 1,
+      "explain": "A single update loop over contiguous data removes per-object call overhead and engine dispatch. A fixed timestep fixes frame-rate dependence and double buffering fixes update-order bias, neither of which reduces call count."
+    }
+  },
+  {
+    "topicId": "engines-entity-architecture",
+    "question": {
+      "q": "Designers add a new enemy kind every week. Each is a new C# subclass whose only difference is its health, speed and loot table, and there are already 40 such classes. What should you reach for?",
+      "options": [
+        "An Entity-Component-System with archetype chunk storage",
+        "A Subclass Sandbox with protected helper methods",
+        "A data-defined enemy type object that one class reads",
+        "An observer event bus between the enemy classes"
+      ],
+      "answer": 2,
+      "explain": "Type Object moves the differences into data, so designers add kinds without code or rebuilds. ECS addresses throughput, not subclass proliferation, and a sandbox helps subclasses that differ in behaviour, not in numbers."
+    }
+  },
+  {
+    "topicId": "engines-scenes-culling",
+    "question": {
+      "q": "A street scene draws lamp posts and cars 5 km away with their full 8,000-triangle meshes. They are inside the frustum, not occluded, and each covers only a few pixels, yet they cost as much as near ones. Which approach fits best?",
+      "options": [
+        "A level-of-detail chain with a distance cut-off",
+        "Occlusion culling against the nearby buildings in view",
+        "Hierarchical frustum culling over a BVH of objects",
+        "A dirty flag on each object's cached world matrix"
+      ],
+      "answer": 0,
+      "explain": "LOD cuts triangle and draw cost where detail is invisible. Frustum and occlusion culling remove only objects outside the view or hidden, and these are visible, so they would still be drawn at full cost."
+    }
+  },
+  {
+    "topicId": "engines-physics-collision",
+    "question": {
+      "q": "A hitscan raycast keeps hitting the shooter's own collider, and shell casings, debris and ragdoll limbs all test against each other, wasting physics time. What should you reach for?",
+      "options": [
+        "Collision layers with layer masks on queries and bodies",
+        "Continuous collision detection on every single rigidbody",
+        "Trigger volumes placed around the shooter's body",
+        "Letting every resting body fall asleep after a delay"
+      ],
+      "answer": 0,
+      "explain": "Layers and masks decide which pairs and queries are tested at all, removing self-hits and debris-on-debris work. CCD fixes tunnelling and sleeping helps only motionless bodies, so neither changes which colliders are considered."
+    }
+  },
+  {
+    "topicId": "engines-animation",
+    "question": {
+      "q": "On stairs and slopes, the character's feet clip into steps or hover above them, and its hands miss ledge grips, even though the clips look correct on flat ground. Which approach fits best?",
+      "options": [
+        "Root motion extracted from the authored locomotion clips",
+        "Stride-matched playback rate for the run clip",
+        "An IK pass after pose evaluation to place feet and hands",
+        "Additive layers for lean and hit reactions on top"
+      ],
+      "answer": 2,
+      "explain": "The authored clips know nothing about the surface, so IK corrects end effectors against ground or grip targets after the pose is computed. Root motion and playback rate affect travel speed, not where feet land."
+    }
+  },
+  {
+    "topicId": "engines-game-math-feel",
+    "question": {
+      "q": "A third-person camera is already smoothed, but it twitches with every small strafe, and players cannot see enough of the path ahead when sprinting. What should you reach for?",
+      "options": [
+        "Exponential smoothing with `1 - exp(-rate * dt)` on position",
+        "A camera dead zone combined with look-ahead on velocity",
+        "Trauma-based noise shake applied to the camera",
+        "Squash and stretch applied to the character mesh"
+      ],
+      "answer": 1,
+      "explain": "A dead zone ignores small movements and look-ahead shifts framing toward where the player is heading. More smoothing would add lag without showing the path ahead, and shake or squash do not affect framing."
+    }
+  },
+  {
+    "topicId": "engines-assets-memory",
+    "question": {
+      "q": "Homing missiles store references to enemies by array slot. Enemies die and new ones reuse the freed slot, so a missile sometimes retargets a brand-new enemy it was never aimed at. Which approach fits best?",
+      "options": [
+        "An object pool that recycles the enemy instances",
+        "Reference counting with explicit load and release calls",
+        "Distance-based streaming of enemy data against a budget",
+        "Generational handles that fail when the slot is reused"
+      ],
+      "answer": 3,
+      "explain": "A handle stores slot plus generation, so a stale handle is detected when the slot is recycled. An object pool is what recycles the slots here and would not fix stale references, and the other two manage asset lifetime."
+    }
+  },
+  {
+    "topicId": "engines-game-ai-navigation",
+    "question": {
+      "q": "In an RTS, a player orders 400 units to move to the same base. Running a separate A* query per unit causes frame spikes. What should you reach for?",
+      "options": [
+        "A* with an admissible heuristic run for each unit",
+        "A navmesh with funnel smoothing run for each unit",
+        "A flow field computed once from the destination",
+        "Staggered low-rate decision ticks for the units"
+      ],
+      "answer": 2,
+      "explain": "One flow field gives every cell a direction toward the shared goal, so each unit just reads its cell. Per-unit A*, even optimal or smoothed, repeats the same search 400 times, and staggering only spreads the cost."
+    }
+  },
+  {
+    "topicId": "engines-input-audio-net",
+    "question": {
+      "q": "Remote players in a server-authoritative game look jerky because snapshots arrive about 20 times per second at irregular intervals, and the client draws the newest one as soon as it lands. Which approach fits best?",
+      "options": [
+        "Snapshot interpolation, rendering remote players slightly in the past",
+        "Client-side prediction with server reconciliation on inputs",
+        "Lag compensation that rewinds the server world state for every shot",
+        "Deterministic lockstep for every player in the match"
+      ],
+      "answer": 0,
+      "explain": "Buffering snapshots and interpolating between two of them turns irregular arrivals into smooth motion. Prediction is for your own inputs, lag compensation is a hit-detection fix, and lockstep would change the whole netcode model."
+    }
+  }
+]

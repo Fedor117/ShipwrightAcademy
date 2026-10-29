@@ -1,0 +1,35 @@
+[
+  {
+    "q": "A phone build holds 60 fps for the first minute. After ten minutes the same scene runs at 40 fps. GPU time per frame rose from 12 ms to 17 ms and CPU time did not change. What is the most likely cause and the right response?",
+    "options": [
+      "A memory leak; add allocation tracking and reduce garbage per frame",
+      "Thermal throttling; test after a soak and budget for sustained clocks",
+      "Shader compilation; ship a pipeline cache to every device",
+      "Driver bug; pin the quality settings to the lowest preset"
+    ],
+    "answer": 1,
+    "explain": "Unchanged scene and CPU time with GPU time rising over minutes is the signature of clocks dropping as the chip heats up. Budget for sustained clocks, test after a 10 to 15 minute soak, and keep dynamic resolution as a guard. A leak would show growing memory and CPU time. Shader compilation hitches appear on first use, not as a gradual rise. Pinning the lowest preset hides the cause and lowers quality everywhere."
+  },
+  {
+    "q": "You set up a CI perf test for a scene. Single runs on one device vary by about 6 percent. Which gate catches real regressions of 10 percent without constant false alarms?",
+    "options": [
+      "Fail if the average fps of one single run is below 60 on the device",
+      "Fail if any single frame in the run exceeds the 16.7 ms budget",
+      "Fail if median-of-3 replay p99 is 10 percent above the last green build",
+      "Fail if the build size grows, since size tends to predict frame time"
+    ],
+    "answer": 2,
+    "explain": "A deterministic replay, three runs and the median shrink the 6 percent noise, and comparing p99 against the last green build catches spikes and relative drift. A single-run average is noisy and hides spikes. A hard per-frame limit fails on any hitch the hardware produces on its own. Build size is unrelated to frame time."
+  },
+  {
+    "q": "A 12 ms crowd-AI update will be time-sliced at 2 ms per frame at 60 fps. Agents use the result to steer. What is the side effect to plan for?",
+    "options": [
+      "Results arrive about 100 ms late, so validate or repair stale ones on delivery",
+      "The total CPU cost drops to 2 ms, so the budget can be spent elsewhere",
+      "Results arrive on the same frame, so no changes are needed in consumers",
+      "The job must move to the GPU, because slices run only on the render thread"
+    ],
+    "answer": 0,
+    "explain": "Six slices of 2 ms take 6 frames, about 100 ms, so a target may have moved. Stamp requests with a version and check on delivery. Slicing spreads the same 12 ms and does not reduce it. The result is not available the same frame. Slices run wherever the job runs, so no GPU move is needed."
+  }
+]

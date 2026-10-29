@@ -1,0 +1,35 @@
+[
+  {
+    "q": "A 2 m crate has a 2048 texture unwrapped once across its width; a 0.5 m mug beside it has a 1024 texture unwrapped the same way. The mug looks oddly sharp. Which change matches their texel density and saves memory?",
+    "options": [
+      "Raise the crate to 4096 so both reach 2048 pixels per metre",
+      "Drop the mug to 512 so both sit at about 1024 pixels per metre",
+      "Drop the crate to 1024 so both sit at about 1024 pixels per metre",
+      "Keep both sizes and enable mipmaps, which equalises the density"
+    ],
+    "answer": 1,
+    "explain": "The crate is 2048 / 2 m = 1024 px/m; the mug is 1024 / 0.5 m = 2048 px/m. A 512 mug gives 1024 px/m, matching the crate at a quarter of the mug's previous memory. Mipmaps change sampling at distance, not authored density."
+  },
+  {
+    "q": "A face rig authored with up to 8 bone influences per vertex looks right on high-end devices but creases badly on the low quality tier. What is the likely cause?",
+    "options": [
+      "Humanoid avatars ignore every bone that is not in the face mapping",
+      "Mesh Compression quantised the bone weights to fewer bits each",
+      "Optimize Game Objects removed the face bones from the hierarchy",
+      "The skin weight cap drops the smaller influences per vertex there"
+    ],
+    "answer": 3,
+    "explain": "The Skin Weights setting limits influences per vertex per quality level; weights beyond the cap are dropped and the rest renormalised, which changes deformation. Agree the cap before rigging and test on the lowest tier."
+  },
+  {
+    "q": "Each prop artist builds their own Shader Graph. Shader variants, build time and SRP Batcher batches all grow every sprint. Which policy addresses the cause?",
+    "options": [
+      "Engineers own a few master shaders; artists make material variants",
+      "Artists keep their graphs but strip every keyword from each of them",
+      "Convert every Shader Graph to hand-written HLSL before shipping",
+      "Give each prop its own material so batching treats them equally"
+    ],
+    "answer": 0,
+    "explain": "Every distinct shader adds variants and splits SRP Batcher grouping. A small owned shader library with exposed properties, used through materials and Material Variants, keeps both under control while artists still adjust looks."
+  }
+]

@@ -1,0 +1,86 @@
+[
+  {
+    "topicId": "engines-animation",
+    "after": 2,
+    "id": "engines-keyframe-curves",
+    "caption": "Linear interpolation leaves corners at each key; Hermite tangents pass through the same keys smoothly. Sampling at t only needs the two surrounding keys.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-b/engines-keyframe-curves.svg"
+  },
+  {
+    "topicId": "engines-animation",
+    "after": 5,
+    "id": "engines-skinning-weights",
+    "caption": "Vertices weighted 0.25, 0.5 and 0.75 to the forearm move only part of the way as the elbow bends, so the skin stays connected across the joint.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-b/engines-skinning-weights.svg"
+  },
+  {
+    "topicId": "engines-animation",
+    "after": 8,
+    "id": "engines-blend-1d",
+    "caption": "As speed rises from 0 to 6 m/s, weight flows from idle to walk to run; at any speed at most two clips are blended and the weights sum to 1.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-b/engines-blend-1d.svg"
+  },
+  {
+    "topicId": "engines-assets-memory",
+    "after": 9,
+    "id": "engines-texture-memory",
+    "caption": "Drawn to scale: the same 2048 x 2048 texture is 21.3 MB as RGBA32 and 2.5 MB as ASTC 6x6, and mips add a third on top of every format.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-b/engines-texture-memory.svg"
+  },
+  {
+    "topicId": "engines-assets-memory",
+    "after": 11,
+    "id": "engines-streaming",
+    "caption": "Cells ahead of the player start loading before the player reaches them, and cells left behind unload once they fall outside the unload distance.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-b/engines-streaming.svg"
+  },
+  {
+    "topicId": "engines-assets-memory",
+    "after": 17,
+    "id": "engines-fragmentation",
+    "caption": "Same allocations, same 200 MB free: interleaved lifetimes leave only 25 MB holes, while a per-level arena frees one contiguous block.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-b/engines-fragmentation.svg"
+  },
+  {
+    "topicId": "engines-game-ai-navigation",
+    "after": 7,
+    "id": "engines-bt-tick",
+    "caption": "One tick, left to right: Flee fails at its first condition, Attack succeeds twice and returns Running at Fire, so lower-priority branches never run.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-b/engines-bt-tick.svg"
+  },
+  {
+    "topicId": "engines-game-ai-navigation",
+    "after": 12,
+    "id": "engines-astar",
+    "caption": "The Manhattan heuristic pulls expansion toward the goal; the open set spreads around the wall only where it has to before the path is found.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-b/engines-astar.svg"
+  },
+  {
+    "topicId": "engines-game-ai-navigation",
+    "after": 15,
+    "id": "engines-navmesh",
+    "caption": "A* over seven polygons gives a zigzag through their centres; the funnel algorithm turns the same corridor into a straight path that bends only at corners.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-b/engines-navmesh.svg"
+  },
+  {
+    "topicId": "engines-input-audio-net",
+    "after": 4,
+    "id": "engines-jump-buffer",
+    "caption": "To scale: a press 40 ms before landing still jumps inside the 120 ms buffer, and a press 60 ms after leaving a ledge still jumps inside the 100 ms coyote window.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-b/engines-jump-buffer.svg"
+  },
+  {
+    "topicId": "engines-input-audio-net",
+    "after": 15,
+    "id": "engines-net-prediction",
+    "caption": "The client never waits: when the server's state for #57 arrives, it drops #57 and replays #58 to #60 on top of the authoritative state.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-b/engines-net-prediction.svg"
+  },
+  {
+    "topicId": "engines-input-audio-net",
+    "after": 19,
+    "id": "engines-lag-comp",
+    "caption": "The server keeps a short hitbox history and rewinds the target 150 ms, 100 ms of interpolation plus 50 ms of travel, to test the shot where the shooter saw it.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-b/engines-lag-comp.svg"
+  }
+]

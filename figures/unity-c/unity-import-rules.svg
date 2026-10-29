@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 366" role="img" aria-label="A texture imported under Assets/Art/UI passes through OnPreprocessTexture, which sets Sprite, no mipmaps and max size 2048 before the importer runs. Bars to scale: 16 MB RGBA32, about 21 MB with mipmaps, under 2 MB as ASTC 6x6.">
+<style>
+.unity-import-rules-t{font-size:14px;fill:var(--fig-ink);font-weight:600}
+.unity-import-rules-h{font-size:13px;fill:var(--fig-ink)}
+.unity-import-rules-s{font-size:12px;fill:var(--fig-muted)}
+.unity-import-rules-c{font-size:12px;fill:var(--fig-ink);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.unity-import-rules-box{fill:var(--fig-panel);stroke:var(--fig-line);stroke-width:1.5}
+.unity-import-rules-hook{fill:var(--fig-accent);fill-opacity:.1;stroke:var(--fig-accent);stroke-width:1.75}
+.unity-import-rules-ar{stroke:var(--fig-muted);stroke-width:1.75;fill:none}
+.unity-import-rules-hl{fill:var(--fig-accent);fill-opacity:.22;opacity:0;animation:unity-import-rules-hl 6s ease-in-out infinite}
+.unity-import-rules-chip{animation:unity-import-rules-mv 6s ease-in-out infinite}
+.unity-import-rules-bb{fill:var(--fig-bad);fill-opacity:.22;stroke:var(--fig-bad);stroke-width:1.5}
+.unity-import-rules-bw{fill:var(--fig-warn);fill-opacity:.22;stroke:var(--fig-warn);stroke-width:1.5}
+.unity-import-rules-bo{fill:var(--fig-ok);fill-opacity:.3;stroke:var(--fig-ok);stroke-width:1.5}
+@keyframes unity-import-rules-mv{0%{opacity:0;transform:translateX(0)}6%{opacity:1;transform:translateX(0)}18%,52%{opacity:1;transform:translateX(204px)}68%{opacity:1;transform:translateX(314px)}84%{opacity:1;transform:translateX(452px)}92%,100%{opacity:0;transform:translateX(452px)}}
+@keyframes unity-import-rules-hl{0%,18%{opacity:0}23%,48%{opacity:1}56%,100%{opacity:0}}
+</style>
+<defs><marker id="unity-import-rules-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--fig-muted)"/></marker></defs>
+<rect class="unity-import-rules-box" x="16" y="52" width="124" height="56" rx="10"/>
+<text class="unity-import-rules-t" x="28" y="75">icon.png</text>
+<text class="unity-import-rules-c" x="28" y="95">Assets/Art/UI/</text>
+<line class="unity-import-rules-ar" x1="142" y1="80" x2="160" y2="80" marker-end="url(#unity-import-rules-a)"/>
+<rect class="unity-import-rules-hook" x="164" y="36" width="184" height="128" rx="12"/>
+<text class="unity-import-rules-t" x="176" y="60">OnPreprocessTexture</text>
+<text class="unity-import-rules-s" x="176" y="79">path in Assets/Art/UI/</text>
+<rect class="unity-import-rules-hl" x="170" y="91" width="172" height="20" rx="5"/>
+<rect class="unity-import-rules-hl" x="170" y="113" width="172" height="20" rx="5" style="animation-delay:.25s"/>
+<rect class="unity-import-rules-hl" x="170" y="135" width="172" height="20" rx="5" style="animation-delay:.5s"/>
+<text class="unity-import-rules-c" x="176" y="105">textureType = Sprite</text>
+<text class="unity-import-rules-c" x="176" y="127">mipmapEnabled = false</text>
+<text class="unity-import-rules-c" x="176" y="149">maxTextureSize = 2048</text>
+<line class="unity-import-rules-ar" x1="350" y1="80" x2="372" y2="80" marker-end="url(#unity-import-rules-a)"/>
+<rect class="unity-import-rules-box" x="376" y="52" width="128" height="56" rx="10"/>
+<text class="unity-import-rules-t" x="388" y="75" style="font-size:13px">TextureImporter</text>
+<text class="unity-import-rules-s" x="388" y="95">uses new settings</text>
+<line class="unity-import-rules-ar" x1="506" y1="80" x2="528" y2="80" marker-end="url(#unity-import-rules-a)"/>
+<rect class="unity-import-rules-box" x="532" y="52" width="92" height="56" rx="10"/>
+<text class="unity-import-rules-t" x="544" y="75">Library/</text>
+<text class="unity-import-rules-s" x="544" y="95">imported</text>
+<g class="unity-import-rules-chip"><rect x="110" y="70" width="32" height="20" rx="6" style="fill:var(--fig-accent);stroke:var(--fig-bg);stroke-width:2"/><text x="126" y="84" text-anchor="middle" style="font-size:11px;font-weight:700;fill:var(--fig-bg)">png</text></g>
+<text class="unity-import-rules-h" x="16" y="206">One 2048×2048 texture in memory, drawn to scale</text>
+<text class="unity-import-rules-h" x="16" y="239">RGBA32</text>
+<rect class="unity-import-rules-bb" x="150" y="222" width="304" height="24" rx="6"/>
+<text class="unity-import-rules-h" x="462" y="239">16 MB</text>
+<text class="unity-import-rules-h" x="16" y="275">RGBA32 + mipmaps</text>
+<rect class="unity-import-rules-bw" x="150" y="258" width="405" height="24" rx="6"/>
+<rect x="454" y="258" width="101" height="24" rx="6" style="fill:var(--fig-warn);fill-opacity:.25"/>
+<text class="unity-import-rules-h" x="563" y="275">≈21 MB</text>
+<text class="unity-import-rules-h" x="16" y="311">ASTC 6×6</text>
+<rect class="unity-import-rules-bo" x="150" y="294" width="34" height="24" rx="6"/>
+<text class="unity-import-rules-h" x="192" y="311">&lt; 2 MB</text>
+<text class="unity-import-rules-s" x="16" y="348">The rule runs at import on every machine and in CI; bump GetVersion() when rules change.</text>
+</svg>

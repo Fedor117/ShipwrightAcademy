@@ -1,0 +1,158 @@
+import SwiftUI
+
+struct ResultView: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        if let session = model.session, let outcome = model.outcome {
+            content(session, outcome)
+        } else {
+            ContentUnavailableView("No result yet", systemImage: "chart.pie")
+        }
+    }
+
+    private func content(_ s: QuizSession, _ o: QuizOutcome) -> some View {
+        let section = model.sections[s.sectionIndex]
+        let isExam: Bool = if case .exam = s.kind { true } else { false }
+        let passMark = isExam ? Rules.examPass : Rules.topicPass
+        let what: String = switch s.kind {
+        case .topic(_, let ti): section.topics[ti].title
+        case .exam: "\(section.title) · Section exam"
+        }
+        let missedTopics = Array(Set(s.items.indices.compactMap { i in s.answers[i].correct ? nil : s.items[i].topicIndex })).sorted()
+
+        return ScrollView {
+            VStack(spacing: 28) {
+                VStack(spacing: 16) {
+                    ZStack {
+                        Ring(fraction: Double(o.correct) / Double(o.total), color: o.passed ? .green : .orange, lineWidth: 22)
+                        VStack(spacing: 2) {
+                            Text("\(o.percent)%").font(.system(size: 44, weight: .bold)).monospacedDigit()
+                            Text("pass \(Int(passMark * 100))%").font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
+                        }
+                    }
+                    .frame(width: 180, height: 180)
+                    Eyebrow(text: what)
+                    Text(o.passed ? (isExam ? "Section cleared." : "Topic passed.") : "Almost there.")
+                        .font(.system(size: 46, weight: .bold)).tracking(-1)
+                    Text(o.passed
+                         ? "You got \(o.correct) of \(o.total).\(isExam ? Curriculum.nextInTrack(s.sectionIndex).map { " \(model.sections[$0].title) is now open." } ?? "" : "")"
+                         : "You got \(o.correct) of \(o.total). The pass mark is \(Int(passMark * 100))%, so this needs a retake. Questions and answer order change each attempt.")
+                        .font(.title3).foregroundStyle(.secondary).multilineTextAlignment(.center).frame(maxWidth: 520)
+                    HStack(spacing: 8) {
+                        if o.gains.isEmpty {
+                            Chip(text: "No new XP this attempt")
+                        } else {
+                            ForEach(o.gains, id: \.0) { g in Chip(text: "+\(g.1) XP · \(g.0)", color: .orange) }
+                        }
+                    }
+                    actions(s, o, isExam: isExam).padding(.top, 8)
+                }
+                .padding(.vertical, 44)
+                .padding(.horizontal, 32)
+                .frame(maxWidth: .infinity)
+                .glassEffect(.regular, in: .rect(cornerRadius: 30))
+
+                if isExam && !o.passed && !missedTopics.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Revisit these first").font(.title2.bold())
+                        GroupedList {
+                            ForEach(missedTopics, id: \.self) { ti in
+                                Button { model.openLesson(s.sectionIndex, ti) } label: {
+                                    HStack {
+                                        Text(section.topics[ti].title)
+                                        Spacer()
+                                        let n = s.items.indices.filter { s.items[$0].topicIndex == ti && !s.answers[$0].correct }.count
+                                        Text("\(n) missed").foregroundStyle(.red).monospacedDigit()
+                                        Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+                                    }
+                                    .padding(.horizontal, 20).padding(.vertical, 14).contentShape(.rect)
+                                }
+                                .buttonStyle(.plain)
+                                if ti != missedTopics.last { Divider().padding(.leading, 20) }
+                            }
+                        }
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Answer review").font(.title2.bold())
+                    GroupedList {
+                        ForEach(s.items.indices, id: \.self) { i in
+                            ReviewRow(item: s.items[i], answer: s.answers[i],
+                                      topicTitle: isExam ? s.items[i].topicIndex.map { section.topics[$0].title } : nil,
+                                      number: i + 1)
+                            if i < s.items.count - 1 { Divider().padding(.leading, 56) }
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: 780)
+            .padding(.horizontal, 40)
+            .padding(.vertical, 48)
+            .frame(maxWidth: .infinity)
+        }
+        .background(Backdrop())
+        .navigationTitle(o.passed ? "Passed" : "Retake required")
+    }
+
+    @ViewBuilder
+    private func actions(_ s: QuizSession, _ o: QuizOutcome, isExam: Bool) -> some View {
+        HStack(spacing: 12) {
+            if !o.passed {
+                switch s.kind {
+                case .topic(let si, let ti):
+                    Button("Retake quiz") { model.startQuiz(si, ti) }.buttonStyle(.glassProminent)
+                    Button("Reread the lesson") { model.openLesson(si, ti) }.buttonStyle(.glass)
+                case .exam(let si):
+                    Button("Retake exam") { model.startExam(si) }.buttonStyle(.glassProminent)
+                }
+            } else if let step = model.store.nextStep {
+                Button(nextLabel(step)) { model.go(to: step) }.buttonStyle(.glassProminent)
+            }
+            Button("Back to path") { model.path = [] }.buttonStyle(.glass)
+        }
+        .controlSize(.extraLarge)
+    }
+
+    private func nextLabel(_ step: ProgressStore.Step) -> String {
+        switch step {
+        case .topic(let si, let ti): "Next: \(model.sections[si].topics[ti].title)"
+        case .review(let si, let ti): "Review: \(model.sections[si].topics[ti].title)"
+        case .exam(let si): "Next: \(model.sections[si].title) exam"
+        }
+    }
+}
+
+struct ReviewRow: View {
+    let item: QuizItem
+    let answer: QuizAnswer
+    let topicTitle: String?
+    let number: Int
+
+    var body: some View {
+        let q = item.question
+        let letters = Array("ABCDE")
+        let letter = { (orig: Int) in String(letters[item.order.firstIndex(of: orig) ?? 0]) }
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: answer.correct ? "checkmark.circle.fill" : "xmark.circle.fill")
+                .font(.title3)
+                .foregroundStyle(.white, answer.correct ? .green : .red)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(topicTitle ?? "Question \(number)").font(.caption).foregroundStyle(.secondary)
+                Text(inline(q.q)).font(.body.weight(.semibold))
+                if answer.correct {
+                    Text("Your answer: \(letter(q.answer)). \(inline(q.options[q.answer]))").foregroundStyle(.secondary)
+                } else {
+                    Text("Your answer: \(letter(answer.chosen)). \(inline(q.options[answer.chosen]))").foregroundStyle(.secondary)
+                    Text("Correct: \(letter(q.answer)). \(inline(q.options[q.answer]))").bold()
+                }
+                Text(inline(q.explain)).font(.callout).foregroundStyle(.secondary)
+            }
+            .textSelection(.enabled)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+    }
+}

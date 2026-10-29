@@ -1,0 +1,86 @@
+[
+  {
+    "topicId": "engines-game-loop",
+    "after": 3,
+    "id": "engines-loop-frame-budget",
+    "caption": "The 60 fps budget is half of 30 fps and twice 120 fps; every CPU stage of a frame has to fit inside its 16.6 ms, and the rest is idle.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-a/engines-loop-frame-budget.svg"
+  },
+  {
+    "topicId": "engines-game-loop",
+    "after": 10,
+    "id": "engines-loop-accumulator",
+    "caption": "Render frames vary, but the accumulator always drains in whole 1/60 s steps: a 38 ms frame runs three ticks, a 12 ms frame may run none, and the remainder becomes alpha.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-a/engines-loop-accumulator.svg"
+  },
+  {
+    "topicId": "engines-game-loop",
+    "after": 13,
+    "id": "engines-loop-vsync-miss",
+    "caption": "Frame B takes 17 ms and misses its vsync by 0.4 ms, so frame A stays on screen for 33.3 ms: a one-millisecond overrun costs a whole refresh.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-a/engines-loop-vsync-miss.svg"
+  },
+  {
+    "topicId": "engines-entity-architecture",
+    "after": 4,
+    "id": "engines-ecs-inherit-vs-compose",
+    "caption": "A class tree shares behaviour along one axis, so the flying rideable barrel needs three parents; composition just attaches the components it needs to one entity.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-a/engines-ecs-inherit-vs-compose.svg"
+  },
+  {
+    "topicId": "engines-entity-architecture",
+    "after": 8,
+    "id": "engines-ecs-aos-soa",
+    "caption": "Drawn at one pixel per byte: AoS drags in 7 cache lines to move 5 enemies, while SoA arrays move 42 enemies with 16 lines and use nearly every fetched byte.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-a/engines-ecs-aos-soa.svg"
+  },
+  {
+    "topicId": "engines-entity-architecture",
+    "after": 11,
+    "id": "engines-ecs-archetype-chunks",
+    "caption": "The query walks only archetypes that have Position and Velocity, one contiguous array at a time; adding Health moves the entity into another table, a structural change.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-a/engines-ecs-archetype-chunks.svg"
+  },
+  {
+    "topicId": "engines-scenes-culling",
+    "after": 3,
+    "id": "engines-scene-transform-tree",
+    "caption": "Rotating the arm carries the hand and sword with it; their world matrices go dirty and are recomputed parents first.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-a/engines-scene-transform-tree.svg"
+  },
+  {
+    "topicId": "engines-scenes-culling",
+    "after": 7,
+    "id": "engines-scene-grid-quadtree",
+    "caption": "The grid keeps 64 equal cells however the objects are spread; the quadtree splits only where the cluster is dense.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-a/engines-scene-grid-quadtree.svg"
+  },
+  {
+    "topicId": "engines-scenes-culling",
+    "after": 13,
+    "id": "engines-scene-frustum-occlusion",
+    "caption": "Frustum culling drops the four objects outside the view volume; occlusion culling then drops the two hidden behind the wall, leaving 3 of 9 to draw.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-a/engines-scene-frustum-occlusion.svg"
+  },
+  {
+    "topicId": "engines-physics-collision",
+    "after": 3,
+    "id": "engines-phys-euler",
+    "caption": "Same spring, same dt of 0.05 s: semi-implicit Euler tracks the exact curve, while explicit Euler gains energy every cycle until it leaves the chart.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-a/engines-phys-euler.svg"
+  },
+  {
+    "topicId": "engines-physics-collision",
+    "after": 8,
+    "id": "engines-phys-broad-narrow",
+    "caption": "The broad phase cuts 21 pairs to 3 by AABB overlap; the narrow phase rejects two false positives and returns one contact with a normal and depth.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-a/engines-phys-broad-narrow.svg"
+  },
+  {
+    "topicId": "engines-physics-collision",
+    "after": 11,
+    "id": "engines-phys-tunnelling",
+    "caption": "At 2 m per step the bullet is before the 0.1 m fence at n and past it at n+1, so no overlap is ever seen; a swept test finds the hit at about 0.46 of the step.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/engines-a/engines-phys-tunnelling.svg"
+  }
+]

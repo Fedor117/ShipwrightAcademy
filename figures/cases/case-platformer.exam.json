@@ -1,0 +1,35 @@
+[
+  {
+    "q": "A boss knockback sets vx = 2400 px/s. The sim runs at 60 Hz, tiles are 16 px, the player is 14 px wide, and collision tests only each move's final position. A player 2 px from a one-tile wall is launched at it and appears on the far side. Which fix keeps the knockback speed and the 60 Hz tick?",
+    "options": [
+      "Make the wall two tiles thick so the final position still overlaps it",
+      "Clamp the knockback to 600 px/s so no move can exceed one tile",
+      "Switch the character to a dynamic rigidbody with continuous detection",
+      "Resolve each tick in sub-steps of at most 8 px, testing after each one"
+    ],
+    "answer": 3,
+    "explain": "The move is 40 px per tick, more than the 32 px (2 + 16 + 14) needed to clear the gap and a one-tile wall, so the final position overlaps nothing. Stepping at most half a tile and testing after each step finds the wall at any speed and costs about 5 cheap grid lookups. Thicker walls patch one level and fail again at the next speed. Clamping changes the feel you wanted to keep. A dynamic body throws away the controller to solve a problem sub-stepping solves in a few lines."
+  },
+  {
+    "q": "A jump is specified as apex 80 px, time to apex 0.4 s, and a fall gravity multiplier of 2. About how long does the fall from the apex back to the launch height take?",
+    "options": [
+      "About 0.20 s, because the multiplier halves the time",
+      "About 0.28 s: the rise time divided by the square root of 2",
+      "About 0.40 s, because a jump arc is symmetric",
+      "About 0.57 s, because the fall covers twice the distance"
+    ],
+    "answer": 1,
+    "explain": "Rising gravity is 2h / t² = 160 / 0.16 = 1000 px/s², so the fall gravity is 2000. Fall time is sqrt(2h / g) = sqrt(160 / 2000) = 0.283 s, which is 0.4 / sqrt(2). Doubling gravity does not halve the time, because distance goes with t². The arc is only symmetric with equal gravity, and the fall covers the same 80 px, not twice that."
+  },
+  {
+    "q": "The jump code is `if (buffer > 0 && coyote > 0) vel.y = v0;` and it clears only the buffer. Players can jump twice by tapping jump twice quickly after leaving the ground. What is the correct fix?",
+    "options": [
+      "Clear the coyote timer in the same branch that fires the jump",
+      "Cut the coyote window to 0.05 s so the second jump is rarer",
+      "Require onGround as well as the coyote timer before jumping",
+      "Ignore new buffered presses while the character is airborne"
+    ],
+    "answer": 0,
+    "explain": "After the first jump the coyote timer is still positive, so a second press satisfies both conditions in mid-air. Consuming both timers at takeoff removes the extra jump entirely. A shorter window only makes the bug rarer. Requiring onGround deletes coyote time, which is the feature. Ignoring presses in the air also blocks the buffer, so early presses before landing stop working."
+  }
+]

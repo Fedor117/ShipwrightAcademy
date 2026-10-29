@@ -1,0 +1,86 @@
+[
+  {
+    "topicId": "graphics-textures-sampling",
+    "after": 5,
+    "id": "graphics-bilinear-weights",
+    "caption": "Point filtering snaps to whichever texel is nearest, while bilinear weights all four by how much a one-texel box around the UV overlaps each.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-b/graphics-bilinear-weights.svg"
+  },
+  {
+    "topicId": "graphics-textures-sampling",
+    "after": 7,
+    "id": "graphics-mip-chain-scale",
+    "caption": "Each mip level halves the size, so the whole chain adds only about 33 percent, and the GPU picks the level where one texel covers about one pixel.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-b/graphics-mip-chain-scale.svg"
+  },
+  {
+    "topicId": "graphics-textures-sampling",
+    "after": 13,
+    "id": "graphics-block-compression",
+    "caption": "A 4x4 block of RGBA8 is 512 bits; BC7 stores it in 128 and ASTC 12x12 gets down to 0.89 bits per texel.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-b/graphics-block-compression.svg"
+  },
+  {
+    "topicId": "graphics-lighting-materials",
+    "after": 2,
+    "id": "graphics-lambert-orbit",
+    "caption": "Lambert brightness follows the cosine of the angle between N and L and clamps to zero once the light passes behind the surface.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-b/graphics-lambert-orbit.svg"
+  },
+  {
+    "topicId": "graphics-lighting-materials",
+    "after": 4,
+    "id": "graphics-blinn-phong-half",
+    "caption": "H always sits halfway between L and V, and the highlight peaks when H lines up with N; higher shininess makes the peak narrower.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-b/graphics-blinn-phong-half.svg"
+  },
+  {
+    "topicId": "graphics-lighting-materials",
+    "after": 12,
+    "id": "graphics-shadow-map-compare",
+    "caption": "Each pixel looks up the depth the light saw and is in shadow when it is farther; too little bias gives acne, too much gives peter-panning.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-b/graphics-shadow-map-compare.svg"
+  },
+  {
+    "topicId": "graphics-render-paths-postfx",
+    "after": 3,
+    "id": "graphics-forward-deferred",
+    "caption": "Forward shades every object once per light; deferred writes the G-buffer once and then lights only the pixels each light touches.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-b/graphics-forward-deferred.svg"
+  },
+  {
+    "topicId": "graphics-render-paths-postfx",
+    "after": 8,
+    "id": "graphics-alpha-overdraw",
+    "caption": "Transparent quads must be blended far to near, and every layer covering a pixel shades it again.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-b/graphics-alpha-overdraw.svg"
+  },
+  {
+    "topicId": "graphics-render-paths-postfx",
+    "after": 10,
+    "id": "graphics-tonemap-curve",
+    "caption": "Clamping flattens everything above 1.0 into the same white, while a tonemap curve rolls highlights off smoothly.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-b/graphics-tonemap-curve.svg"
+  },
+  {
+    "topicId": "graphics-apis-gpu-performance",
+    "after": 7,
+    "id": "graphics-instancing-calls",
+    "caption": "Eight draw calls cost eight rounds of CPU state setup; one instanced call costs one, with the same GPU work reading per-instance data.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-b/graphics-instancing-calls.svg"
+  },
+  {
+    "topicId": "graphics-apis-gpu-performance",
+    "after": 11,
+    "id": "graphics-cpu-gpu-bound",
+    "caption": "Frame time is the longer bar: a CPU-bound frame leaves the GPU idle, and a GPU-bound frame leaves the CPU waiting.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-b/graphics-cpu-gpu-bound.svg"
+  },
+  {
+    "topicId": "graphics-apis-gpu-performance",
+    "after": 13,
+    "id": "graphics-tile-based-gpu",
+    "caption": "Immediate-mode GPUs hit DRAM for every triangle; tile-based GPUs shade each tile on-chip and write it out once.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-b/graphics-tile-based-gpu.svg"
+  }
+]

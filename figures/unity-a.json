@@ -1,0 +1,86 @@
+[
+  {
+    "topicId": "unity-fundamentals",
+    "after": 5,
+    "id": "unity-gameobject-components",
+    "caption": "A GameObject is a list of Components, each a C# wrapper over a native object: disabling one component stops only that component, SetActive(false) stops them all.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-a/unity-gameobject-components.svg"
+  },
+  {
+    "topicId": "unity-fundamentals",
+    "after": 9,
+    "id": "unity-transform-dirty",
+    "caption": "Every Transform write dirties the whole subtree below it, so two writes cost two propagations and SetPositionAndRotation costs one.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-a/unity-transform-dirty.svg"
+  },
+  {
+    "topicId": "unity-fundamentals",
+    "after": 16,
+    "id": "unity-prefab-override",
+    "caption": "The fix to the prefab asset reaches every instance except Track 12, whose overridden m_Size wins.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-a/unity-prefab-override.svg"
+  },
+  {
+    "topicId": "unity-lifecycle-scripting",
+    "after": 3,
+    "id": "unity-lifecycle-order",
+    "caption": "Watch FixedUpdate run once, then zero times, then twice across three frames, while Update, LateUpdate and rendering run exactly once each.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-a/unity-lifecycle-order.svg"
+  },
+  {
+    "topicId": "unity-lifecycle-scripting",
+    "after": 5,
+    "id": "unity-fixed-timestep",
+    "caption": "Drawn to scale: elapsed time piles up and each 20 ms fixed step drains it, so 60 fps skips FixedUpdate on one frame in six and 30 fps runs it once or twice.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-a/unity-fixed-timestep.svg"
+  },
+  {
+    "topicId": "unity-lifecycle-scripting",
+    "after": 10,
+    "id": "unity-coroutine-frames",
+    "caption": "A coroutine is suspended at each yield return null and resumed by the engine after Update on the next frame.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-a/unity-coroutine-frames.svg"
+  },
+  {
+    "topicId": "unity-csharp-memory-serialization",
+    "after": 5,
+    "id": "unity-gc-hitch",
+    "caption": "At 3.2 KB per frame the garbage reaches about 1.7 MB in nine seconds and the collection blows the 16.7 ms budget; at zero GC Alloc both lines stay flat.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-a/unity-gc-hitch.svg"
+  },
+  {
+    "topicId": "unity-csharp-memory-serialization",
+    "after": 12,
+    "id": "unity-fake-null",
+    "caption": "Destroy frees only the native side at end of frame; only Unity’s == operator notices, every plain C# null test still sees a live reference.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-a/unity-fake-null.svg"
+  },
+  {
+    "topicId": "unity-csharp-memory-serialization",
+    "after": 15,
+    "id": "unity-serialization-rules",
+    "caption": "The serializer keeps public and [SerializeField] fields of supported types and silently skips everything else.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-a/unity-serialization-rules.svg"
+  },
+  {
+    "topicId": "unity-rendering",
+    "after": 7,
+    "id": "unity-srp-batcher",
+    "caption": "With the SRP Batcher, material constants stay on the GPU, so each draw uploads only its small per-object data.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-a/unity-srp-batcher.svg"
+  },
+  {
+    "topicId": "unity-rendering",
+    "after": 10,
+    "id": "unity-batching-compared",
+    "caption": "Static batching, dynamic batching and instancing merge work into one draw; the SRP Batcher keeps separate draws but makes them cheap.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-a/unity-batching-compared.svg"
+  },
+  {
+    "topicId": "unity-rendering",
+    "after": 12,
+    "id": "unity-shader-variants",
+    "caption": "Each binary multi_compile keyword doubles the variant count: ten keywords fill all 1,024 squares.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/unity-a/unity-shader-variants.svg"
+  }
+]

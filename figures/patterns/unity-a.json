@@ -1,0 +1,442 @@
+[
+  {
+    "topicId": "unity-fundamentals",
+    "patterns": [
+      {
+        "signal": "You need `EnemyArmored` that differs from `Enemy` in a few values and should still pick up future fixes to `Enemy`",
+        "use": "Prefab Variant",
+        "why": "The variant stores only its differences from the base, so base fixes propagate. Keep chains shallow: deep variant-of-variant stacks make it hard to see where a value comes from."
+      },
+      {
+        "signal": "The same sub-assembly (a wheel, a door, a light rig) is copy-pasted inside many different prefabs",
+        "use": "Nested prefab",
+        "why": "Each nested instance keeps its own link to its asset, so one edit updates every parent. Costs an extra level of overrides to reason about when a parent tweaks the child."
+      },
+      {
+        "signal": "A 2,000-line `Player` MonoBehaviour handles movement, health, audio and UI, and every change touches it",
+        "use": "Composition with small components",
+        "why": "Split into `Mover`, `Health`, `PlayerAudio` and so on, each with one job, reused on other objects. Costs more wiring between components; do not split pieces that always change together."
+      },
+      {
+        "signal": "A component silently fails because a sibling `Rigidbody` or `Collider` it depends on was never added",
+        "use": "`[RequireComponent]`",
+        "why": "Unity adds the dependency automatically and blocks removing it, turning a runtime null into an editor guarantee. Only use it for true hard dependencies, or it fights designers."
+      },
+      {
+        "signal": "Scripts locate collaborators with `GameObject.Find(\"Player\")` or by tag, and break when an object is renamed",
+        "use": "Serialized reference in the Inspector",
+        "why": "A `[SerializeField]` reference is resolved by file ID, survives renames and costs nothing at runtime. For objects spawned at runtime, pass references at spawn time instead."
+      },
+      {
+        "signal": "A fix made on the prefab asset reaches every instance except one, which still shows the old value",
+        "use": "Audit and revert instance overrides",
+        "why": "Overrides always win over the asset. Check the Overrides dropdown, revert stale ones, and apply deliberate ones to the asset so instances do not drift."
+      },
+      {
+        "signal": "Profiler shows high transform change dispatch; thousands of movers share one deep parent",
+        "use": "Flat hierarchy for moving objects",
+        "why": "A transform change dirties the whole hierarchy it belongs to, so many movers under one root serialise work. Keep frequently moving objects at the root or in small groups; folders are not free."
+      },
+      {
+        "signal": "You want a script to stop running but keep the object visible and colliding",
+        "use": "Disable the component, not the GameObject",
+        "why": "`enabled = false` stops that component's Update and similar callbacks only. `SetActive(false)` deactivates the whole object and its children, hiding renderers and colliders too."
+      },
+      {
+        "signal": "References to an asset break after files were moved or renamed outside Unity, or a commit lacks `.meta` files",
+        "use": "Move assets in the Editor, commit `.meta`",
+        "why": "References are by GUID stored in `.meta`; a new `.meta` means a new GUID and every reference breaks. Always move inside Unity and treat `.meta` as source code."
+      }
+    ]
+  },
+  {
+    "topicId": "unity-lifecycle-scripting",
+    "patterns": [
+      {
+        "signal": "`GetComponent<Rigidbody>()` is called inside `Update` on every frame",
+        "use": "Cache component references in Awake",
+        "why": "Look up once in `Awake` and store it in a field; repeated lookups waste CPU in hot paths. If the component can be added later, use `TryGetComponent` when it appears instead."
+      },
+      {
+        "signal": "`Find`, `FindObjectOfType` or `FindWithTag` appears in `Update` or in code run per spawned object",
+        "use": "Look up once, or register on spawn",
+        "why": "Find walks the scene and scales with object count. Resolve once at init, or have objects register themselves with a manager or runtime set when enabled."
+      },
+      {
+        "signal": "A script reads another object's data in `Awake` and sometimes sees defaults",
+        "use": "Awake for self, Start for others",
+        "why": "Every `Awake` in a scene runs before any `Start`, so set up your own state in Awake and talk to others in Start. Order of the same callback across scripts is still undefined."
+      },
+      {
+        "signal": "Many scripts depend on a config or service manager being initialised before them",
+        "use": "Bootstrapper with explicit init order",
+        "why": "One entry point initialises services in a known order and hands them out. `[DefaultExecutionOrder]` works for a few cases but hides the order in attributes scattered across files."
+      },
+      {
+        "signal": "A short sequence over frames (blink, fade, wait then spawn) should die with its GameObject",
+        "use": "Coroutine",
+        "why": "Simple, tied to the object and stopped when it is destroyed or deactivated. It keeps running if only the component is disabled, cannot return values and swallows the call stack in exceptions."
+      },
+      {
+        "signal": "An `async` loop keeps running and throws `MissingReferenceException` after its object is destroyed",
+        "use": "Awaitable + `destroyCancellationToken`",
+        "why": "Async methods are owned by nothing, so pass the token and let cancellation end the loop. Await each Awaitable instance only once, since instances are pooled."
+      },
+      {
+        "signal": "You must wait for a load or web request and then use its result, with try/catch error handling",
+        "use": "async/await over coroutines",
+        "why": "Async methods return values and propagate exceptions normally, so multi-step flows read top to bottom. Costs explicit cancellation and care about which thread you resume on."
+      },
+      {
+        "signal": "A CPU-heavy calculation (path search, parsing) causes a frame spike on the main thread",
+        "use": "Background thread, then back to main thread",
+        "why": "`Awaitable.BackgroundThreadAsync()` moves the work off the main thread and `MainThreadAsync()` returns to touch Unity objects. Unity APIs are main-thread only; for bulk data, the Job System scales better."
+      },
+      {
+        "signal": "Every enemy prefab carries its own copy of max health, speed and loot tables, and balance changes touch 200 files",
+        "use": "ScriptableObject as shared data",
+        "why": "Instances reference one asset, saving memory and giving designers a single place to tune. Treat it as read-only at runtime: Play Mode edits to assets persist in the Editor."
+      },
+      {
+        "signal": "Player death must notify HUD, audio and analytics, and none of them should reference the player or each other",
+        "use": "ScriptableObject event channel",
+        "why": "A `GameEvent` asset holds listeners; the raiser and listeners only share the asset, even across scenes. Flow is harder to trace than direct calls, so name channels clearly and log raises."
+      },
+      {
+        "signal": "Systems call `FindObjectsByType<Enemy>` to get all live enemies",
+        "use": "ScriptableObject runtime set",
+        "why": "Enemies add themselves to a set asset in `OnEnable` and remove in `OnDisable`, giving an always-current list with no scene search. Clear it on play start when domain reload is off."
+      },
+      {
+        "signal": "Handlers fire on destroyed objects, or fire twice after re-enabling a component",
+        "use": "Subscribe in OnEnable, unsubscribe in OnDisable",
+        "why": "Pairing the two keeps listener lifetime equal to the component's active lifetime. Subscribing in Start without unsubscribing leaks handlers that keep dead objects alive."
+      }
+    ]
+  },
+  {
+    "topicId": "unity-csharp-memory-serialization",
+    "patterns": [
+      {
+        "signal": "Profiler shows GC Alloc every frame and a periodic spike, with bullets or effects instantiated and destroyed constantly",
+        "use": "Object pooling",
+        "why": "Reuse instances with `UnityEngine.Pool.ObjectPool<T>` or your own pool; Instantiate/Destroy cost CPU and garbage. Pools hold memory and need careful state reset on reuse."
+      },
+      {
+        "signal": "A label string is built with `+` or interpolation every frame",
+        "use": "Rebuild strings only on change",
+        "why": "Concatenation allocates a new string per call. Rebuild when the value changes, or format into a reused `StringBuilder`; the allocation then happens rarely instead of every frame."
+      },
+      {
+        "signal": "`Physics.RaycastAll`, `GetComponents<T>()` or `mesh.vertices` is called in a hot path",
+        "use": "Non-allocating API with reused buffer",
+        "why": "These return fresh arrays each call. Use the `NonAlloc` variants or `List<T>` overloads with a preallocated buffer; size it for the worst case or results are silently truncated."
+      },
+      {
+        "signal": "LINQ like `.Where().OrderBy().First()` runs in `Update` or per-frame AI code",
+        "use": "Plain loops in hot paths",
+        "why": "LINQ allocates enumerators and closures and hides O(n log n) sorts. Keep it for editor tools and load-time code; in per-frame code write the loop and track the best item yourself."
+      },
+      {
+        "signal": "A coroutine loop does `yield return new WaitForSeconds(0.1f)` on every iteration",
+        "use": "Cache yield instructions",
+        "why": "Each `new` allocates. Store the `WaitForSeconds` in a field and reuse it; `null` and `WaitForEndOfFrame`-style instances can be shared too. Not needed for one-shot waits."
+      },
+      {
+        "signal": "A lambda capturing a local or `this` is passed as a callback every frame",
+        "use": "Cache the delegate",
+        "why": "Capturing lambdas allocate a closure and delegate each time they are created. Create the delegate once in a field; non-capturing lambdas are already cached by the compiler."
+      },
+      {
+        "signal": "A `Dictionary` keyed by a custom struct or enum shows GC Alloc on every lookup",
+        "use": "`IEquatable<T>` on struct keys",
+        "why": "Without it, equality falls back to `object.Equals` and boxes. Implement `IEquatable<T>` and `GetHashCode`, or pass a custom `IEqualityComparer<T>` to the dictionary."
+      },
+      {
+        "signal": "`target?.Hit()` or `cached ?? fallback` misbehaves after the target object was destroyed",
+        "use": "Unity null check: `==` or implicit bool",
+        "why": "Destroyed objects are fake nulls that only Unity's overloaded `==` detects; `?.`, `??` and `is null` check the C# reference. Write `if (target) target.Hit();`."
+      },
+      {
+        "signal": "A field typed as a base class or interface loses its subclass data after save or reload",
+        "use": "`[SerializeReference]`",
+        "why": "Stores the managed reference with its concrete type, so polymorphism, null and shared references survive. Costs a heavier format and breaks if the class is renamed without `[MovedFrom]`."
+      },
+      {
+        "signal": "Renaming a serialized field resets its value on every prefab and scene",
+        "use": "`[FormerlySerializedAs]`",
+        "why": "The serializer matches data by field name; the attribute maps the old name to the new one. Keep it until every asset has been re-saved, then remove it."
+      },
+      {
+        "signal": "You need a `Dictionary` editable in the Inspector, but the serializer drops it",
+        "use": "Serialize as list, rebuild in callback",
+        "why": "Store parallel lists or a list of key-value structs and rebuild the dictionary in `ISerializationCallbackReceiver.OnAfterDeserialize`. Duplicate keys must be handled explicitly."
+      },
+      {
+        "signal": "With domain reload disabled, scores and event handlers from the last Play session reappear",
+        "use": "Reset statics with `RuntimeInitializeOnLoadMethod`",
+        "why": "Statics survive when the domain is not reloaded. Reset them in a method marked with `RuntimeInitializeLoadType.SubsystemRegistration`, which runs before scene load on every play."
+      }
+    ]
+  },
+  {
+    "topicId": "unity-rendering",
+    "patterns": [
+      {
+        "signal": "Frame time is too high and you do not yet know whether the CPU, render thread or GPU is the limit",
+        "use": "Find the bound first",
+        "why": "Compare main thread, render thread and GPU times before changing anything. Cutting draw calls does nothing for a GPU-bound frame; cutting shader cost does nothing for a CPU-bound one."
+      },
+      {
+        "signal": "Hundreds of SetPass calls; objects use many materials on a legacy or hand-written shader",
+        "use": "SRP Batcher compatible shaders",
+        "why": "Put material properties in `CBUFFER_START(UnityPerMaterial)` so objects sharing a shader variant skip per-draw setup. Gains come from fewer variants, not necessarily fewer materials."
+      },
+      {
+        "signal": "Per-object colours are set through `MaterialPropertyBlock` and render CPU cost goes up",
+        "use": "Shared material variants instead of MPBs",
+        "why": "Renderers with a property block drop out of the SRP Batcher. Use a few shared materials, or encode variation in vertex colour or a texture. MPBs remain fine for Built-in or instanced paths."
+      },
+      {
+        "signal": "Thousands of copies of one mesh and material (grass, rocks, crowds) need drawing",
+        "use": "GPU instancing",
+        "why": "One draw call renders many instances with per-instance data, ideally via `Graphics.RenderMeshInstanced` or indirect drawing. Loses per-object culling and LOD unless you implement them."
+      },
+      {
+        "signal": "Many non-moving props share a few materials and draw calls dominate the CPU",
+        "use": "Static batching",
+        "why": "Combines static meshes into big buffers drawn with fewer state changes. Costs extra memory for the combined copies and the objects can never move."
+      },
+      {
+        "signal": "A Unity 6 URP scene has many GameObject renderers and CPU draw submission is the bottleneck",
+        "use": "GPU Resident Drawer",
+        "why": "Moves draw submission for eligible renderers to GPU-driven instanced paths, cutting CPU cost. Requires Forward+ and compatible shaders; check the manual for current constraints."
+      },
+      {
+        "signal": "Distant objects with full-detail meshes inflate vertex count and GPU time",
+        "use": "LOD Group",
+        "why": "Swaps to cheaper meshes as screen size shrinks, culling at the end. Costs authoring time and memory for each level; cross-fade hides popping at extra shader cost."
+      },
+      {
+        "signal": "Dense interiors where walls hide most objects, yet the frame still draws everything in the frustum",
+        "use": "Occlusion culling",
+        "why": "Baked visibility data skips hidden renderers. Costs bake time and memory, and gives little in open scenes where most things are visible anyway."
+      },
+      {
+        "signal": "Many small sprites or UI images each use their own texture and break batching",
+        "use": "Sprite Atlas",
+        "why": "Packing into one texture lets them share a material and batch. Costs atlas memory for every sprite in it, so group atlases by screen or level, not the whole game."
+      },
+      {
+        "signal": "Build size and shader compile time explode; a shader has many `multi_compile` keywords",
+        "use": "Shader variant stripping",
+        "why": "Variants multiply per keyword. Use `shader_feature` for material toggles, strip unused variants, and prewarm needed ones. Over-stripping causes missing or pink materials at runtime."
+      },
+      {
+        "signal": "Static scenery is lit well by lightmaps but moving characters look flat and unlit",
+        "use": "Light probes or Adaptive Probe Volumes",
+        "why": "Probes sample baked light in space so dynamic objects receive matching indirect light. Probes need placement or volume setup and do not capture sharp shadows."
+      },
+      {
+        "signal": "Mobile frame is GPU bound with many realtime lights and shadows on geometry that never moves",
+        "use": "Bake static lighting",
+        "why": "Lightmaps move lighting cost to build time, leaving few realtime lights. Costs lightmap memory and bake iteration time, and baked lights cannot change at runtime."
+      }
+    ]
+  },
+  {
+    "topicId": "unity-physics-input-animation",
+    "patterns": [
+      {
+        "signal": "Rigidbody forces applied in `Update` feel stronger at high frame rates and weaker at low ones",
+        "use": "Apply forces in FixedUpdate",
+        "why": "Physics steps on a fixed timestep, so forces applied there are frame rate independent. Read input in Update; only the application of forces moves to FixedUpdate."
+      },
+      {
+        "signal": "`WasPressedThisFrame()` checked in `FixedUpdate` misses jumps at high frame rates",
+        "use": "Latch input in Update, consume in FixedUpdate",
+        "why": "FixedUpdate may not run on the frame the press happened. Set a flag in Update and clear it after the physics step uses it, so no one-frame event is lost."
+      },
+      {
+        "signal": "A follow camera shows a Rigidbody stuttering, especially on high refresh displays",
+        "use": "Rigidbody interpolation",
+        "why": "Interpolate renders the body between physics steps, so motion is smooth at any frame rate. Adds up to one fixed step of visual latency; use it on player-visible bodies, not everything."
+      },
+      {
+        "signal": "Fast bullets or balls pass through thin walls between physics steps",
+        "use": "Raycast or continuous collision detection",
+        "why": "For hitscan-like bullets, raycast along the path each step. For physical objects use continuous detection modes, which cost more and should be limited to the few fast bodies."
+      },
+      {
+        "signal": "A platform moved by `transform.position` jitters riders and misses trigger events",
+        "use": "Kinematic Rigidbody + `MovePosition`",
+        "why": "A moving collider without a Rigidbody is treated as static and is expensive to move. A kinematic body moved in FixedUpdate interacts correctly and carries riders."
+      },
+      {
+        "signal": "Raycasts hit the player's own collider or triggers, and broadphase cost is high in crowded scenes",
+        "use": "Layers, LayerMask and the collision matrix",
+        "why": "Disable layer pairs that never interact and pass a LayerMask to queries. This removes bugs and broadphase work; keep layer usage documented since there are only 32."
+      },
+      {
+        "signal": "Gameplay code polls `Keyboard.current.spaceKey` directly and now needs gamepad support and rebinding",
+        "use": "Input System actions",
+        "why": "Code reads a `Jump` action; bindings for keyboard, gamepad and touch live in the asset and can be rebound. Costs some setup and an indirection when debugging a binding."
+      },
+      {
+        "signal": "Menu and gameplay both react to the same button, causing double actions when a menu is open",
+        "use": "Separate action maps per context",
+        "why": "Enable the `UI` map and disable `Gameplay` when a menu opens. Context switches become explicit; forget to re-enable a map and input appears dead."
+      },
+      {
+        "signal": "Animation logic is a nest of bools and `Play(\"Run\")` calls with fragile transitions",
+        "use": "Animator state machine driven by parameters",
+        "why": "Code only sets parameters like Speed and Grounded; the Animator owns states and blends. Hash names with `Animator.StringToHash` once, as string lookups each frame waste CPU."
+      },
+      {
+        "signal": "A cutscene must sync camera moves, animations, audio and events to exact times",
+        "use": "Timeline",
+        "why": "Authored sequences belong in a Timeline asset with tracks, not in coroutines of waits. Use the Animator for reactive state; both run on Playables and can be combined."
+      },
+      {
+        "signal": "Feet slide because the code-driven move speed disagrees with the walk animation's stride",
+        "use": "Root motion",
+        "why": "Let the animation drive displacement, optionally through `OnAnimatorMove`, so feet stay planted. Costs responsiveness and precise control; many action games scale animation speed instead."
+      },
+      {
+        "signal": "Hundreds of off-screen NPC Animators still show up as CPU cost in the profiler",
+        "use": "Animator culling mode",
+        "why": "Set culling to skip updates when renderers are not visible. Watch for gameplay that reads bone positions or animation events off-screen, which then stop updating."
+      }
+    ]
+  },
+  {
+    "topicId": "unity-ui",
+    "patterns": [
+      {
+        "signal": "Button handlers modify game state directly and UI scripts read player fields, so screens break when gameplay changes",
+        "use": "MVP: presenter between view and model",
+        "why": "The view only displays and raises input events; a presenter talks to game state. Views become swappable and logic testable without UI. Costs one extra class per screen."
+      },
+      {
+        "signal": "A UI Toolkit screen has dozens of fields that must mirror a settings or inventory object",
+        "use": "UI Toolkit runtime data binding",
+        "why": "Bind elements to a data source with the MVVM pattern instead of hand-written sync code. Version dependent and adds binding overhead; for a few labels, direct updates are simpler."
+      },
+      {
+        "signal": "The HUD polls player health, ammo and score in `Update` and rewrites labels every frame",
+        "use": "Observer: update HUD on change events",
+        "why": "Model raises `HealthChanged`; the HUD updates only then, avoiding per-frame rebuilds and allocations. Unsubscribe when the HUD is disabled or destroyed."
+      },
+      {
+        "signal": "Back button behaviour is a tangle of ifs over which panels are open, and popups sometimes stack wrongly",
+        "use": "Screen stack navigation",
+        "why": "Push screens on open, pop on back; the top screen gets input and focus. Model the outer flow (title, loading, in-game) as a small state machine above the stack."
+      },
+      {
+        "signal": "Profiler shows `Canvas.BuildBatch` every frame; a big static HUD shares a Canvas with a ticking timer",
+        "use": "Split canvases by update frequency",
+        "why": "A dirty element re-batches its whole Canvas. Put frequently changing elements on a nested Canvas of their own. Each extra Canvas adds draw calls, so do not split per element."
+      },
+      {
+        "signal": "A ScrollRect with 1,000 instantiated rows takes seconds to open and scrolls slowly",
+        "use": "Virtualised list with recycled items",
+        "why": "Create only the visible rows and rebind them as they scroll; UI Toolkit `ListView` virtualises this way. Costs more complex item code, and variable row heights are harder."
+      },
+      {
+        "signal": "Changing one text causes a spike in layout rebuilds through nested Layout Groups and Content Size Fitters",
+        "use": "Anchors instead of nested Layout Groups",
+        "why": "Layout Groups cascade rebuilds up to the root. Use anchors for fixed layouts and keep Layout Groups for truly dynamic lists, ideally one level deep."
+      },
+      {
+        "signal": "Opening a menu with `SetActive(true)` causes a frame spike on a large panel",
+        "use": "Toggle the Canvas component to show and hide",
+        "why": "Disabling the Canvas stops drawing but keeps its geometry and layout, so re-showing is cheap. Scripts on it keep running, so pause their Update logic yourself."
+      },
+      {
+        "signal": "Clicks are swallowed by an invisible overlay, or GraphicRaycaster shows up in the profiler",
+        "use": "Raycast Target only on interactive graphics",
+        "why": "Every Graphic with Raycast Target on is tested on input and can block clicks beneath it. Turn it off on decorative images and text; use `CanvasGroup.blocksRaycasts` for whole panels."
+      },
+      {
+        "signal": "A TextMeshPro score label is set with string concatenation every frame and Auto Size is on",
+        "use": "TMP `SetText` with numbers, Auto Size off",
+        "why": "`SetText(\"Score: {0}\", score)` formats without a string allocation, and fixed sizes avoid repeated layout passes. Update only when the value actually changes."
+      },
+      {
+        "signal": "You need a quick debug overlay or editor tool and do not want to build prefabs or UXML",
+        "use": "Immediate mode UI (IMGUI)",
+        "why": "IMGUI rebuilds the UI from code each call, so it is fast to write and has no asset state. It allocates and redraws every frame, so keep it out of shipping player UI, which suits retained mode."
+      },
+      {
+        "signal": "HUD elements clip under phone notches or stretch on ultrawide screens",
+        "use": "Anchors, Canvas Scaler and safe area",
+        "why": "Anchor to edges, scale with a reference resolution, and inset a root rect by `Screen.safeArea`. Test multiple aspect ratios early; fixed pixel positions fail on the first new device."
+      }
+    ]
+  },
+  {
+    "topicId": "unity-accessibility-localization",
+    "patterns": [
+      {
+        "signal": "Map markers or team indicators differ only by colour, and colour-blind testers cannot tell them apart",
+        "use": "Redundant encoding: shape, icon or text",
+        "why": "Pair each colour with a shape or label so the information survives any colour vision. Colour-blind filter modes help less, because they only fix the cases you anticipated."
+      },
+      {
+        "signal": "A mechanic needs a long trigger hold or rapid mashing, and testers with limited grip report pain",
+        "use": "Toggle and single-press alternatives",
+        "why": "Offer a toggle for every hold and a single-press option for mashing, plus adjustable timing. They are opt-in settings, so the fight stays the same for everyone else."
+      },
+      {
+        "signal": "Controls are fixed per device, or remapping exists for keyboard only",
+        "use": "Full remapping on every device",
+        "why": "Let players rebind every action on every device, built on Input System action rebinding. Requires conflict handling, a reset to defaults and saving bindings per profile."
+      },
+      {
+        "signal": "Dialogue subtitles are small white text, and deaf players miss who is speaking and key off-screen sounds",
+        "use": "Full subtitles and captions",
+        "why": "Add speaker labels, a background, size options and captions for gameplay-relevant sounds. Costs authoring sound captions and UI space."
+      },
+      {
+        "signal": "Players report nausea from camera shake, head bob or flashing effects",
+        "use": "Motion and flash toggles",
+        "why": "Provide settings to reduce shake, bob and blur and limit flashes per second. Wire effects through one intensity setting so new effects respect it automatically."
+      },
+      {
+        "signal": "A mobile player using VoiceOver or TalkBack reports the screen reader announces nothing in your game",
+        "use": "Expose an accessibility hierarchy",
+        "why": "Engine-rendered UI is invisible to OS screen readers until you publish nodes with labels and roles. The Unity APIs are version dependent, so check the manual for your version."
+      },
+      {
+        "signal": "Literal strings like `\"Quit\"` are scattered through scripts and prefabs, or one label stays untranslated",
+        "use": "String Table keys, never literals",
+        "why": "Reference every string through a key in a String Table so translators and tools see all of it. Costs a lookup and a key-naming discipline, which pays off on the first new language."
+      },
+      {
+        "signal": "Code builds sentences like `\"You have \" + count + \" coins\"` from translated fragments",
+        "use": "Smart Strings with plurals and variables",
+        "why": "One translatable entry with placeholders lets each language reorder words and pick plural forms. Fragments assume English word order and plural rules, which most languages break."
+      },
+      {
+        "signal": "Voice-over, flag sprites or fonts must differ per language, and all of them load for every player",
+        "use": "Asset Tables loaded per locale",
+        "why": "Map each locale to its own assets and load only the active one, through Asset Tables or Addressables. CJK fonts especially are large; load them as per-locale fallbacks."
+      },
+      {
+        "signal": "Parsing `\"1.5\"` from a save or config fails on German or French machines",
+        "use": "Invariant culture for data",
+        "why": "Use `CultureInfo.InvariantCulture` for saved and network data and the player's culture only for displayed numbers and dates. Mixing them corrupts saves across regions."
+      },
+      {
+        "signal": "Arabic or Hebrew is on the roadmap and the UI layout assumes left-to-right",
+        "use": "Right-to-left mirroring",
+        "why": "Mirror layouts, progress direction and text alignment for RTL locales and use a text renderer that shapes Arabic correctly. Retrofitting late is costly; build layouts mirror-ready now."
+      },
+      {
+        "signal": "Hard-coded text and truncated labels are only discovered after translations arrive",
+        "use": "Pseudo-localization",
+        "why": "A pseudo-locale accents, brackets and expands every string, so unlocalised text and overflow show up on day one. Costs nothing but a test pass per screen."
+      }
+    ]
+  }
+]

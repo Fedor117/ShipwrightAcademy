@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 310" role="img" aria-label="On a click, the GraphicRaycaster tests every Graphic with Raycast Target on: 11 in a default HUD, 3 when decorative graphics have it turned off.">
+<style>
+.unity-raycast-target-tests-h{font-size:14px;font-weight:600;fill:var(--fig-ink)}
+.unity-raycast-target-tests-s{font-size:12px;fill:var(--fig-muted)}
+.unity-raycast-target-tests-e{font-size:12px;fill:var(--fig-ink)}
+.unity-raycast-target-tests-ok{font-size:13px;fill:var(--fig-ok);font-weight:600}
+.unity-raycast-target-tests-bad{font-size:13px;fill:var(--fig-bad);font-weight:600}
+.unity-raycast-target-tests-bg{fill:var(--fig-bg);stroke:var(--fig-line);stroke-width:1.5}
+.unity-raycast-target-tests-dec{fill:var(--fig-line)}
+.unity-raycast-target-tests-btn{fill:var(--fig-accent);fill-opacity:.16}
+.unity-raycast-target-tests-rt{stroke:var(--fig-accent);stroke-width:1.5;stroke-dasharray:4 3;animation:unity-raycast-target-tests-rt 4s ease-out infinite}
+.unity-raycast-target-tests-rip{fill:none;stroke:var(--fig-accent2);stroke-width:2;opacity:0;transform-box:fill-box;transform-origin:center;animation:unity-raycast-target-tests-rip 4s ease-out infinite}
+.unity-raycast-target-tests-ptr{fill:var(--fig-ink);stroke:var(--fig-bg);stroke-width:1.2;stroke-linejoin:round}
+@keyframes unity-raycast-target-tests-rt{0%,24%{stroke-width:1.5;stroke-opacity:1}30%{stroke-width:3.5;stroke-opacity:1}48%,100%{stroke-width:1.5;stroke-opacity:1}}
+@keyframes unity-raycast-target-tests-rip{0%,20%{opacity:0;transform:scale(.4)}24%{opacity:1;transform:scale(.6)}44%{opacity:0;transform:scale(1.6)}100%{opacity:0;transform:scale(1.6)}}
+</style>
+<rect x="20" y="30" width="290" height="262" rx="12" fill="var(--fig-panel)" stroke="var(--fig-line)" stroke-width="1.5"/>
+<text class="unity-raycast-target-tests-h" x="36" y="56">Default: every Graphic</text>
+<rect class="unity-raycast-target-tests-bg unity-raycast-target-tests-rt" x="36" y="72" width="258" height="160" rx="10"/>
+<rect class="unity-raycast-target-tests-dec unity-raycast-target-tests-rt" x="50" y="88" width="120" height="12" rx="6"/>
+<circle class="unity-raycast-target-tests-dec unity-raycast-target-tests-rt" cx="62" cy="128" r="10"/><circle class="unity-raycast-target-tests-dec unity-raycast-target-tests-rt" cx="92" cy="128" r="10"/><circle class="unity-raycast-target-tests-dec unity-raycast-target-tests-rt" cx="122" cy="128" r="10"/><circle class="unity-raycast-target-tests-dec unity-raycast-target-tests-rt" cx="152" cy="128" r="10"/>
+<rect class="unity-raycast-target-tests-dec unity-raycast-target-tests-rt" x="50" y="158" width="140" height="10" rx="5"/><rect class="unity-raycast-target-tests-dec unity-raycast-target-tests-rt" x="50" y="176" width="104" height="10" rx="5"/>
+<rect class="unity-raycast-target-tests-btn unity-raycast-target-tests-rt" x="206" y="88" width="74" height="28" rx="8"/><text class="unity-raycast-target-tests-e" x="243" y="106" text-anchor="middle">Play</text><rect class="unity-raycast-target-tests-btn unity-raycast-target-tests-rt" x="206" y="128" width="74" height="28" rx="8"/><text class="unity-raycast-target-tests-e" x="243" y="146" text-anchor="middle">Shop</text><rect class="unity-raycast-target-tests-btn unity-raycast-target-tests-rt" x="206" y="168" width="74" height="28" rx="8"/><text class="unity-raycast-target-tests-e" x="243" y="186" text-anchor="middle">Quit</text>
+<circle class="unity-raycast-target-tests-rip" cx="264" cy="102" r="14"/>
+<path class="unity-raycast-target-tests-ptr" d="M264 103 l0 20 l5 -5 l4 9 l4 -2 l-4 -9 l7 0 z"/>
+<text class="unity-raycast-target-tests-bad" x="36" y="256">11 graphics tested per pointer event</text><text class="unity-raycast-target-tests-s" x="36" y="276">background Image, labels and icons too</text>
+<rect x="330" y="30" width="290" height="262" rx="12" fill="var(--fig-panel)" stroke="var(--fig-line)" stroke-width="1.5"/>
+<text class="unity-raycast-target-tests-h" x="346" y="56">Decor: Raycast Target off</text>
+<rect class="unity-raycast-target-tests-bg" x="346" y="72" width="258" height="160" rx="10"/>
+<rect class="unity-raycast-target-tests-dec" x="360" y="88" width="120" height="12" rx="6"/>
+<circle class="unity-raycast-target-tests-dec" cx="372" cy="128" r="10"/><circle class="unity-raycast-target-tests-dec" cx="402" cy="128" r="10"/><circle class="unity-raycast-target-tests-dec" cx="432" cy="128" r="10"/><circle class="unity-raycast-target-tests-dec" cx="462" cy="128" r="10"/>
+<rect class="unity-raycast-target-tests-dec" x="360" y="158" width="140" height="10" rx="5"/><rect class="unity-raycast-target-tests-dec" x="360" y="176" width="104" height="10" rx="5"/>
+<rect class="unity-raycast-target-tests-btn unity-raycast-target-tests-rt" x="516" y="88" width="74" height="28" rx="8"/><text class="unity-raycast-target-tests-e" x="553" y="106" text-anchor="middle">Play</text><rect class="unity-raycast-target-tests-btn unity-raycast-target-tests-rt" x="516" y="128" width="74" height="28" rx="8"/><text class="unity-raycast-target-tests-e" x="553" y="146" text-anchor="middle">Shop</text><rect class="unity-raycast-target-tests-btn unity-raycast-target-tests-rt" x="516" y="168" width="74" height="28" rx="8"/><text class="unity-raycast-target-tests-e" x="553" y="186" text-anchor="middle">Quit</text>
+<circle class="unity-raycast-target-tests-rip" cx="574" cy="102" r="14"/>
+<path class="unity-raycast-target-tests-ptr" d="M574 103 l0 20 l5 -5 l4 9 l4 -2 l-4 -9 l7 0 z"/>
+<text class="unity-raycast-target-tests-ok" x="346" y="256">3 graphics tested per pointer event</text><text class="unity-raycast-target-tests-s" x="346" y="276">only the buttons are targets</text>
+</svg>

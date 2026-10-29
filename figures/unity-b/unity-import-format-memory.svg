@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 326" role="img" aria-label="Memory of a 2048 by 2048 texture per format, bars to scale: RGBA32 16 MB, ETC2 RGBA8 or BC7 4 MB, ASTC 4x4 4 MB, ASTC 6x6 about 1.8 MB, ASTC 8x8 1 MB, BC1 or ETC2 RGB 2 MB; mipmaps add about 33 percent.">
+<style>
+.unity-import-format-memory-t{font-size:13px;fill:var(--fig-ink)}
+.unity-import-format-memory-h{font-size:12px;font-weight:600;fill:var(--fig-muted)}
+.unity-import-format-memory-m{font-size:13px;fill:var(--fig-muted)}
+.unity-import-format-memory-b{fill:var(--fig-accent)}
+.unity-import-format-memory-mip{fill:var(--fig-accent2);fill-opacity:.55;transform-box:fill-box;transform-origin:0 50%;animation:unity-import-format-memory-mip 5s ease-in-out infinite}
+@keyframes unity-import-format-memory-mip{0%,15%{transform:scaleX(0)}40%,85%{transform:scaleX(1)}100%{transform:scaleX(0)}}
+</style>
+<text class="unity-import-format-memory-h" x="20" y="36">FORMAT</text><text class="unity-import-format-memory-h" x="206" y="36" text-anchor="end">BPP</text><text class="unity-import-format-memory-h" x="268" y="36" text-anchor="end">MB</text><text class="unity-import-format-memory-h" x="286" y="36">2048 × 2048, to scale</text>
+<line x1="286" y1="48" x2="286" y2="274" stroke="var(--fig-line)" stroke-width="1.5"/>
+<text class="unity-import-format-memory-t" x="20" y="75">RGBA32 uncompressed</text><text class="unity-import-format-memory-m" x="206" y="75" text-anchor="end">32</text><text class="unity-import-format-memory-t" x="268" y="75" text-anchor="end">16.0</text>
+<rect class="unity-import-format-memory-b" x="286" y="60" width="240.0" height="20" rx="4"/><rect class="unity-import-format-memory-mip" x="527.0" y="60" width="80.0" height="20" rx="4"/>
+<text class="unity-import-format-memory-t" x="20" y="113">ETC2 RGBA8 / BC7</text><text class="unity-import-format-memory-m" x="206" y="113" text-anchor="end">8</text><text class="unity-import-format-memory-t" x="268" y="113" text-anchor="end">4.0</text>
+<rect class="unity-import-format-memory-b" x="286" y="98" width="60.0" height="20" rx="4"/><rect class="unity-import-format-memory-mip" x="347.0" y="98" width="20.0" height="20" rx="4"/>
+<text class="unity-import-format-memory-t" x="20" y="151">ASTC 4x4</text><text class="unity-import-format-memory-m" x="206" y="151" text-anchor="end">8</text><text class="unity-import-format-memory-t" x="268" y="151" text-anchor="end">4.0</text>
+<rect class="unity-import-format-memory-b" x="286" y="136" width="60.0" height="20" rx="4"/><rect class="unity-import-format-memory-mip" x="347.0" y="136" width="20.0" height="20" rx="4"/>
+<text class="unity-import-format-memory-t" x="20" y="189">ASTC 6x6</text><text class="unity-import-format-memory-m" x="206" y="189" text-anchor="end">~3.56</text><text class="unity-import-format-memory-t" x="268" y="189" text-anchor="end">~1.8</text>
+<rect class="unity-import-format-memory-b" x="286" y="174" width="26.7" height="20" rx="4"/><rect class="unity-import-format-memory-mip" x="313.7" y="174" width="8.9" height="20" rx="4"/>
+<text class="unity-import-format-memory-t" x="20" y="227">ASTC 8x8</text><text class="unity-import-format-memory-m" x="206" y="227" text-anchor="end">2</text><text class="unity-import-format-memory-t" x="268" y="227" text-anchor="end">1.0</text>
+<rect class="unity-import-format-memory-b" x="286" y="212" width="15.0" height="20" rx="4"/><rect class="unity-import-format-memory-mip" x="302.0" y="212" width="5.0" height="20" rx="4"/>
+<text class="unity-import-format-memory-t" x="20" y="265">BC1 / ETC2 RGB</text><text class="unity-import-format-memory-m" x="206" y="265" text-anchor="end">4</text><text class="unity-import-format-memory-t" x="268" y="265" text-anchor="end">2.0</text>
+<rect class="unity-import-format-memory-b" x="286" y="250" width="30.0" height="20" rx="4"/><rect class="unity-import-format-memory-mip" x="317.0" y="250" width="10.0" height="20" rx="4"/>
+<rect class="unity-import-format-memory-b" x="20" y="292" width="16" height="14" rx="3"/><text class="unity-import-format-memory-m" x="44" y="304">texture, no mips</text>
+<rect x="180" y="292" width="16" height="14" rx="3" fill="var(--fig-accent2)" fill-opacity=".55"/><text class="unity-import-format-memory-m" x="204" y="304">+ mip chain (~33%)</text>
+<text class="unity-import-format-memory-m" x="620" y="304" text-anchor="end">1 MB = 15 px</text>
+</svg>

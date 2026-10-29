@@ -1,0 +1,35 @@
+[
+  {
+    "q": "A homing missile turns with `rot = Quaternion.Slerp(rot, desired, turnRate * Time.deltaTime)`. During a 200 ms hitch it snaps straight onto the target heading, and it turns differently at 30 and 144 fps. What is the most robust fix?",
+    "options": [
+      "Use t = 1 - exp(-turnRate * dt) so t never exceeds 1",
+      "Switch from Slerp to Lerp so the result is normalized",
+      "Move the turning code into LateUpdate after animation",
+      "Double turnRate and halve the speed of the missile"
+    ],
+    "answer": 0,
+    "explain": "With a long dt the factor turnRate * dt can exceed 1, and Quaternion.Slerp clamps t, so the missile snaps straight onto the desired heading in one frame. Exponential decay keeps the factor below 1 and gives the same motion at any frame rate. Lerp, update order and retuning do not address the dt dependence."
+  },
+  {
+    "q": "An open-world game generates terrain chunks as the player explores, using one seeded generator advanced chunk by chunk. Two players with the same seed see different terrain. What design fixes this?",
+    "options": [
+      "Generate every chunk on a background thread in parallel",
+      "Store the generator state in the save file after each chunk",
+      "Use a larger seed so collisions between worlds become rare",
+      "Derive each chunk from hash(worldSeed, chunkX, chunkY)"
+    ],
+    "answer": 3,
+    "explain": "A sequential generator makes each chunk depend on visit order. Hashing the seed with chunk coordinates makes every chunk a pure function of its position. Saving state only fixes one player, and threading makes ordering worse."
+  },
+  {
+    "q": "A designer wants a UI badge to pop in, overshoot slightly and settle, and to retarget smoothly if a new value arrives mid-animation. Which approach fits best?",
+    "options": [
+      "A fixed ease-out tween restarted each time from the start",
+      "An under-damped spring that keeps its velocity across retargets",
+      "Exponential decay toward the target with a high rate in 1/s",
+      "A critically damped SmoothDamp with a very short smoothTime"
+    ],
+    "answer": 1,
+    "explain": "An under-damped spring overshoots and settles, and because it carries velocity a new target blends in without a jump. Restarting a tween pops, while exponential decay and critical damping never overshoot."
+  }
+]

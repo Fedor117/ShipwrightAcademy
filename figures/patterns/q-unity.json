@@ -1,0 +1,184 @@
+[
+  {
+    "topicId": "unity-fundamentals",
+    "question": {
+      "q": "A designer renames the `Player` object to `Hero` and the camera rig starts throwing NullReferenceException. Its script grabs the target with `GameObject.Find(\"Player\")` in `Start`. What should you reach for?",
+      "options": [
+        "A `[SerializeField]` field set in the Inspector",
+        "Switch the lookup to `FindWithTag(\"Player\")` instead",
+        "Move the camera under the Hero in the hierarchy",
+        "Add `[RequireComponent]` to the camera script"
+      ],
+      "answer": 0,
+      "explain": "A serialized reference is stored by file ID, so it survives renames and costs nothing at runtime. `FindWithTag` only swaps one string for another and breaks the same way when the tag changes."
+    }
+  },
+  {
+    "topicId": "unity-lifecycle-scripting",
+    "question": {
+      "q": "Minimap, AI and audio code each call `FindObjectsByType<Enemy>()` every frame, and enemies spawn and die constantly. The scene search shows up in the profiler. Which approach fits best?",
+      "options": [
+        "Cache the found array once, in `Start`",
+        "A ScriptableObject set filled in `OnEnable`",
+        "Poll with a coroutine every half second or so",
+        "Tag enemies and call `FindGameObjectsWithTag`"
+      ],
+      "answer": 1,
+      "explain": "Enemies add and remove themselves, so the set is always current and needs no scene search. Caching in `Start` goes stale as soon as enemies spawn or die."
+    }
+  },
+  {
+    "topicId": "unity-csharp-memory-serialization",
+    "question": {
+      "q": "A proximity sensor calls `Physics.RaycastAll` in `Update`, and the Profiler's hierarchy shows about 1 KB of GC Alloc per frame from that call. Which change removes the garbage?",
+      "options": [
+        "Call `GC.Collect()` at the end of each frame",
+        "Filter the hits with LINQ into a new `List<T>`",
+        "`RaycastNonAlloc` with a reused hit buffer",
+        "Run the cast in a coroutine every frame"
+      ],
+      "answer": 2,
+      "explain": "The NonAlloc variant writes into a buffer you reuse, so no array is created per call. Forcing `GC.Collect()` just trades steady garbage for a guaranteed main-thread stall."
+    }
+  },
+  {
+    "topicId": "unity-rendering",
+    "question": {
+      "q": "A meadow has 8,000 copies of one grass mesh sharing one material. The render thread is the bottleneck, the GPU is mostly idle, and the objects must keep varying scale. What should you reach for?",
+      "options": [
+        "Static batching of all the grass meshes",
+        "Occlusion culling baked for the whole meadow",
+        "A LOD Group added to every single blade",
+        "GPU instancing with `RenderMeshInstanced`"
+      ],
+      "answer": 3,
+      "explain": "Instancing draws many copies of one mesh and material in a few calls with per-instance data. Occlusion culling gives little in an open field where most blades are visible anyway."
+    }
+  },
+  {
+    "topicId": "unity-physics-input-animation",
+    "question": {
+      "q": "Opening the inventory with `I` leaves the Jump and Fire bindings live, so clicking an item also shoots and Space jumps the character. What is the cleanest fix?",
+      "options": [
+        "Enable the UI map, disable the Gameplay map",
+        "Check a `menuOpen` bool in every gameplay script",
+        "Rebind Jump and Fire while the menu is open",
+        "Poll `Keyboard.current` in the menu code instead"
+      ],
+      "answer": 0,
+      "explain": "Swapping maps makes the context switch explicit in one place. Scattered `menuOpen` checks work at first but each new gameplay script can forget one."
+    }
+  },
+  {
+    "topicId": "unity-ui",
+    "question": {
+      "q": "The Back button logic is a tangle of ifs over which panels are open, and sometimes a settings popup opens behind the shop instead of on top. Which approach fits best?",
+      "options": [
+        "Keep an `isOpen` bool per panel and check in order",
+        "Screen stack: push on open, pop on back",
+        "Toggle each panel's Canvas component on and off",
+        "Bind each panel to a UI Toolkit data source"
+      ],
+      "answer": 1,
+      "explain": "A stack gives one rule: the top screen gets input and Back pops it. Per-panel bools just recreate the ordering ifs you have now."
+    }
+  },
+  {
+    "topicId": "unity-accessibility-localization",
+    "question": {
+      "q": "Playtesters report nausea and headaches during sprints, which add strong camera shake, head bob and screen flashes. Which change addresses this?",
+      "options": [
+        "Toggle alternatives for every held input button",
+        "Speaker labels and sound captions in subtitles",
+        "Reduce-motion setting for shake, bob, flashes",
+        "Publish a screen reader accessibility hierarchy"
+      ],
+      "answer": 2,
+      "explain": "A reduce-motion setting, ideally one intensity value all effects read, targets the cause. Subtitles and captions help players who cannot hear, not those made ill by motion."
+    }
+  },
+  {
+    "topicId": "unity-assets-content",
+    "question": {
+      "q": "The profiler shows a 150 ms hitch on every screen change, and the hitch is `Resources.UnloadUnusedAssets` called from your transition code. What should you reach for?",
+      "options": [
+        "Call `GC.Collect()` after each screen change instead",
+        "Move the screens' assets into Resources folders",
+        "Call the unload every frame in small slices",
+        "Unload only behind loading screens at pause points"
+      ],
+      "answer": 3,
+      "explain": "It walks the whole object graph on the main thread, so it belongs where a pause is invisible; steady-state memory should come from Addressables releases. `GC.Collect()` frees managed memory, not unused assets."
+    }
+  },
+  {
+    "topicId": "unity-tech-art-pipeline",
+    "question": {
+      "q": "You add a validator rule that flags textures above 2048 px, but 600 existing textures violate it and CI would go red for everyone on day one. How do you roll it out?",
+      "options": [
+        "Ship it as a warning list first, then an error",
+        "Fail CI immediately so the backlog gets cleared quickly",
+        "Add a Preset for the folder and call it enforced",
+        "Silently downsize all 600 with a postprocessor"
+      ],
+      "answer": 0,
+      "explain": "Artists can clear a published backlog, then the rule flips to an error. A rule that blocks everyone at once tends to be disabled within the week."
+    }
+  },
+  {
+    "topicId": "unity-profiling-performance",
+    "question": {
+      "q": "The profiler says rendering is expensive and you count 1,400 draw calls, far above what you expected. The materials look identical in the scene. Which tool should you use next?",
+      "options": [
+        "Deep Profiling, to count the draws per script",
+        "Frame Debugger, to see why draws did not batch",
+        "A Memory Profiler snapshot of the render targets",
+        "`ProfilerMarker` around the camera render call"
+      ],
+      "answer": 1,
+      "explain": "The Frame Debugger steps through every draw and states why it broke from the previous one, such as keywords or lightmaps. Deep Profiling measures script calls, not batch breaks."
+    }
+  },
+  {
+    "topicId": "unity-editor-scripting",
+    "question": {
+      "q": "Twelve components each draw a min/max range field with hand-written inspector code, and every one looks slightly different. What should you reach for?",
+      "options": [
+        "A shared static helper copied into each custom editor",
+        "An EditorWindow that lists every range field",
+        "A PropertyDrawer bound to a custom PropertyAttribute",
+        "A ScriptableObject holding all the range values"
+      ],
+      "answer": 2,
+      "explain": "Tag each field with the attribute and one drawer renders it identically in any inspector. A shared helper still needs a custom editor per component to call it."
+    }
+  },
+  {
+    "topicId": "unity-builds-testing",
+    "question": {
+      "q": "Testing a dash cooldown rule needs a scene load and about 40 frames of waiting, so each test takes seconds and CI crawls. Which approach fits best?",
+      "options": [
+        "Convert the test to a `[UnityTest]` that yields frames",
+        "Run the same tests in a built player on a device",
+        "Raise `Time.timeScale` inside the scene during tests",
+        "Move the rule to a plain C# class; test in EditMode"
+      ],
+      "answer": 3,
+      "explain": "A thin MonoBehaviour delegating to a plain class lets the rule run in milliseconds with no engine loop. PlayMode still needs the scene and frames, so it stays slow."
+    }
+  },
+  {
+    "topicId": "unity-vcs-and-agents",
+    "question": {
+      "q": "An agent finishes a task to add one field to a prefab, but its diff rewrites YAML in 40 unrelated scenes and several GUIDs changed. What do you do?",
+      "options": [
+        "Revert and redo it through Editor APIs",
+        "Merge it and run the validator afterwards",
+        "Move the touched scenes into Git LFS",
+        "Hand-edit the GUIDs back to the old values"
+      ],
+      "answer": 0,
+      "explain": "Unrelated scene churn and changed GUIDs signal hand-edited or regenerated assets. Patching the YAML by hand risks inconsistent fileIDs, so redo the change with `PrefabUtility` or `SerializedObject`."
+    }
+  }
+]

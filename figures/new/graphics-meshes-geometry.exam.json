@@ -1,0 +1,35 @@
+[
+  {
+    "q": "A mesh exported from a tool with counter-clockwise front faces is imported into an engine that treats clockwise as front and culls back faces. It looks inside-out. Which fix is correct?",
+    "options": [
+      "Recalculate the normals, since the stored normals decide which side is culled",
+      "Swap two indices in every triangle at import, leaving the stored normals as they are",
+      "Convert the mesh from a triangle list to triangle strips so the order is consistent",
+      "Set every material to double-sided rendering and accept the extra fill cost"
+    ],
+    "answer": 1,
+    "explain": "Culling depends on the index order, not on the normals. Swapping two indices per triangle reverses the winding and makes the outside the front face, while the normals were already pointing outward. Double-sided materials hide the symptom but cost extra pixels and break lighting on the back faces."
+  },
+  {
+    "q": "A 50,000-vertex prop stores position float32 x3, normal float32 x3, tangent float32 x4 and UV0 float32 x2 (48 bytes). You want to halve its memory with the least visible risk. Which change does that?",
+    "options": [
+      "Store positions and UV0 as float16 and leave everything else as it is",
+      "Quantise everything to 8-bit normalized values relative to the origin",
+      "Drop the tangent and rebuild it in the fragment shader from the normal alone",
+      "Pack normal and tangent as snorm8 and UV0 as unorm16, keeping float32 positions"
+    ],
+    "answer": 3,
+    "explain": "12 + 4 + 4 + 4 gives a 24-byte stride, exactly half, and 8-bit unit vectors and 16-bit UVs lose almost nothing visible. Half-float positions and UVs lose precision away from the origin or on tiled textures, and a tangent cannot be rebuilt from the normal alone because it depends on the UV layout."
+  },
+  {
+    "q": "A flat water plane is displaced up to 6 m by a vertex-shader wave function. When the camera looks so the undisplaced plane is just outside the view, wave crests that should be visible vanish and pop back in. What is the cause?",
+    "options": [
+      "Culling uses bounds from the undisplaced vertices, so they must be enlarged to cover the waves",
+      "The depth buffer is too coarse in the distance, so the near plane should be raised",
+      "The mesh is using 16-bit indices, so far vertices wrap to the wrong positions",
+      "The vertex cache is thrashing, so the index buffer should be reordered"
+    ],
+    "answer": 0,
+    "explain": "Frustum culling uses the mesh bounds, which come from the stored vertex positions rather than the shader's output. Displaced vertices can be on screen while the rest-pose box is not. Widening the bounds fixes it; depth precision, index width and cache order do not cause popping at the screen edge."
+  }
+]

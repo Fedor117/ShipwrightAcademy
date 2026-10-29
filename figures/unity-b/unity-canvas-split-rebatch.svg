@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" role="img" aria-label="A ticking timer dirties its Canvas. In one shared Canvas all 12 elements are re-batched every tick; with a nested Dynamic Canvas only its 3 elements are.">
+<style>
+.unity-canvas-split-rebatch-h{font-size:14px;font-weight:600;fill:var(--fig-ink)}
+.unity-canvas-split-rebatch-s{font-size:12px;fill:var(--fig-muted)}
+.unity-canvas-split-rebatch-e{font-size:12px;fill:var(--fig-ink)}
+.unity-canvas-split-rebatch-ok{font-size:13px;fill:var(--fig-ok);font-weight:600}
+.unity-canvas-split-rebatch-bad{font-size:13px;fill:var(--fig-bad);font-weight:600}
+.unity-canvas-split-rebatch-cv{fill:none;stroke:var(--fig-muted);stroke-width:1.5;stroke-dasharray:5 4}
+.unity-canvas-split-rebatch-cvd{stroke:var(--fig-accent)}
+.unity-canvas-split-rebatch-es{fill:var(--fig-line);fill-opacity:.55}
+.unity-canvas-split-rebatch-ed{fill:var(--fig-accent);fill-opacity:.18;stroke:var(--fig-accent);stroke-width:1.5}
+.unity-canvas-split-rebatch-fl{fill:var(--fig-warn);opacity:0;animation:unity-canvas-split-rebatch-fl 3s ease-out infinite}
+.unity-canvas-split-rebatch-ta{animation:unity-canvas-split-rebatch-ta 3s step-end infinite}
+.unity-canvas-split-rebatch-tb{opacity:0;animation:unity-canvas-split-rebatch-tb 3s step-end infinite}
+@keyframes unity-canvas-split-rebatch-fl{0%{opacity:.6}18%{opacity:0}50%{opacity:.6}68%{opacity:0}100%{opacity:0}}
+@keyframes unity-canvas-split-rebatch-ta{0%{opacity:1}50%{opacity:0}}
+@keyframes unity-canvas-split-rebatch-tb{0%{opacity:0}50%{opacity:1}}
+</style>
+<rect x="20" y="30" width="290" height="256" rx="12" fill="var(--fig-panel)" stroke="var(--fig-line)" stroke-width="1.5"/>
+<text class="unity-canvas-split-rebatch-h" x="36" y="56">One Canvas</text>
+<rect class="unity-canvas-split-rebatch-cv" x="34" y="96" width="258" height="138" rx="10"/><text class="unity-canvas-split-rebatch-s" x="34" y="88">HUD (Canvas)</text>
+<rect class="unity-canvas-split-rebatch-es" x="42" y="106" width="52" height="32" rx="8"/><rect class="unity-canvas-split-rebatch-fl" x="42" y="106" width="52" height="32" rx="8"/>
+<rect class="unity-canvas-split-rebatch-es" x="100" y="106" width="52" height="32" rx="8"/><rect class="unity-canvas-split-rebatch-fl" x="100" y="106" width="52" height="32" rx="8"/>
+<rect class="unity-canvas-split-rebatch-es" x="158" y="106" width="52" height="32" rx="8"/><rect class="unity-canvas-split-rebatch-fl" x="158" y="106" width="52" height="32" rx="8"/>
+<rect class="unity-canvas-split-rebatch-ed" x="232" y="106" width="52" height="32" rx="8"/><rect class="unity-canvas-split-rebatch-fl" x="232" y="106" width="52" height="32" rx="8"/><text class="unity-canvas-split-rebatch-e unity-canvas-split-rebatch-ta" x="258" y="127" text-anchor="middle">0:42</text><text class="unity-canvas-split-rebatch-e unity-canvas-split-rebatch-tb" x="258" y="127" text-anchor="middle">0:41</text>
+<rect class="unity-canvas-split-rebatch-es" x="42" y="148" width="52" height="32" rx="8"/><rect class="unity-canvas-split-rebatch-fl" x="42" y="148" width="52" height="32" rx="8"/>
+<rect class="unity-canvas-split-rebatch-es" x="100" y="148" width="52" height="32" rx="8"/><rect class="unity-canvas-split-rebatch-fl" x="100" y="148" width="52" height="32" rx="8"/>
+<rect class="unity-canvas-split-rebatch-es" x="158" y="148" width="52" height="32" rx="8"/><rect class="unity-canvas-split-rebatch-fl" x="158" y="148" width="52" height="32" rx="8"/>
+<rect class="unity-canvas-split-rebatch-ed" x="232" y="148" width="52" height="32" rx="8"/><rect class="unity-canvas-split-rebatch-fl" x="232" y="148" width="52" height="32" rx="8"/><text class="unity-canvas-split-rebatch-e" x="258" y="169" text-anchor="middle">Ammo</text>
+<rect class="unity-canvas-split-rebatch-es" x="42" y="190" width="52" height="32" rx="8"/><rect class="unity-canvas-split-rebatch-fl" x="42" y="190" width="52" height="32" rx="8"/>
+<rect class="unity-canvas-split-rebatch-es" x="100" y="190" width="52" height="32" rx="8"/><rect class="unity-canvas-split-rebatch-fl" x="100" y="190" width="52" height="32" rx="8"/>
+<rect class="unity-canvas-split-rebatch-es" x="158" y="190" width="52" height="32" rx="8"/><rect class="unity-canvas-split-rebatch-fl" x="158" y="190" width="52" height="32" rx="8"/>
+<rect class="unity-canvas-split-rebatch-ed" x="232" y="190" width="52" height="32" rx="8"/><rect class="unity-canvas-split-rebatch-fl" x="232" y="190" width="52" height="32" rx="8"/><text class="unity-canvas-split-rebatch-e" x="258" y="211" text-anchor="middle">HP</text>
+<text class="unity-canvas-split-rebatch-bad" x="36" y="262">12 elements re-batched per tick</text>
+<rect x="330" y="30" width="290" height="256" rx="12" fill="var(--fig-panel)" stroke="var(--fig-line)" stroke-width="1.5"/>
+<text class="unity-canvas-split-rebatch-h" x="346" y="56">Split by update rate</text>
+<rect class="unity-canvas-split-rebatch-cv" x="344" y="96" width="184" height="138" rx="10"/><text class="unity-canvas-split-rebatch-s" x="344" y="88">StaticFrame</text>
+<rect class="unity-canvas-split-rebatch-cv unity-canvas-split-rebatch-cvd" x="534" y="96" width="68" height="138" rx="10"/><text class="unity-canvas-split-rebatch-s" x="602" y="88" text-anchor="end">Dynamic (Canvas)</text>
+<rect class="unity-canvas-split-rebatch-es" x="352" y="106" width="52" height="32" rx="8"/>
+<rect class="unity-canvas-split-rebatch-es" x="410" y="106" width="52" height="32" rx="8"/>
+<rect class="unity-canvas-split-rebatch-es" x="468" y="106" width="52" height="32" rx="8"/>
+<rect class="unity-canvas-split-rebatch-ed" x="542" y="106" width="52" height="32" rx="8"/><rect class="unity-canvas-split-rebatch-fl" x="542" y="106" width="52" height="32" rx="8"/><text class="unity-canvas-split-rebatch-e unity-canvas-split-rebatch-ta" x="568" y="127" text-anchor="middle">0:42</text><text class="unity-canvas-split-rebatch-e unity-canvas-split-rebatch-tb" x="568" y="127" text-anchor="middle">0:41</text>
+<rect class="unity-canvas-split-rebatch-es" x="352" y="148" width="52" height="32" rx="8"/>
+<rect class="unity-canvas-split-rebatch-es" x="410" y="148" width="52" height="32" rx="8"/>
+<rect class="unity-canvas-split-rebatch-es" x="468" y="148" width="52" height="32" rx="8"/>
+<rect class="unity-canvas-split-rebatch-ed" x="542" y="148" width="52" height="32" rx="8"/><rect class="unity-canvas-split-rebatch-fl" x="542" y="148" width="52" height="32" rx="8"/><text class="unity-canvas-split-rebatch-e" x="568" y="169" text-anchor="middle">Ammo</text>
+<rect class="unity-canvas-split-rebatch-es" x="352" y="190" width="52" height="32" rx="8"/>
+<rect class="unity-canvas-split-rebatch-es" x="410" y="190" width="52" height="32" rx="8"/>
+<rect class="unity-canvas-split-rebatch-es" x="468" y="190" width="52" height="32" rx="8"/>
+<rect class="unity-canvas-split-rebatch-ed" x="542" y="190" width="52" height="32" rx="8"/><rect class="unity-canvas-split-rebatch-fl" x="542" y="190" width="52" height="32" rx="8"/><text class="unity-canvas-split-rebatch-e" x="568" y="211" text-anchor="middle">HP</text>
+<text class="unity-canvas-split-rebatch-ok" x="346" y="262">3 elements re-batched per tick</text>
+</svg>

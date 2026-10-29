@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 340" role="img" aria-label="The Unity linker keeps code reachable from roots such as scenes and MonoBehaviours. SaveData is only created by type name through reflection, so without link.xml it is stripped and fails at runtime with MissingMethodException; link.xml preserves it.">
+<style>
+.unity-stripping-linkxml-t{font-size:14px;fill:var(--fig-ink);font-weight:600}
+.unity-stripping-linkxml-s{font-size:12px;fill:var(--fig-muted)}
+.unity-stripping-linkxml-k{fill:var(--fig-ok);fill-opacity:.1;stroke:var(--fig-ok);stroke-width:1.75}
+.unity-stripping-linkxml-x{fill:none;stroke:var(--fig-muted);stroke-width:1.5;stroke-dasharray:5 4}
+.unity-stripping-linkxml-ar{stroke:var(--fig-muted);stroke-width:1.75;fill:none}
+.unity-stripping-linkxml-m{fill:none;stroke:var(--fig-ok);stroke-width:3.5;opacity:0;animation:unity-stripping-linkxml-mk 8s ease-out infinite}
+.unity-stripping-linkxml-lx{animation:unity-stripping-linkxml-off 8s ease-in-out infinite}
+.unity-stripping-linkxml-sd{animation:unity-stripping-linkxml-dim 8s ease-in-out infinite}
+.unity-stripping-linkxml-on{opacity:0;animation:unity-stripping-linkxml-err 8s ease-in-out infinite}
+@keyframes unity-stripping-linkxml-mk{0%{opacity:0}3%{opacity:1}12%,100%{opacity:0}}
+@keyframes unity-stripping-linkxml-off{0%,48%{opacity:1}54%,90%{opacity:.15}96%,100%{opacity:1}}
+@keyframes unity-stripping-linkxml-dim{0%,52%{opacity:1}60%,90%{opacity:.3}96%,100%{opacity:1}}
+@keyframes unity-stripping-linkxml-err{0%,56%{opacity:0}62%,90%{opacity:1}96%,100%{opacity:0}}
+</style>
+<defs><marker id="unity-stripping-linkxml-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--fig-muted)"/></marker>
+<marker id="unity-stripping-linkxml-ak" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--fig-accent)"/></marker></defs>
+<text class="unity-stripping-linkxml-s" x="16" y="30">The linker keeps what it can reach from roots, and removes the rest</text>
+<rect class="unity-stripping-linkxml-k" x="16" y="56" width="96" height="44" rx="10"/>
+<text class="unity-stripping-linkxml-t" x="28" y="75">Scene</text>
+<text class="unity-stripping-linkxml-s" x="28" y="92">root</text>
+<line class="unity-stripping-linkxml-ar" x1="114" y1="78" x2="144" y2="78" marker-end="url(#unity-stripping-linkxml-a)"/>
+<rect class="unity-stripping-linkxml-k" x="148" y="56" width="180" height="44" rx="10"/>
+<text class="unity-stripping-linkxml-t" x="160" y="75">Player</text>
+<text class="unity-stripping-linkxml-s" x="160" y="92">MonoBehaviour, root</text>
+<line class="unity-stripping-linkxml-ar" x1="330" y1="78" x2="360" y2="78" marker-end="url(#unity-stripping-linkxml-a)"/>
+<rect class="unity-stripping-linkxml-k" x="364" y="56" width="160" height="44" rx="10"/>
+<text class="unity-stripping-linkxml-t" x="376" y="75">SaveSystem</text>
+<text class="unity-stripping-linkxml-s" x="376" y="92">called method</text>
+<line class="unity-stripping-linkxml-ar" x1="238" y1="102" x2="238" y2="142" marker-end="url(#unity-stripping-linkxml-a)"/>
+<rect class="unity-stripping-linkxml-k" x="148" y="146" width="180" height="44" rx="10"/>
+<text class="unity-stripping-linkxml-t" x="160" y="165">Damage</text>
+<text class="unity-stripping-linkxml-s" x="160" y="182">called method</text>
+<line class="unity-stripping-linkxml-ar" x1="444" y1="102" x2="444" y2="142" marker-end="url(#unity-stripping-linkxml-a)"/>
+<rect class="unity-stripping-linkxml-k" x="364" y="146" width="160" height="44" rx="10"/>
+<text class="unity-stripping-linkxml-t" x="376" y="165" style="font-size:13px">JSON deserializer</text>
+<text class="unity-stripping-linkxml-s" x="376" y="182">called method</text>
+<rect class="unity-stripping-linkxml-m" x="13" y="53" width="102" height="50" rx="12"/>
+<rect class="unity-stripping-linkxml-m" x="145" y="53" width="186" height="50" rx="12" style="animation-delay:.35s"/>
+<rect class="unity-stripping-linkxml-m" x="361" y="53" width="166" height="50" rx="12" style="animation-delay:.7s"/>
+<rect class="unity-stripping-linkxml-m" x="145" y="143" width="186" height="50" rx="12" style="animation-delay:.7s"/>
+<rect class="unity-stripping-linkxml-m" x="361" y="143" width="166" height="50" rx="12" style="animation-delay:1.05s"/>
+<g opacity=".5"><rect class="unity-stripping-linkxml-x" x="148" y="236" width="180" height="44" rx="10"/>
+<text class="unity-stripping-linkxml-t" x="160" y="255">OldMenu</text>
+<text class="unity-stripping-linkxml-s" x="160" y="272">never referenced: stripped</text></g>
+<line x1="444" y1="192" x2="444" y2="232" style="stroke:var(--fig-warn);stroke-width:1.75;stroke-dasharray:4 4"/>
+<text x="454" y="217" style="font-size:12px;fill:var(--fig-warn)">by type name</text>
+<g class="unity-stripping-linkxml-sd"><rect class="unity-stripping-linkxml-k" x="364" y="236" width="160" height="44" rx="10"/>
+<text class="unity-stripping-linkxml-t" x="376" y="255" style="font-size:13px">Game.Save.SaveData</text>
+<text class="unity-stripping-linkxml-s" x="376" y="272">DTO, reflection only</text></g>
+<rect class="unity-stripping-linkxml-on" x="364" y="236" width="160" height="44" rx="10" style="fill:none;stroke:var(--fig-bad);stroke-width:2;stroke-dasharray:6 4"/>
+<g class="unity-stripping-linkxml-lx"><rect x="554" y="236" width="70" height="44" rx="10" style="fill:var(--fig-accent);fill-opacity:.14;stroke:var(--fig-accent);stroke-width:1.75"/>
+<text x="589" y="263" text-anchor="middle" style="font-size:13px;fill:var(--fig-ink);font-family:ui-monospace,SFMono-Regular,Menlo,monospace">link.xml</text>
+<line x1="552" y1="258" x2="528" y2="258" style="stroke:var(--fig-accent);stroke-width:1.75" marker-end="url(#unity-stripping-linkxml-ak)"/></g>
+<text class="unity-stripping-linkxml-on" x="624" y="306" text-anchor="end" style="font-size:13px;font-weight:600;fill:var(--fig-bad)">without link.xml: MissingMethodException</text>
+<rect x="16" y="300" width="14" height="14" rx="4" class="unity-stripping-linkxml-k"/>
+<text class="unity-stripping-linkxml-s" x="38" y="312">kept</text>
+<rect x="84" y="300" width="14" height="14" rx="4" class="unity-stripping-linkxml-x"/>
+<text class="unity-stripping-linkxml-s" x="106" y="312">stripped</text>
+</svg>

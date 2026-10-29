@@ -1,0 +1,86 @@
+[
+  {
+    "topicId": "graphics-math",
+    "after": 3,
+    "id": "graphics-dot-product",
+    "caption": "For unit vectors the dot product is the length of b's shadow on a: 0.866 at 30 degrees passes the 0.707 cone test, 0.5 at 60 degrees fails, 0 is perpendicular and -1 is opposite.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-a/graphics-dot-product.svg"
+  },
+  {
+    "topicId": "graphics-math",
+    "after": 8,
+    "id": "graphics-transform-order",
+    "caption": "Same rotation, same translation, different order: rotate-then-translate turns the square in place at its new spot, translate-then-rotate swings it around the origin.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-a/graphics-transform-order.svg"
+  },
+  {
+    "topicId": "graphics-math",
+    "after": 13,
+    "id": "graphics-gimbal-lock",
+    "caption": "As pitch reaches 90 degrees the roll axis swings onto the yaw axis, so two Euler angles now spin the object the same way and one degree of freedom is gone.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-a/graphics-gimbal-lock.svg"
+  },
+  {
+    "topicId": "graphics-spaces-cameras",
+    "after": 3,
+    "id": "graphics-space-chain",
+    "caption": "Follow one head vertex through every space: the model, view and projection matrices, then the fixed divide by w and the viewport map it to a pixel (camera at (10, 1.2, 0), 60 degree FOV, 16:9).",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-a/graphics-space-chain.svg"
+  },
+  {
+    "topicId": "graphics-spaces-cameras",
+    "after": 5,
+    "id": "graphics-frustum",
+    "caption": "The projection copies depth into w, so dividing by it shrinks an object in proportion to its distance: the same bar at 2.7 times the depth is 1/2.7 as tall on screen.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-a/graphics-frustum.svg"
+  },
+  {
+    "topicId": "graphics-spaces-cameras",
+    "after": 14,
+    "id": "graphics-depth-precision",
+    "caption": "With standard 24-bit depth the smallest resolvable gap grows with distance squared, reaching 0.15 m at 500 m; reversed-Z with a float32 buffer keeps it orders of magnitude smaller across the range.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-a/graphics-depth-precision.svg"
+  },
+  {
+    "topicId": "graphics-gpu-pipeline",
+    "after": 4,
+    "id": "graphics-pipeline-stages",
+    "caption": "Only the vertex and fragment stages run your code; everything between them, including clipping, rasterization and the depth test, is fixed-function hardware.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-a/graphics-pipeline-stages.svg"
+  },
+  {
+    "topicId": "graphics-gpu-pipeline",
+    "after": 12,
+    "id": "graphics-raster-quads",
+    "caption": "The rasterizer tests pixel centres, but shading runs in 2x2 quads: every quad the triangle touches launches four lanes, so edge pixels and tiny triangles pay for helper lanes that produce nothing.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-a/graphics-raster-quads.svg"
+  },
+  {
+    "topicId": "graphics-gpu-pipeline",
+    "after": 16,
+    "id": "graphics-cpu-gpu-overlap",
+    "caption": "Pipelined, a 6 ms CPU and a 14 ms GPU deliver a frame every 14 ms; a blocking readback forces them to take turns and every frame costs 6 + 14 = 20 ms.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-a/graphics-cpu-gpu-overlap.svg"
+  },
+  {
+    "topicId": "graphics-shaders",
+    "after": 8,
+    "id": "graphics-interpolation",
+    "caption": "Every fragment gets a barycentric blend of its three vertices' outputs; blending two unit normals gives a shorter vector, which is why the fragment shader re-normalizes.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-a/graphics-interpolation.svg"
+  },
+  {
+    "topicId": "graphics-shaders",
+    "after": 10,
+    "id": "graphics-warp-divergence",
+    "caption": "When lanes disagree on a branch the warp runs both sides with lanes masked off and pays shadeA plus shadeB; a coherent warp pays for one side only.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-a/graphics-warp-divergence.svg"
+  },
+  {
+    "topicId": "graphics-shaders",
+    "after": 13,
+    "id": "graphics-shader-variants",
+    "caption": "Each independent on/off keyword doubles the compiled programs: 10 keywords make 2^10 = 1,024 variants for one pass, while the worked example drops from 288 to 36 by moving three features to uniform branches.",
+    "svgFile": "/Users/fedorvaliavko/Developer/ShipwrightAcademy/figures/graphics-a/graphics-shader-variants.svg"
+  }
+]

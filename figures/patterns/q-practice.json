@@ -1,0 +1,352 @@
+[
+ {
+  "topicId": "readable-code",
+  "question": {
+   "q": "`ship_order()` checks the cart, then stock, then the address, each inside another `if`; the actual shipping call sits five indents deep with the failure branches trailing below it. Which approach fits best?",
+   "options": [
+    "Check each failure case first and return early, leaving the main path flat",
+    "Extract each nested block into its own helper function but keep the same nesting depth",
+    "Add a comment header above each nesting level to explain it",
+    "Pass a boolean flag so callers choose which checks to run"
+   ],
+   "answer": 0,
+   "explain": "Guard clauses handle the edge cases up front so the main logic reads top to bottom. Extracting the blocks keeps the same deep nesting and just moves it elsewhere."
+  }
+ },
+ {
+  "topicId": "design-principles",
+  "question": {
+   "q": "`place_order()` saves the order and then calls the email sender, the analytics client and the inventory service directly. Every new reaction, like loyalty points, means editing it again. What should you reach for?",
+   "options": [
+    "Wrap the three calls in one facade object called `OrderNotifier` that place_order uses",
+    "Subclass `OrderService` once per reaction that is needed",
+    "Publish an order-placed event and let each reaction subscribe to it",
+    "Add a boolean parameter per reaction to `place_order()`"
+   ],
+   "answer": 2,
+   "explain": "Events invert the dependency so order code no longer knows its reactions. A facade hides the calls but `place_order()` still depends on every reaction and still changes for each new one."
+  }
+ },
+ {
+  "topicId": "version-control-git",
+  "question": {
+   "q": "You are mid-feature with a dev server running and half-finished edits. A production hotfix must be built and tested on the release branch right now, and you want your current state left exactly as it is. What fits best?",
+   "options": [
+    "Run `git reset --hard` and redo the feature work afterwards",
+    "Check the release branch out in a second directory with `git worktree add`",
+    "Cherry-pick your unfinished edits onto the release branch and build from there",
+    "Rebase the feature branch onto the release branch first"
+   ],
+   "answer": 1,
+   "explain": "A worktree gives the hotfix its own checkout while your files and running server stay untouched. Cherry-pick moves commits between branches and does nothing about your dirty working tree."
+  }
+ },
+ {
+  "topicId": "testing",
+  "question": {
+   "q": "After checkout succeeds, the service must call the payment gateway's `charge` exactly once with the order total. Tests cannot hit the real gateway. Which approach fits best?",
+   "options": [
+    "Snapshot the whole order object as a golden file",
+    "Add a `sleep` and poll the gateway dashboard for the charge",
+    "Write a property test that checks `decode(encode(order))` always round-trips for any input",
+    "Replace the gateway client with a mock and assert the single `charge` call"
+   ],
+   "answer": 3,
+   "explain": "The charge is an effect at a system boundary, so a mock verifies it was requested. A golden snapshot of the order would not show whether the gateway was ever called."
+  }
+ },
+ {
+  "topicId": "interfaces-types-contracts",
+  "question": {
+   "q": "A bug shipped because `refund(orderId, userId)` was called as `refund(userId, orderId)`. Both are plain strings, so the compiler accepted it. What should you reach for?",
+   "options": [
+    "Validate every incoming request body with a runtime schema at the trust boundary",
+    "Return a Result type from `refund` instead of throwing",
+    "Give `OrderId` and `UserId` distinct types so a swap fails to compile",
+    "Add an exhaustiveness check on the refund status enum"
+   ],
+   "answer": 2,
+   "explain": "Distinct ID types turn the swap into a compile error. A runtime schema checks shape at the boundary but both IDs are still valid strings, so it cannot tell the order apart."
+  }
+ },
+ {
+  "topicId": "architecture",
+  "question": {
+   "q": "The order service saves the order, then publishes `OrderPlaced` to the broker. After a crash between the two steps, billing never hears about some orders that exist in the database. Which approach fits best?",
+   "options": [
+    "Write the event to an outbox table in the same transaction and relay it",
+    "Make the billing consumer idempotent so that it safely ignores any duplicate events",
+    "Split the order service into two smaller microservices",
+    "Record the choice of broker in an Architecture Decision Record"
+   ],
+   "answer": 0,
+   "explain": "The outbox makes the save and the event commit atomically. An idempotent consumer protects against duplicates but cannot recover an event that was never published."
+  }
+ },
+ {
+  "topicId": "continuous-integration",
+  "question": {
+   "q": "Two PRs each passed CI cleanly and were merged ten minutes apart. Now `main` fails to compile because one renamed a function the other still calls. What should you reach for?",
+   "options": [
+    "Run lint and unit tests first, before the slow end-to-end stage starts on every push",
+    "Commit a lockfile and pin the toolchain version in CI",
+    "Quarantine the failing test and assign it an owner",
+    "A merge queue that tests each PR on top of the latest `main` before merging"
+   ],
+   "answer": 3,
+   "explain": "Each PR was green only against an older `main`; a queue tests the combined result. Fail-fast stage ordering speeds feedback but still tests each PR against a stale base."
+  }
+ },
+ {
+  "topicId": "code-review",
+  "question": {
+   "q": "A PR changing token refresh logic was approved in two minutes by whichever teammate was free, and he had never touched the auth code. How do you stop this from happening again?",
+   "options": [
+    "Add a linter to CI that enforces brace and import style",
+    "Require approval from the auth owners via CODEOWNERS on those paths",
+    "Ask authors to split every PR into a stack of small ones",
+    "Have the author carefully re-read their own diff before they request any review"
+   ],
+   "answer": 1,
+   "explain": "Sensitive paths should need an owner with the right context. Self-review by the author helps, but it does not guarantee someone who knows auth reads the change."
+  }
+ },
+ {
+  "topicId": "deployment-strategies",
+  "question": {
+   "q": "A migration must set `region` on all 200 million rows of `orders`. A single `UPDATE` locked the table in staging and ballooned the transaction log. Which approach fits best?",
+   "options": [
+    "Put the change behind a feature flag and flip it for all users",
+    "Deploy it to a blue environment and switch traffic over at once",
+    "Update in small id-ranged batches with pauses, safe to rerun",
+    "Roll it out with a canary at 5% of production traffic"
+   ],
+   "answer": 2,
+   "explain": "Batching keeps each transaction short and lets the job resume. A canary or blue/green switch controls traffic to code, not the size of a data update."
+  }
+ },
+ {
+  "topicId": "infrastructure-environments",
+  "question": {
+   "q": "Users upload avatars to the container's local disk. After every deploy they vanish, and with three replicas only the one that handled the upload can serve the file. What should you do?",
+   "options": [
+    "Store uploads in external object storage and keep containers stateless",
+    "Build the container image once and promote that same image across every environment",
+    "Move the storage path into an environment variable per stage",
+    "Spin up a preview environment for each pull request"
+   ],
+   "answer": 0,
+   "explain": "Containers are replaceable, so durable data must live outside them. Config from the environment only changes where the path points; it still writes to a disk that gets discarded."
+  }
+ },
+ {
+  "topicId": "observability",
+  "question": {
+   "q": "Twelve services each have a dashboard built by a different engineer, so during an incident on-call cannot compare them or tell which request-serving service is hurting. Which approach fits best?",
+   "options": [
+    "Per-resource utilisation, saturation and error graphs for every host and disk in the fleet",
+    "A standard dashboard of request rate, error rate and duration per service",
+    "Alert whenever CPU on any host passes 80 percent",
+    "Convert all logs to JSON and search them by field"
+   ],
+   "answer": 1,
+   "explain": "RED gives every request-driven service the same three signals. The USE method targets resources like disks and queues, which helps find a bottleneck but not compare services."
+  }
+ },
+ {
+  "topicId": "releases-versioning",
+  "question": {
+   "q": "Release tags are bumped by hand. Last week `2.3.1` was tagged twice and `2.4.0` was skipped, and nobody can say which commits each one holds. What should you reach for?",
+   "options": [
+    "Move to a fixed-schedule release train with a code freeze date before each release",
+    "Publish a hotfix from a dedicated release branch each time",
+    "Group the changelog into user-facing sections by hand",
+    "Derive the next version and tag from commit types in the release pipeline"
+   ],
+   "answer": 3,
+   "explain": "Computing the version and tag from commits in CI removes the manual step that went wrong. A release train fixes when releases ship, not how version numbers are assigned."
+  }
+ },
+ {
+  "topicId": "refactoring-tech-debt",
+  "question": {
+   "q": "You must add a new discount rule to a tangled 600-line `price()` function, and it is unclear where the rule even belongs. Bolting it onto the end feels risky. What should you reach for?",
+   "options": [
+    "Rewrite `price()` from scratch in a new module",
+    "First restructure the code to make the change easy, then add the rule",
+    "Append the rule as a new `if` block at the bottom of the existing function",
+    "Rank all ugly modules by churn and clean the worst first"
+   ],
+   "answer": 1,
+   "explain": "Make the change easy, then make the easy change: refactor in small steps first, then add the rule. A full rewrite is a much bigger and riskier step than the task needs."
+  }
+ },
+ {
+  "topicId": "dependencies-supply-chain",
+  "question": {
+   "q": "A critical CVE lands for `libfoo 1.4.2`. Security asks which of your 60 services ship that exact version, and answering takes two engineers two days of grepping repos. What fits best?",
+   "options": [
+    "Generate an SBOM for every build and query it by package and version",
+    "Disable install scripts by default on every developer machine and on all CI runners",
+    "Vendor every dependency into each repository",
+    "Triage each alert by whether the vulnerable code is reachable"
+   ],
+   "answer": 0,
+   "explain": "An SBOM is a queryable inventory of what each build contains. Reachability triage decides how urgent a finding is, but only after you know which services include the library."
+  }
+ },
+ {
+  "topicId": "incident-response-postmortems",
+  "question": {
+   "q": "Two hours into an outage, support is overwhelmed with angry tickets and customers are learning status from social media, while every responder is heads-down debugging. What should you reach for?",
+   "options": [
+    "Have every responder reply to customers as soon as they know something",
+    "Pause the debugging until a full postmortem draft is written",
+    "Stop restarting services until the root cause is confirmed",
+    "Assign one person to post status updates on a fixed cadence"
+   ],
+   "answer": 3,
+   "explain": "A dedicated comms role keeps customers informed on a predictable schedule without pulling responders off the fix. Ad hoc replies from many responders give inconsistent messages and cost debugging time."
+  }
+ },
+ {
+  "topicId": "performance",
+  "question": {
+   "q": "Each hour when the cached homepage feed expires, database CPU spikes to 100% for a few seconds because hundreds of requests all recompute the same value at once. Which approach fits best?",
+   "options": [
+    "Add an index to the feed query so that each individual recompute is much cheaper",
+    "Fetch the feed in pages instead of all at once",
+    "Let one request rebuild the value while the others wait or get the stale copy",
+    "Replace the cache with per-request recomputation"
+   ],
+   "answer": 2,
+   "explain": "Single-flight or serve-stale stops the herd from hitting the backend together. An index makes each recompute cheaper but hundreds of simultaneous recomputes still pile up."
+  }
+ },
+ {
+  "topicId": "documentation-knowledge",
+  "question": {
+   "q": "The 40-page payments guide mixes a getting-started walkthrough, a table of every error code and an essay on why the ledger works as it does. New hires and on-call both say they cannot find anything. What fits best?",
+   "options": [
+    "Separate it into a tutorial, how-to guides, a reference and an explanation",
+    "Add a table of contents and a search box on top of it",
+    "Write an ADR for each section of the guide",
+    "Move the whole guide into a single runbook that is linked from every alert page"
+   ],
+   "answer": 0,
+   "explain": "Readers arrive with different needs, so each kind of doc should serve one of them. A table of contents makes the mixed page easier to navigate but it still serves none of the needs well."
+  }
+ },
+ {
+  "topicId": "legacy-migrations",
+  "question": {
+   "q": "The billing migration started a year ago. 20% of customers still run on the old service, both systems need patches, and the team does everything twice. What should you reach for?",
+   "options": [
+    "Begin routing shadow traffic to the new service to compare it with the old system",
+    "Add dual writes so both stores always hold the same data",
+    "Start a full rewrite of the new service to finish faster",
+    "Set a dated decommission milestone with an owner and a cutover plan"
+   ],
+   "answer": 3,
+   "explain": "Without an end date an incremental migration stalls with two systems to maintain. Shadow traffic builds confidence but does not retire the old system."
+  }
+ },
+ {
+  "topicId": "how-llms-work",
+  "question": {
+   "q": "You ask an agent how many of 4,000 log lines contain a specific 36-character request ID. It answers confidently with a count that is off by a few. Which approach fits best?",
+   "options": [
+    "Ask it to count again more carefully and show each of its steps as it goes",
+    "Have it run a command like `grep -c` and report the output",
+    "Set the temperature to 0 and rerun the same prompt",
+    "Paste all 4,000 lines into the prompt again for reference"
+   ],
+   "answer": 1,
+   "explain": "Exact counting is better done by a deterministic tool than by token prediction. Temperature 0 reduces variation but does not make the model reliable at counting."
+  }
+ },
+ {
+  "topicId": "context-engineering",
+  "question": {
+   "q": "One prompt asks the agent to fix a login bug, refactor the session module and update the docs. The result is a single large diff where nothing is clearly finished or checked. What should you reach for?",
+   "options": [
+    "Add a longer list of adjectives describing the desired code style to the prompt",
+    "Move the instructions into the project CLAUDE.md file",
+    "Send separate prompts, each with one task and its own done check",
+    "Restart the session and paste the same prompt again"
+   ],
+   "answer": 2,
+   "explain": "One task per prompt gives a reviewable result with a clear check for each. A project instruction file holds standing conventions, not a particular set of three tasks."
+  }
+ },
+ {
+  "topicId": "agent-loop-tools",
+  "question": {
+   "q": "Your `manage_tickets(action, payload)` tool is called with missing or wrong fields several times per session, and the agent wastes steps recovering from the errors. Which approach fits best?",
+   "options": [
+    "Add a step limit that interrupts the loop and shows a new hint after five failed calls",
+    "Hand ticket work to a subagent with its own context window",
+    "Connect more MCP servers so it has other tools to try",
+    "Split it into narrow tools like `close_ticket` with typed, required parameters"
+   ],
+   "answer": 3,
+   "explain": "A narrow tool with a precise schema makes wrong calls hard to express. A step limit only stops the loop after the wasted attempts have already happened."
+  }
+ },
+ {
+  "topicId": "agentic-workflow",
+  "question": {
+   "q": "You asked for a one-line fix to a date formatter. The diff also reformats three unrelated files and renames variables 'while the agent was there'. What should you do?",
+   "options": [
+    "Reject the unrequested edits and keep the diff to the task you asked for",
+    "Run the agent in plan mode first so that it cannot touch any files in the repository",
+    "Give the next agent a separate worktree for each file",
+    "Take over by hand and write the fix yourself"
+   ],
+   "answer": 0,
+   "explain": "Unrelated edits make the review harder and add risk, so hold the agent to the request. Plan mode is about approving an approach before editing and does not reject changes already made."
+  }
+ },
+ {
+  "topicId": "verification-evals",
+  "question": {
+   "q": "A support bot's eval shows 92% accuracy before and after a prompt change, yet Spanish-speaking users report many more wrong answers. What should you reach for?",
+   "options": [
+    "Hold out a fresh test set of new examples to detect any overfitting to the old ones",
+    "Calibrate the LLM judge against a sample of human grades",
+    "Break results down by user segment and track the worst failures separately",
+    "Write a failing test for the first bug report you read"
+   ],
+   "answer": 2,
+   "explain": "An overall average can hide a segment that got worse, so slice the results. A held-out set checks for overfitting, which would not expose a regression confined to one language."
+  }
+ },
+ {
+  "topicId": "safety-security",
+  "question": {
+   "q": "An agent has been asked to fix a CSS bug, but its workspace contains a `.env` with the production database password and a readable `~/.ssh` directory. Which approach fits best?",
+   "options": [
+    "Review every generated diff for string-built SQL queries",
+    "Keep credentials outside its readable paths and deny it access to them",
+    "Require human approval before any force-push or table drop",
+    "Vet each MCP server it connects to in the same way you would any other dependency"
+   ],
+   "answer": 1,
+   "explain": "The simplest protection is that the agent cannot read the secrets at all. Approval for irreversible actions guards what the agent does, not what it can read and leak."
+  }
+ },
+ {
+  "topicId": "agent-friendly-codebases",
+  "question": {
+   "q": "A 5,000-line `utils.py` mixes billing, formatting and email code. When the agent edits one function, unrelated features break and it cannot predict what a change touches. What fits best?",
+   "options": [
+    "Split it into small focused modules that declare their dependencies explicitly",
+    "Write one-command scripts for setup, test and lint and document them in the README file",
+    "Make assertion failures print the expected and actual values",
+    "Mark the file as generated and add a guard against editing"
+   ],
+   "answer": 0,
+   "explain": "Small modules with explicit dependencies limit the blast radius of an edit and fit in context. Better failure messages help diagnose a break but do not prevent distant code from breaking."
+  }
+ }
+]
